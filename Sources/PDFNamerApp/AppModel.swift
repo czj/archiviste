@@ -446,12 +446,27 @@ final class AppModel {
 
     // MARK: Watched folders
 
+    /// Until when each watched folder was watched (path → date), kept across launches so that
+    /// what arrived while the app was not running is caught up at the next launch. A folder
+    /// added or switched back on starts afresh: its files already there stay as they are.
+    private static let watchedUntilKey = "watchedUntil"
+    @ObservationIgnored private var heartbeat: Task<Void, Never>?
+
+    private func markWatched() {
+        let now = Date()
+        let dates = Dictionary(uniqueKeysWithValues: watchers.keys.map { ($0, now) })
+        UserDefaults.standard.set(dates, forKey: Self.watchedUntilKey)
+    }
+
     private func syncWatchers() {
         let wanted = Set(settings.watchedFolders.filter(\.enabled).map(\.url.path))
+        let until = UserDefaults.standard.dictionary(forKey: Self.watchedUntilKey) as? [String: Date] ?? [:]
+        // Only at launch: later, a new watcher is a folder just added or switched on.
+        let launching = heartbeat == nil
         for path in watchers.keys where !wanted.contains(path) { watchers[path] = nil }
         for path in wanted where watchers[path] == nil {
             let url = URL(fileURLWithPath: path)
-            watchers[path] = FolderWatcher(url, accepts: { [weak self] file in
+            watchers[path] = FolderWatcher(url, since: launching ? until[path] : nil, accepts: { [weak self] file in
                 guard let self, Config.isFileForRules(file) else { return false }
                 if self.relay(for: path) != nil { return true }  // a relay passes everything on
                 guard !Marker.isMarked(file) else { return false }
@@ -459,6 +474,17 @@ final class AppModel {
             }) { [weak self] urls in
                 guard let self else { return }
                 if let relay = self.relay(for: path) { self.pass(urls, to: relay) } else { self.add(urls, source: url.lastPathComponent) }
+            }
+        }
+        markWatched()
+        // Every minute, so a crash or a forced quit loses at most a minute of "watched until".
+        // Overlap is harmless: what was already handled carries the marker and is skipped.
+        if heartbeat == nil {
+            heartbeat = Task { [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(60))
+                    self?.markWatched()
+                }
             }
         }
     }

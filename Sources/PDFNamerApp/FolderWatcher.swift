@@ -14,11 +14,15 @@ final class FolderWatcher {
     private var pending: [String: Int] = [:]  // path → last seen size
     private var settling: Task<Void, Never>?
 
-    init(_ url: URL, accepts: @escaping (URL) -> Bool, onNew: @escaping ([URL]) -> Void) {
+    /// `since`: when this folder was last watched. Files added after it (while the app was not
+    /// running) are taken like new arrivals; without it, everything already there is left alone.
+    init(_ url: URL, since: Date? = nil, accepts: @escaping (URL) -> Bool, onNew: @escaping ([URL]) -> Void) {
         self.url = url
         self.accepts = accepts
         self.onNew = onNew
-        known = Set(Self.files(in: url).map(\.path))
+        let present = Self.files(in: url)
+        let missed = since.map { since in present.filter { (Self.added($0) ?? .distantPast) > since } } ?? []
+        known = Set(present.map(\.path)).subtracting(missed.map(\.path))
         let fd = open(url.path, O_EVTONLY)
         guard fd >= 0 else {
             Logger(subsystem: "com.github.czj.pdf-namer", category: "watch")
@@ -31,6 +35,7 @@ final class FolderWatcher {
         src.setCancelHandler { close(fd) }
         src.resume()
         source = src
+        if !missed.isEmpty { scan() }  // catch up: they settle and go out like arrivals
     }
 
     isolated deinit {
@@ -39,6 +44,12 @@ final class FolderWatcher {
     }
 
     func ignore(_ file: URL) { known.insert(file.path) }
+
+    /// When the file entered this folder (Finder's "Date Added"), else its creation.
+    private static func added(_ file: URL) -> Date? {
+        let values = try? file.resourceValues(forKeys: [.addedToDirectoryDateKey, .creationDateKey])
+        return values?.addedToDirectoryDate ?? values?.creationDate
+    }
 
     private static func files(in dir: URL) -> [URL] {
         let all = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isRegularFileKey],

@@ -31,7 +31,9 @@ rendu et l'OCR passent en `@concurrent`.
 - Déposez des fichiers (ou un dossier) sur l'icône ou sur la page Activité, choisissez-les
   (⌘O), ou collez-les (⌘V).
 - Ajoutez des **dossiers surveillés** (Scans, Téléchargements…) : chaque nouveau PDF ou
-  image qui y arrive est renommé tout seul, avec une notification.
+  image qui y arrive est renommé tout seul, avec une notification. Ce qui est arrivé pendant
+  que l'app était fermée est rattrapé à son lancement (date d'ajout du Finder) ; un dossier
+  qu'on vient d'ajouter part de zéro, sans reprendre les fichiers déjà là.
 - **Ranger maintenant** (⇧⌘R) passe les règles sur les fichiers déjà présents dans les
   dossiers surveillés : un aperçu montre où chacun irait, « Tout ranger » (⌘↩) les range.
   Le modèle ne renomme rien pendant ce passage ; les fichiers sans règle restent en place.
