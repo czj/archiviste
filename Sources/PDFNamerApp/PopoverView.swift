@@ -47,13 +47,6 @@ struct PopoverView: View {
                 }
             }
             Spacer()
-            Button { model.paused.toggle() } label: {
-                Image(systemName: model.paused ? "play.fill" : "pause.fill")
-            }
-            .buttonStyle(.borderless)
-            .help(model.paused ? "Reprendre : renommer et ranger les fichiers en attente"
-                               : "Pause : les fichiers déposés ou arrivés attendent, rien n’est renommé")
-            .accessibilityLabel(model.paused ? "Reprendre" : "Pause")
             Button {
                 NSApp.activate()
                 openSettings()
@@ -77,9 +70,8 @@ struct PopoverView: View {
             } else {
                 Text("Surveille \(Text(active.map(\.name).formatted(.list(type: .and))).bold())")
                 Spacer()
-                Text(model.paused ? "en pause" : "actif").font(.caption)
-                    .foregroundStyle(model.paused ? Color.orange : .secondary)
             }
+            PauseButton()
         }
         .font(.callout)
         .padding(.horizontal, 10).padding(.vertical, 8)
@@ -133,6 +125,7 @@ struct PopoverView: View {
                          : model.isBusy ? "Renommage · \(min(done + 1, total)) sur \(total)" : "Terminé · \(total) fichier(s)")
                         .font(.headline)
                     Spacer()
+                    PauseButton()
                 }
                 ProgressView(value: Double(done), total: Double(max(total, 1)))
             }
@@ -159,6 +152,27 @@ struct PopoverView: View {
             .padding(.top, 10)
             .overlay(alignment: .top) { Divider() }
         }
+    }
+}
+
+/// State and switch in one: "⏸ Actif" (click to pause) or "▶︎ En pause" (click to resume).
+struct PauseButton: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let paused = model.paused
+        Button { model.paused.toggle() } label: {
+            Label(paused ? "En pause" : "Actif", systemImage: paused ? "play.fill" : "pause.fill")
+                .font(.caption.weight(.medium))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .foregroundStyle(paused ? Color.orange : Color.green)
+                .background((paused ? Color.orange : Color.green).opacity(0.15), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(paused ? "Reprendre : renommer et ranger les fichiers en attente"
+                     : "Mettre en pause : les fichiers déposés ou arrivés attendent, rien n’est renommé")
+        .accessibilityLabel(paused ? "En pause, reprendre" : "Actif, mettre en pause")
     }
 }
 
