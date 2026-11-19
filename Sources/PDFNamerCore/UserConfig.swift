@@ -13,26 +13,33 @@ import Foundation
 ///       "backupDir": "~/Documents/Archives",
 ///       "backupMaxAgeDays": 180,
 ///       "expireMaxAgeDays": 548,
-///       "watchedFolders": [{ "path": "~/Downloads", "enabled": true }],
+///       "watchedFolders": [{ "path": "~/Downloads", "enabled": true },
+///                          { "path": "~/Scans inbox", "moveTo": "~/Desktop" }],
 ///       "confirmBeforeRename": false
 ///     }
 public struct UserConfig: Codable, Equatable, Sendable {
     public struct Folder: Codable, Equatable, Hashable, Sendable, Identifiable {
         public var path: String
         public var enabled = true
+        /// A relay folder (a scanner app's inbox, say): what lands here is only moved there,
+        /// where the rules and the model take it if that folder is watched too.
+        public var moveTo: String?
         public var id: String { path }
         public var url: URL { UserConfig.expand(path) }
         public var name: String { url.lastPathComponent }
+        public var relay: URL? { moveTo.flatMap { $0.isEmpty ? nil : UserConfig.expand($0) } }
 
-        public init(path: String, enabled: Bool = true) {
+        public init(path: String, enabled: Bool = true, moveTo: String? = nil) {
             self.path = UserConfig.abbreviate(path)
             self.enabled = enabled
+            self.moveTo = moveTo.map(UserConfig.abbreviate)
         }
 
         public init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
             path = try c.decode(String.self, forKey: .path)
             enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+            moveTo = try c.decodeIfPresent(String.self, forKey: .moveTo)
         }
     }
 

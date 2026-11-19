@@ -173,7 +173,14 @@ public enum Rules {
         public let dateSource: DateSource
     }
 
-    public enum DateSource: Sendable { case document, file, unused }
+    public enum DateSource: Sendable { case document, name, file, unused }
+
+    /// The date a name starts with ("2025-03-14 - …"), if it is a real one.
+    static func nameDate(_ filename: String) -> String? {
+        guard Naming.isNamed(filename) else { return nil }
+        let iso = String(filename.prefix(10))
+        return Day(iso: iso) == nil ? nil : iso
+    }
 
     /// Reads a document's issue date (AAAA-MM-JJ), nil if it can't tell: see `Namer.issueDate`.
     public typealias DateReader = @Sendable (URL) async -> String?
@@ -190,6 +197,9 @@ public enum Rules {
             var date = fileDate(url), source = DateSource.file
             if !rule.usesDate {
                 source = .unused
+            } else if let named = nameDate(filename) {  // "2025-03-14 - …": already dated, keep it
+                date = named
+                source = .name
             } else if let read = await readDate?(url) {
                 date = read
                 source = .document

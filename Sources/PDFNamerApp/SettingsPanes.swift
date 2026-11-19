@@ -77,9 +77,22 @@ struct FoldersPane: View {
                 }
                 ForEach($model.settings.watchedFolders) { $folder in
                     HStack {
-                        Image(systemName: "folder").foregroundStyle(.tint)
-                        Text(folder.path)
+                        Image(systemName: folder.relay == nil ? "folder" : "arrow.right.circle")
+                            .foregroundStyle(.tint).frame(width: 20)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(folder.name)
+                            Text(folder.path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
+                        }
                         Spacer()
+                        Menu {
+                            Button("Renommer et ranger ici") { folder.moveTo = nil }
+                            Button("Seulement déplacer vers…") { chooseRelay(for: $folder) }
+                        } label: {
+                            Text(folder.relay.map { "→ \($0.lastPathComponent)" } ?? "Renommer et ranger")
+                        }
+                        .fixedSize()
+                        .help(folder.relay.map { "Dossier relais : chaque fichier qui arrive est déplacé vers \(($0.path as NSString).abbreviatingWithTildeInPath), sans autre traitement (pour la boîte d’envoi d’une app de scan, par exemple)" }
+                              ?? "Les règles, puis le modèle, sur chaque fichier qui arrive")
                         Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
                         Button {
                             model.settings.watchedFolders.removeAll { $0.path == folder.path }
@@ -90,11 +103,22 @@ struct FoldersPane: View {
                 }
                 Button("Ajouter un dossier…") { model.addFolder() }
             } footer: {
-                Text("Chaque fichier qui arrive dans ces dossiers passe d’abord par les règles (rangé et renommé s’il en suit une), sinon le modèle nomme les PDF et images, avec une notification. Les fichiers déjà présents, ceux déjà traités par PDF Namer et ceux nommés « AAAA-MM-JJ - … » ne sont pas renommés par le modèle. « Ranger maintenant » (⇧⌘R) passe les règles sur les fichiers déjà là, avec un aperçu avant de ranger.")
+                Text("Chaque fichier qui arrive dans ces dossiers passe d’abord par les règles (rangé et renommé s’il en suit une), sinon le modèle nomme les PDF et images, avec une notification. Les fichiers déjà présents, ceux déjà traités par PDF Namer et ceux nommés « AAAA-MM-JJ - … » ne sont pas renommés par le modèle. Un dossier relais (« Seulement déplacer vers… ») passe ses fichiers à un autre dossier, par exemple les scans d’une app vers le Bureau. « Ranger maintenant » (⇧⌘R) passe les règles sur les fichiers déjà là, et range par date les fichiers laissés en vrac dans les dossiers de destination, avec un aperçu avant de ranger.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+    }
+
+    private func chooseRelay(for folder: Binding<UserConfig.Folder>) {
+        NSApp.activate()
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.message = "Où déplacer les fichiers qui arrivent dans « \(folder.wrappedValue.name) » ?"
+        guard panel.runModal() == .OK, let url = panel.url, url.standardizedFileURL != folder.wrappedValue.url.standardizedFileURL else { return }
+        folder.wrappedValue.moveTo = UserConfig.abbreviate(url.path)
     }
 }
 

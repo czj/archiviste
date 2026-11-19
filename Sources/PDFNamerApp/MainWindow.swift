@@ -229,7 +229,8 @@ private struct TidyBanner: View {
     }
 
     private var details: String {
-        var parts = ["\(scan.scanned) fichier(s) dans \(scan.folders.formatted(.list(type: .and)))"]
+        var parts = ["\(scan.scanned) fichier(s) dans \((scan.folders + scan.dated).formatted(.list(type: .and)))"]
+        if scan.relayed > 0 { parts.append("\(scan.relayed) passé(s) par un dossier relais") }
         if scan.noRule > 0 { parts.append("\(scan.noRule) sans règle, laissés en place") }
         if scan.alreadyHandled > 0 { parts.append("\(scan.alreadyHandled) déjà traités ou en place") }
         return parts.joined(separator: " · ")

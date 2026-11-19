@@ -32,17 +32,20 @@ final class Item: Identifiable {
     let source: String?  // watched folder name, nil for a drop
     /// Found by "Ranger maintenant" among the files already there: rules only, always proposed first.
     let tidy: Bool
+    /// Set for a loose file in a dated destination folder: this one rule instead of all of them.
+    let dating: Rule?
     var url: URL
     var phase: Phase = .waiting
     var suggestion: Suggestion?
     var took: TimeInterval?
     @ObservationIgnored var extraction: Task<Extracted, Error>?
 
-    init(url: URL, source: String?, phase: Phase = .waiting, tidy: Bool = false) {
+    init(url: URL, source: String?, phase: Phase = .waiting, tidy: Bool = false, dating: Rule? = nil) {
         self.url = url
         self.phase = phase
         self.source = source
         self.tidy = tidy
+        self.dating = dating
         originalName = url.lastPathComponent
         originalFolder = url.deletingLastPathComponent()
     }
@@ -129,7 +132,7 @@ final class AppModel {
         }
         // Any file may match a rule; only PDFs and images can be named by the model.
         for url in files where (Config.isSupported(url) || !rules.isEmpty) && Config.isFileForRules(url) {
-            guard !items.contains(where: { $0.url == url && $0.phase.isPending }) else { continue }
+            guard !isQueued(url) else { continue }
             if Marker.isMarked(url) {  // renamed or filed by PDF Namer before, whatever its name now
                 if source == nil { items.append(Item(url: url, source: nil, phase: .skipped("déjà traité"))) }
                 continue
@@ -154,6 +157,10 @@ final class AppModel {
         var scanned = 0
         var alreadyHandled = 0
         var noRule = 0
+        /// Files a relay folder passed on (they are then among the scanned ones of their new folder).
+        var relayed = 0
+        /// Destination folders whose loose files were looked at for dating.
+        var dated: [String] = []
     }
 
     var tidyScan: TidyScan?
@@ -164,21 +171,66 @@ final class AppModel {
     /// Runs the rules over the files already in the watched folders, like the old Raycast script,
     /// and proposes each match. Nothing moves before "Tout ranger"; the model renames nothing here.
     func tidyNow() {
-        let folders = settings.watchedFolders.filter(\.enabled).map(\.url)
-        var scan = TidyScan(folders: folders.map(\.lastPathComponent))
+        guard !tidyScanning else { return }
+        tidyScanning = true
         items.removeAll { $0.tidy && !$0.phase.isPending && $0.phase != .proposed }  // last pass's leftovers
-        for folder in folders {
-            let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil,
-                                                                      options: .skipsHiddenFiles)) ?? []
-            for url in files.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) where Config.isFileForRules(url) {
-                scan.scanned += 1
-                if Marker.isMarked(url) { scan.alreadyHandled += 1; continue }
-                guard !items.contains(where: { $0.url == url && ($0.phase.isPending || $0.phase == .proposed) }) else { continue }
-                items.append(Item(url: url, source: folder.lastPathComponent, tidy: true))
+        let folders = settings.watchedFolders.filter(\.enabled)
+        Task {
+            var scan = TidyScan(folders: folders.filter { $0.relay == nil }.map(\.name))
+            // 1. Relay folders (a scanner's inbox): their files join the folder they feed, as on arrival.
+            for folder in folders {
+                if let relay = folder.relay { scan.relayed += pass(await Self.files(in: folder.url), to: relay) }
             }
+            // 2. Watched folders: the rules.
+            for folder in folders where folder.relay == nil {
+                for url in await Self.files(in: folder.url) {
+                    scan.scanned += 1
+                    if Marker.isMarked(url) { scan.alreadyHandled += 1; continue }
+                    if !isQueued(url) { items.append(Item(url: url, source: folder.name, tidy: true)) }
+                }
+            }
+            // 3. Destinations dated by their rules: loose files at the top go to their year (or month)
+            //    subfolder, with the date prefix, like the files the rules file there.
+            let watched = Set(folders.map { $0.url.standardizedFileURL.path })
+            for (folder, rule) in datedFolders() where !watched.contains(folder.path) {
+                let files = await Self.files(in: folder)
+                guard !files.isEmpty else { continue }
+                scan.dated.append(folder.lastPathComponent)
+                for url in files where !isQueued(url) {
+                    scan.scanned += 1
+                    items.append(Item(url: url, source: folder.lastPathComponent, tidy: true, dating: rule))
+                }
+            }
+            tidyScan = scan
+            tidyScanning = false
+            startWorker()
         }
-        tidyScan = scan
-        startWorker()
+    }
+
+    var tidyScanning = false
+
+    private func isQueued(_ url: URL) -> Bool {
+        items.contains { $0.url == url && ($0.phase.isPending || $0.phase == .proposed) }
+    }
+
+    /// Each destination folder whose rules date files, with the settings of its first rule.
+    private func datedFolders() -> [(URL, Rule)] {
+        var seen = Set<String>(), found: [(URL, Rule)] = []
+        for rule in rules where rule.enabled && !rule.folder.isEmpty && rule.usesDate {
+            let url = UserConfig.expand(rule.folder).standardizedFileURL
+            guard seen.insert(url.path).inserted else { continue }
+            found.append((url, Rule(name: "Classement par date", filename: ".", folder: rule.folder,
+                                    subfolder: rule.subfolder, datePrefix: rule.datePrefix)))
+        }
+        return found
+    }
+
+    /// The files directly in a folder (no subfolders, nothing hidden or still downloading).
+    /// Off the main actor: a cloud drive can be slow to list.
+    @concurrent private static func files(in folder: URL) async -> [URL] {
+        let all = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil,
+                                                                options: .skipsHiddenFiles)) ?? []
+        return all.filter(Config.isFileForRules).sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
 
     /// Files every proposal as previewed (same folder, name and date: nothing is read again).
@@ -218,7 +270,7 @@ final class AppModel {
         do {
             item.phase = .reading
             // 1. Filing rules, before any model call.
-            if let m = await Rules.firstMatch(rules, for: item.url, readDate: readDate) {
+            if let m = await Rules.firstMatch(item.dating.map { [$0] } ?? rules, for: item.url, readDate: readDate) {
                 item.suggestion = Suggestion(m)
                 item.took = Date().timeIntervalSince(t0)
                 if m.folder.appendingPathComponent(m.name).standardizedFileURL == item.url.standardizedFileURL {
@@ -407,10 +459,35 @@ final class AppModel {
         for path in wanted where watchers[path] == nil {
             let url = URL(fileURLWithPath: path)
             watchers[path] = FolderWatcher(url, accepts: { [weak self] file in
-                guard let self, Config.isFileForRules(file), !Marker.isMarked(file) else { return false }
+                guard let self, Config.isFileForRules(file) else { return false }
+                if self.relay(for: path) != nil { return true }  // a relay passes everything on
+                guard !Marker.isMarked(file) else { return false }
                 return Config.isSupported(file) || !self.rules.isEmpty  // any file may match a rule
-            }) { [weak self] urls in self?.add(urls, source: url.lastPathComponent) }
+            }) { [weak self] urls in
+                guard let self else { return }
+                if let relay = self.relay(for: path) { self.pass(urls, to: relay) } else { self.add(urls, source: url.lastPathComponent) }
+            }
         }
+    }
+
+    /// Read at each arrival, so changing "Déplacer vers" needs no new watcher.
+    private func relay(for path: String) -> URL? {
+        settings.watchedFolders.first { $0.enabled && $0.url.path == path }?.relay
+    }
+
+    /// Relay folder: move as is; the destination's own watcher (if any) takes it from there.
+    @discardableResult
+    private func pass(_ urls: [URL], to folder: URL) -> Int {
+        var moved = 0
+        for url in urls {
+            do {
+                try Files.move(url, to: url.lastPathComponent, in: folder)
+                moved += 1
+            } catch {
+                log.error("Relais \(url.lastPathComponent, privacy: .public) : \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        return moved
     }
 
     /// A file we just renamed or restored must not look like a new arrival.

@@ -164,6 +164,27 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(p.dateSource == .unused && p.name == "DSN_123.pdf")
 }
 
+@Test func `un nom déjà daté donne sa date, sans lire le document`() async throws {
+    let dir = try tempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let file = dir.appendingPathComponent("2025-03-14 - Facture Example.pdf")
+    try Data("x".utf8).write(to: file)
+    // A loose file in a destination dated by year: it goes to its own year, name unchanged.
+    let dating = Rule(name: "Classement par date", filename: ".", folder: dir.path, subfolder: .year)
+    let m = try #require(await Rules.firstMatch([dating], for: file, readDate: { _ in Issue.record("lu"); return nil }))
+    #expect(m.dateSource == .name && m.date == "2025-03-14")
+    #expect(m.folder.path == dir.appendingPathComponent("2025").path && m.name == file.lastPathComponent)
+    #expect(Rules.nameDate("2025-13-40 - x.pdf") == nil)  // not a real date
+}
+
+@Test func `dossier relais : moveTo lu, écrit seulement s’il existe`() throws {
+    let relay = try JSONDecoder().decode(UserConfig.Folder.self, from: Data(#"{"path": "~/Scans", "moveTo": "~/Desktop"}"#.utf8))
+    #expect(relay.relay?.path == UserConfig.expand("~/Desktop").path)
+    let plain = UserConfig.Folder(path: "~/Downloads")
+    #expect(plain.relay == nil)
+    #expect(!String(decoding: try JSONEncoder().encode(plain), as: UTF8.self).contains("moveTo"))
+}
+
 @Test func `règle tirée d’un fichier : nombres généralisés, type et émetteur du nom proposé`() {
     let r = Rule.draft(from: "Invoice-DE84E1D9-0026 (1).pdf",
                        suggestedName: "2026-09-17 - Facture Replicate - Calcul GPU - 12.40 USD.pdf")

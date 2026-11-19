@@ -430,8 +430,8 @@ private struct TesterPanel: View {
                 .help("Afficher cette règle")
                 if match.dateSource != .unused {
                     Label(match.dateSource == .document ? "Date du document, lue par le modèle : \(match.date)"
-                                                       : "Pas de date dans le document : date du fichier, \(match.date)",
-                          systemImage: "calendar")
+                          : match.dateSource == .name ? "Date déjà dans le nom : \(match.date)"
+                          : "Pas de date dans le document : date du fichier, \(match.date)", systemImage: "calendar")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             } else {

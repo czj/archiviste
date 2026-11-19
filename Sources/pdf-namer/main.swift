@@ -70,6 +70,7 @@ let readDate: Rules.DateReader? = dateEngine.map { engine in { @Sendable url in 
 func dateNote(_ m: Rules.Match) -> String {
     switch m.dateSource {
     case .document: " · date du document"
+    case .name: " · date du nom"
     case .file: " · date du fichier"
     case .unused: ""
     }

@@ -29,6 +29,12 @@ rendu et l'OCR passent en `@concurrent`.
 - **Ranger maintenant** (⇧⌘R) passe les règles sur les fichiers déjà présents dans les
   dossiers surveillés : un aperçu montre où chacun irait, « Tout ranger » (⌘↩) les range.
   Le modèle ne renomme rien pendant ce passage ; les fichiers sans règle restent en place.
+  Il range aussi par date les fichiers laissés en vrac dans les dossiers de destination dont
+  les règles datent (sous-dossier `2026` ou `2026-11`, préfixe `AAAA-MM-JJ - `), en gardant la
+  date d'un nom déjà daté.
+- Un dossier surveillé peut être un **relais** (« Seulement déplacer vers… », clé `moveTo`) :
+  ce qui y arrive est déplacé tel quel vers un autre dossier, par exemple les scans d'une app
+  vers le Bureau, où les règles et le modèle le prennent.
 - Chaque renommage peut être modifié ou annulé. L'option « Valider avant de renommer »
   attend votre accord pour les fichiers déposés.
 - Un fichier renommé ou rangé par PDF Namer n'est plus jamais repris, même si son nom n'a
