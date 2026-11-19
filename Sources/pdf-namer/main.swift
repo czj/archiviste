@@ -44,7 +44,7 @@ while let a = args.popFirst() {
                 seen += 1
                 if let right = Candidates.misreadDates(text)[String(name.prefix(10))] {
                     found += 1
-                    print("✗ \(name.prefix(10)) → \(right)  \(url.path.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~"))")
+                    print("✗ \(name.prefix(10)) → \(right)  \(UserConfig.abbreviate(url.path))")
                 }
             }
         }
@@ -68,14 +68,13 @@ guard !files.isEmpty else { err(usage); exit(1) }
 
 let batch = rename || rulesTest || files.count > 1
 func say(_ s: String) { if batch { print(s) } else { err(s) } }
-let home = FileManager.default.homeDirectoryForCurrentUser.path
-func short(_ url: URL) -> String { url.path.hasPrefix(home) ? "~" + url.path.dropFirst(home.count) : url.path }
+func short(_ url: URL) -> String { UserConfig.abbreviate(url.path) }
 
 /// Any file can match a rule; only PDFs and images can be named by the model.
 let anyFile = (rename || rulesTest) && !rules.isEmpty
 var urls: [URL] = []
 for f in files {
-    let url = URL(fileURLWithPath: (f as NSString).expandingTildeInPath)
+    let url = UserConfig.expand(f)
     if !FileManager.default.fileExists(atPath: url.path) { say("⚠ Introuvable : \(f)") }
     else if !Config.isSupported(url) && !anyFile { say("⚠ Ni PDF ni image : \(f)") }
     else if !Config.isFileForRules(url) { say("⚠ Dossier ou téléchargement en cours, ignoré : \(f)") }
@@ -84,7 +83,7 @@ for f in files {
 
 /// Rules that date a file ask the model for the issue date (file date if the model is unavailable).
 let dateEngine = rules.isEmpty ? nil : try? Engine()
-let readDate: Rules.DateReader? = dateEngine.map { engine in { @Sendable url in await Namer.issueDate(url, engine: engine) } }
+let readDate = dateEngine.map(Namer.dateReader)
 func dateNote(_ m: Rules.Match) -> String {
     switch m.dateSource {
     case .document: " · date du document"
@@ -178,15 +177,19 @@ func summary() {
 if urls.isEmpty { summary(); exit(errors > 0 ? 2 : 0) }
 
 // One file, no renaming: a matching rule gives the name, as --rename would.
-if !batch, let m = await Rules.firstMatch(rules, for: urls[0], readDate: readDate) {
+/// One file's suggested name: as JSON with `--json`, else the name without its extension.
+func emit(_ name: String, _ extra: [String: String] = [:]) throws {
     if json {
-        let out: [String: String] = ["original": urls[0].lastPathComponent, "suggested": m.name, "path": urls[0].path,
-                                     "folder": m.folder.path, "rule": m.rule.label]
+        let out = extra.merging(["original": urls[0].lastPathComponent, "suggested": name, "path": urls[0].path]) { $1 }
         let data = try JSONSerialization.data(withJSONObject: out, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
         print(String(decoding: data, as: UTF8.self))
     } else {
-        print((m.name as NSString).deletingPathExtension)
+        print((name as NSString).deletingPathExtension)
     }
+}
+
+if !batch, let m = await Rules.firstMatch(rules, for: urls[0], readDate: readDate) {
+    try emit(m.name, ["folder": m.folder.path, "rule": m.rule.label])
     exit(0)
 }
 
@@ -205,13 +208,7 @@ if !batch {
         guard let s = try await Namer.suggest(urls[0], try await nextExtraction!.value, engine: engine) else {
             err("✗ Rien de lisible dans ce fichier"); exit(2)
         }
-        if json {
-            let out: [String: String] = ["original": urls[0].lastPathComponent, "suggested": s.name, "path": urls[0].path]
-            let data = try JSONSerialization.data(withJSONObject: out, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
-            print(String(decoding: data, as: UTF8.self))
-        } else {
-            print((s.name as NSString).deletingPathExtension)
-        }
+        try emit(s.name)
     } catch {
         err("✗ \(error.localizedDescription)"); exit(2)
     }
