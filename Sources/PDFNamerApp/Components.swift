@@ -9,7 +9,7 @@ struct PauseButton: View {
         let paused = model.paused
         let color = paused ? Color.orange : Color.green
         Button { withAnimation(.snappy) { model.paused.toggle() } } label: {
-            Label(paused ? "En pause" : "Actif", systemImage: paused ? "play.fill" : "pause.fill")
+            Label(paused ? String(localized: "En pause") : String(localized: "Actif"), systemImage: paused ? "play.fill" : "pause.fill")
                 .contentTransition(.symbolEffect(.replace))
                 .font(.caption.weight(.medium))
                 .padding(.horizontal, 9).padding(.vertical, 4)
@@ -18,9 +18,9 @@ struct PauseButton: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .help(paused ? "Reprendre : renommer et ranger les fichiers en attente (⌥⌘P)"
-                     : "Mettre en pause : les fichiers déposés ou arrivés attendent, rien n’est renommé (⌥⌘P)")
-        .accessibilityLabel(paused ? "En pause, reprendre" : "Actif, mettre en pause")
+        .help(paused ? String(localized: "Reprendre : renommer et ranger les fichiers en attente (⌥⌘P)")
+                     : String(localized: "Mettre en pause : les fichiers déposés ou arrivés attendent, rien n’est renommé (⌥⌘P)"))
+        .accessibilityLabel(paused ? String(localized: "En pause, reprendre") : String(localized: "Actif, mettre en pause"))
     }
 }
 

@@ -20,6 +20,9 @@ rendu et l'OCR passent en `@concurrent`.
 
 ## L'app de barre de menus
 
+L'app est en français et en anglais : elle suit la langue du système (choix par app dans
+Réglages Système › Général › Langue et région). Les noms de fichiers restent en français.
+
 - Un clic sur l'icône de la barre des menus ouvre la fenêtre PDF Namer : Activité
   (dépôt de fichiers, historique des renommages avec recherche), Règles, Dossiers,
   Sauvegardes, Général (⌘1 à ⌘5). Un clic droit donne un menu court : ouvrir, ranger

@@ -52,7 +52,8 @@ struct GeneralPane: View {
             }
             Section("Format du nom") {
                 HStack(spacing: 4) {
-                    ForEach(["Date", "Type", "Émetteur", "Détail", "Montant"], id: \.self) { part in
+                    ForEach([String(localized: "Date"), String(localized: "Type"), String(localized: "Émetteur"),
+                             String(localized: "Détail"), String(localized: "Montant")], id: \.self) { part in
                         Text(part).font(.caption)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))

@@ -78,7 +78,7 @@ struct FoldersPane: View {
 
     private func report(_ already: [String]) {
         notice = already.isEmpty ? nil
-            : "Déjà dans la liste : \(already.joined(separator: ", ")). Un dossier est soit une boîte d’arrivée, soit un classeur."
+            : String(localized: "Déjà dans la liste : \(already.joined(separator: ", ")). Un dossier est soit une boîte d’arrivée, soit un classeur.")
     }
 
     /// How many enabled rules file into this folder.
@@ -102,9 +102,9 @@ struct FoldersPane: View {
 
 func rulesText(_ n: Int) -> String {
     switch n {
-    case 0: "aucune règle n’y range"
-    case 1: "1 règle y range"
-    default: "\(n) règles y rangent"
+    case 0: String(localized: "aucune règle n’y range")
+    case 1: String(localized: "1 règle y range")
+    default: String(localized: "\(n) règles y rangent")
     }
 }
 
@@ -134,7 +134,7 @@ private struct FlowDiagram: View {
     }
 
     private struct Step: View {
-        let icon: String, text: String
+        let icon: String, text: LocalizedStringKey
         var body: some View {
             Label(text, systemImage: icon)
                 .font(.caption)
@@ -177,13 +177,13 @@ private struct InboxRow: View {
                 Button("Règles, puis le modèle") { folder.moveTo = nil }
                 Button("Seulement déplacer vers…", action: chooseRelay)
             } label: {
-                Text(folder.relay.map { "Déplacer vers \($0.lastPathComponent)" } ?? "Règles, puis le modèle")
+                Text(folder.relay.map { String(localized: "Déplacer vers \($0.lastPathComponent)") } ?? String(localized: "Règles, puis le modèle"))
             }
             .fixedSize()
-            .help(folder.relay.map { "Relais : chaque fichier qui arrive est déplacé vers \(UserConfig.abbreviate($0.path)), sans autre traitement" }
-                  ?? "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive")
+            .help(folder.relay.map { String(localized: "Relais : chaque fichier qui arrive est déplacé vers \(UserConfig.abbreviate($0.path)), sans autre traitement") }
+                  ?? String(localized: "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive"))
             Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
-                .help(folder.enabled ? "Surveillé : décocher pour suspendre ce dossier seulement" : "Suspendu : rien n’y est renommé")
+                .help(folder.enabled ? String(localized: "Surveillé : décocher pour suspendre ce dossier seulement") : String(localized: "Suspendu : rien n’y est renommé"))
             Button {
                 model.settings.watchedFolders.removeAll { $0.path == folder.path }
             } label: { Image(systemName: "minus.circle") }
@@ -194,7 +194,7 @@ private struct InboxRow: View {
     }
 
     private func chooseRelay() {
-        let message = "Où déplacer les fichiers qui arrivent dans « \(folder.name) » ?"
+        let message = String(localized: "Où déplacer les fichiers qui arrivent dans « \(folder.name) » ?")
         guard let url = chooseFolders(canCreate: true, message: message).first,
               !UserConfig.same(url, folder.url) else { return }
         folder.moveTo = UserConfig.abbreviate(url.path)
@@ -222,7 +222,7 @@ private struct ClasseurRow: View {
                 .toggleStyle(.checkbox).fixedSize()
                 .help("Fichiers posés à la main : mettre « AAAA-MM-JJ - » devant leur nom. Ceux qu’une règle range gardent le nom qu’elle leur donne.")
             Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
-                .help(folder.enabled ? "Surveillé : chaque fichier posé à la racine est rangé" : "Non surveillé : les règles y rangent toujours par année ou par mois, mais rien de posé à la main n’est rangé")
+                .help(folder.enabled ? String(localized: "Surveillé : chaque fichier posé à la racine est rangé") : String(localized: "Non surveillé : les règles y rangent toujours par année ou par mois, mais rien de posé à la main n’est rangé"))
             Button {
                 model.settings.datedFolders.removeAll { $0.path == folder.path }
             } label: { Image(systemName: "minus.circle") }

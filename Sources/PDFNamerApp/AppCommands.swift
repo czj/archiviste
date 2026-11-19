@@ -89,7 +89,7 @@ struct AppCommands: Commands {
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(!model.canTidyAll)
             Divider()
-            Button(model.paused ? "Reprendre" : "Mettre en pause") { model.paused.toggle() }
+            Button(model.paused ? String(localized: "Reprendre") : String(localized: "Mettre en pause")) { model.paused.toggle() }
                 .keyboardShortcut("p", modifiers: [.command, .option])
         }
 
@@ -98,7 +98,7 @@ struct AppCommands: Commands {
                 .keyboardShortcut("d")
                 .disabled(rules?.hasSelection != true)
             // Espace in the list; not a menu shortcut, which would take the space bar from text fields.
-            Button(rules?.selectionEnabled == false ? "Activer la règle (Espace)" : "Désactiver la règle (Espace)") { rules?.toggle() }
+            Button(rules?.selectionEnabled == false ? String(localized: "Activer la règle (Espace)") : String(localized: "Désactiver la règle (Espace)")) { rules?.toggle() }
                 .disabled(rules?.hasSelection != true)
             Divider()
             Button("Monter") { rules?.move(-1) }

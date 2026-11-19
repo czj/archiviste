@@ -9,11 +9,11 @@ enum AppSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .activity: "Activité"
-        case .rules: "Règles"
-        case .folders: "Dossiers"
-        case .cleanup: "Sauvegardes et ménage"
-        case .general: "Général"
+        case .activity: String(localized: "Activité")
+        case .rules: String(localized: "Règles")
+        case .folders: String(localized: "Dossiers")
+        case .cleanup: String(localized: "Sauvegardes et ménage")
+        case .general: String(localized: "Général")
         }
     }
 
@@ -130,7 +130,8 @@ struct ActivityPane: View {
                     ForEach(batch) { ItemCard(item: $0).listRowSeparator(.hidden) }
                 } header: {
                     HStack {
-                        Text(busy ? "En cours · \(batch.count { !$0.phase.isPending }) sur \(batch.count)" : "Dernier lot")
+                        Text(busy ? String(localized: "En cours · \(batch.count { !$0.phase.isPending }) sur \(batch.count)")
+                                  : String(localized: "Dernier lot"))
                         Spacer()
                         if busy {
                             Button("Arrêter") { model.stop() }
@@ -143,7 +144,8 @@ struct ActivityPane: View {
             }
             Section {
                 if history.isEmpty {
-                    Text(query.isEmpty ? "Rien de renommé pour l’instant." : "Aucun fichier ne contient « \(query) ».")
+                    Text(query.isEmpty ? String(localized: "Rien de renommé pour l’instant.")
+                                       : String(localized: "Aucun fichier ne contient « \(query) »."))
                         .foregroundStyle(.secondary)
                 }
                 ForEach(history) { entry in
@@ -215,8 +217,8 @@ private struct TidyBanner: View {
                 .symbolEffect(.pulse, isActive: tidying)
                 .frame(width: 34)
             VStack(alignment: .leading, spacing: 3) {
-                Text(tidying ? "Lecture des fichiers… encore \(reading)"
-                     : ready > 0 ? "\(ready) fichier(s) à ranger" : "Rien à ranger")
+                Text(tidying ? String(localized: "Lecture des fichiers… encore \(reading)")
+                     : ready > 0 ? String(localized: "\(ready) fichier(s) à ranger") : String(localized: "Rien à ranger"))
                     .font(.headline)
                 Text(details).font(.caption).foregroundStyle(.secondary)
             }
@@ -238,10 +240,11 @@ private struct TidyBanner: View {
     }
 
     private var details: String {
-        var parts = ["\(scan.scanned) fichier(s) dans \((scan.folders + scan.dated).formatted(.list(type: .and)))"]
-        if scan.relayed > 0 { parts.append("\(scan.relayed) passé(s) par un dossier relais") }
-        if scan.noRule > 0 { parts.append("\(scan.noRule) sans règle, laissés en place") }
-        if scan.alreadyHandled > 0 { parts.append("\(scan.alreadyHandled) déjà traités ou en place") }
+        let folders = (scan.folders + scan.dated).formatted(.list(type: .and))
+        var parts = [String(localized: "\(scan.scanned) fichier(s) dans \(folders)")]
+        if scan.relayed > 0 { parts.append(String(localized: "\(scan.relayed) passé(s) par un dossier relais")) }
+        if scan.noRule > 0 { parts.append(String(localized: "\(scan.noRule) sans règle, laissés en place")) }
+        if scan.alreadyHandled > 0 { parts.append(String(localized: "\(scan.alreadyHandled) déjà traités ou en place")) }
         return parts.joined(separator: " · ")
     }
 }
@@ -299,7 +302,8 @@ private struct HistoryMenu: View {
                 }
             }
             Divider()
-            Button(entries.count == 1 ? "Annuler le renommage" : "Annuler ces \(entries.count) renommages") {
+            Button(entries.count == 1 ? String(localized: "Annuler le renommage")
+                                      : String(localized: "Annuler ces \(entries.count) renommages")) {
                 entries.forEach(model.undo)
             }
             .help("Remettre le nom et le dossier d’origine")

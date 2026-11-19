@@ -48,14 +48,14 @@ struct ItemCard: View {
 
     private var status: String {
         switch item.phase {
-        case .waiting: return model.paused ? "en pause" : "en attente"
-        case .reading: return "lecture…"
-        case .analyzing: return "analyse…"
-        case .proposed: return "à valider"
-        case .unchanged: return "déjà bien nommé"
-        case .cancelled: return "annulé"
+        case .waiting: return model.paused ? String(localized: "en pause") : String(localized: "en attente")
+        case .reading: return String(localized: "lecture…")
+        case .analyzing: return String(localized: "analyse…")
+        case .proposed: return String(localized: "à valider")
+        case .unchanged: return String(localized: "déjà bien nommé")
+        case .cancelled: return String(localized: "annulé")
         case .skipped(let why): return why
-        case .failed: return "erreur"
+        case .failed: return String(localized: "erreur")
         case .done: return item.took.map { String(format: "%.1f s", $0) } ?? ""
         }
     }
@@ -119,13 +119,15 @@ struct ItemCard: View {
                     .help("Changer le nom proposé avant de renommer")
                 Button("Ignorer") { model.skip(item) }
                     .help("Laisser ce fichier tel quel")
-                Button(item.suggestion?.match == nil ? "Renommer" : "Ranger") { model.apply(item, name: displayName) }.buttonStyle(.borderedProminent)
+                Button(item.suggestion?.match == nil ? String(localized: "Renommer") : String(localized: "Ranger")) { model.apply(item, name: displayName) }.buttonStyle(.borderedProminent)
                     .controlSize(.small)
                     .help("Appliquer ce nom (l’original est sauvegardé)")
             } else {
                 Button("Modifier", action: startEditing)
                     .help("Changer le nom donné")
-                Button("Annuler") { model.undo(item) }
+                Button(String(localized: "undo-rename", defaultValue: "Annuler", comment: "Undo a rename (not Cancel)")) {
+                    model.undo(item)
+                }
                     .help("Remettre le nom et le dossier d’origine")
                 Button("Afficher") { model.reveal(item.url) }
                     .help("Afficher le fichier dans le Finder")

@@ -85,7 +85,7 @@ struct RulesPane: View {
             switch sort {
             case .priority where query.isEmpty:
                 ForEach(shown, id: \.rule.id) { row($0.rule, rank: $0.rank) }
-                    .onMove { from, to in model.changeRules("Déplacer", undo: undo) { $0.move(fromOffsets: from, toOffset: to) } }
+                    .onMove { from, to in model.changeRules(String(localized: "Déplacer"), undo: undo) { $0.move(fromOffsets: from, toOffset: to) } }
             case .priority, .name:
                 ForEach(shown, id: \.rule.id) { row($0.rule, rank: $0.rank) }
             case .folder:
@@ -100,7 +100,7 @@ struct RulesPane: View {
                                 .foregroundStyle(RuleStyle.color(rows[0].rule))
                             Text(RuleStyle.folderTitle(rows[0].rule))
                             Spacer()
-                            Text("\(rows.count)").monospacedDigit().foregroundStyle(.tertiary)
+                            Text(rows.count, format: .number).monospacedDigit().foregroundStyle(.tertiary)
                         }
                         .help(rows[0].rule.folder)
                     }
@@ -134,27 +134,29 @@ struct RulesPane: View {
     private func subtitle(_ rule: Rule) -> String {
         let folder = RuleStyle.folderTitle(rule)
         if sort != .folder, !rule.label.localizedStandardContains(folder) {
-            return rule.folder.isEmpty ? "reste sur place" : "→ " + folder
+            return rule.folder.isEmpty ? String(localized: "reste sur place") : "→ " + folder
         }
-        if !rule.contains.isEmpty { return "contient « " + rule.contains.joined(separator: " » + « ") + " »" }
-        return rule.filename.isEmpty ? "aucune condition" : rule.filename
+        if !rule.contains.isEmpty {
+            return String(localized: "contient \(rule.contains.map(RuleStyle.quoted).joined(separator: " + "))")
+        }
+        return rule.filename.isEmpty ? String(localized: "aucune condition") : rule.filename
     }
 
     private func row(_ rule: Rule, rank: Int) -> some View {
         HStack(spacing: 10) {
             RuleIcon(rule: rule)
             VStack(alignment: .leading, spacing: 1) {
-                Text(rule.label.isEmpty ? "Nouvelle règle" : rule.label).lineLimit(1)
+                Text(rule.label.isEmpty ? String(localized: "Nouvelle règle") : rule.label).lineLimit(1)
                 Text(subtitle(rule))
                     .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
             }
             Spacer(minLength: 4)
             if !rule.isUsable {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                    .help(rule.hasCondition ? "Expression invalide" : "Aucune condition : la règle ne s’applique jamais")
+                    .help(rule.hasCondition ? String(localized: "Expression invalide") : String(localized: "Aucune condition : la règle ne s’applique jamais"))
             }
             if sort != .priority || !query.isEmpty {
-                Text("#\(rank)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                Text(verbatim: "#\(rank)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
                     .help("Rang : les règles s’appliquent dans l’ordre de priorité")
             }
         }
@@ -162,7 +164,7 @@ struct RulesPane: View {
         .opacity(rule.enabled ? 1 : 0.45)
         .tag(rule.id)
         .contextMenu {
-            Button(rule.enabled ? "Désactiver" : "Activer") { toggle(rule.id) }
+            Button(rule.enabled ? String(localized: "Désactiver") : String(localized: "Activer")) { toggle(rule.id) }
             Button("Dupliquer") { duplicate(rule.id) }
             Divider()
             Button("Monter") { move(rule.id, by: -1) }.disabled(rank == 1)
@@ -252,9 +254,9 @@ struct RulesPane: View {
     private var selectedIndex: Int? { model.rules.firstIndex { $0.id == selection } }
 
     private func add() {
-        let rule = Rule(name: "Nouvelle règle")
+        let rule = Rule(name: String(localized: "Nouvelle règle"))
         let at = selectedIndex.map { $0 + 1 } ?? model.rules.count
-        model.changeRules("Nouvelle règle", undo: undo) { $0.insert(rule, at: at) }
+        model.changeRules(String(localized: "Nouvelle règle"), undo: undo) { $0.insert(rule, at: at) }
         model.selectedRuleID = rule.id
         query = ""
     }
@@ -263,8 +265,8 @@ struct RulesPane: View {
         guard let i = model.rules.firstIndex(where: { $0.id == id }) else { return }
         var copy = model.rules[i]
         copy.id = UUID()
-        copy.name = copy.label + " (copie)"
-        model.changeRules("Dupliquer", undo: undo) { $0.insert(copy, at: i + 1) }
+        copy.name = String(localized: "\(copy.label) (copie)")
+        model.changeRules(String(localized: "Dupliquer"), undo: undo) { $0.insert(copy, at: i + 1) }
         model.selectedRuleID = copy.id
     }
 
@@ -273,7 +275,7 @@ struct RulesPane: View {
     /// Deletes and selects the next rule, so ⌫ ⌫ ⌫ walks down the list.
     private func delete(_ id: Rule.ID) {
         guard let i = model.rules.firstIndex(where: { $0.id == id }) else { return }
-        model.changeRules("Supprimer « \(model.rules[i].label) »", undo: undo) { $0.remove(at: i) }
+        model.changeRules(String(localized: "Supprimer « \(model.rules[i].label) »"), undo: undo) { $0.remove(at: i) }
         if model.selectedRuleID == id {
             model.selectedRuleID = model.rules.indices.contains(i) ? model.rules[i].id : model.rules.last?.id
         }
@@ -281,12 +283,12 @@ struct RulesPane: View {
 
     private func toggle(_ id: Rule.ID) {
         guard let i = model.rules.firstIndex(where: { $0.id == id }) else { return }
-        model.changeRules(model.rules[i].enabled ? "Désactiver" : "Activer", undo: undo) { $0[i].enabled.toggle() }
+        model.changeRules(model.rules[i].enabled ? String(localized: "Désactiver") : String(localized: "Activer"), undo: undo) { $0[i].enabled.toggle() }
     }
 
     private func move(_ id: Rule.ID, by step: Int) {
         guard let i = model.rules.firstIndex(where: { $0.id == id }), model.rules.indices.contains(i + step) else { return }
-        model.changeRules(step < 0 ? "Monter" : "Descendre", undo: undo) { $0.swapAt(i, i + step) }
+        model.changeRules(step < 0 ? String(localized: "Monter") : String(localized: "Descendre"), undo: undo) { $0.swapAt(i, i + step) }
     }
 
     private func run(_ url: URL) {
@@ -308,9 +310,9 @@ enum RuleSort: String, CaseIterable, Identifiable {
     var id: Self { self }
     var title: String {
         switch self {
-        case .priority: "Priorité"
-        case .folder: "Dossier de destination"
-        case .name: "Nom de règle"
+        case .priority: String(localized: "Priorité")
+        case .folder: String(localized: "Dossier de destination")
+        case .name: String(localized: "Nom de règle")
         }
     }
     var icon: String {
@@ -339,8 +341,11 @@ enum RuleStyle {
     }
 
     static func folderTitle(_ rule: Rule) -> String {
-        rule.folder.isEmpty ? "Sur place" : URL(fileURLWithPath: rule.folder).lastPathComponent
+        rule.folder.isEmpty ? String(localized: "Sur place") : URL(fileURLWithPath: rule.folder).lastPathComponent
     }
+
+    /// A phrase between the language's quotation marks: « … » in French, “…” in English.
+    static func quoted(_ text: String) -> String { String(localized: "« \(text) »") }
 
     static func searchText(_ rule: Rule) -> String {
         ([rule.label, rule.folder, rule.filename, rule.rename] + rule.contains).joined(separator: "\n")
@@ -363,7 +368,7 @@ struct RuleIcon: View {
             }
             .frame(width: size, height: size)
             .saturation(rule.enabled ? 1 : 0)
-            .help(rule.needsText ? "D’après le contenu" : "D’après le nom")
+            .help(rule.needsText ? String(localized: "D’après le contenu") : String(localized: "D’après le nom"))
     }
 }
 
@@ -386,10 +391,12 @@ struct RuleTest {
 
     static func run(_ rules: [Rule], _ url: URL, readDate: Rules.DateReader?, sorted: [UserConfig.DatedFolder]) async -> RuleTest {
         let misses = await Rules.nearMisses(rules, for: url).map { i, rule, missing in
-            "Règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))"
+            String(localized: "Règle \(i + 1) « \(rule.label) » : manque \(missing.map(RuleStyle.quoted).joined(separator: ", "))")
         }
         var note: [String] = []
-        if let original = Marker.originalName(url) { note.append("Déjà traité par PDF Namer (avant : « \(original) ») : l’app le laisse de côté, seule la commande pdf-namer --force le reprend") }
+        if let original = Marker.originalName(url) {
+            note.append(String(localized: "Déjà traité par PDF Namer (avant : « \(original) ») : l’app le laisse de côté, seule la commande pdf-namer --force le reprend"))
+        }
         return RuleTest(file: url.lastPathComponent, match: await Rules.firstMatch(rules, for: url, readDate: readDate, sorted: sorted),
                         nameable: Config.isSupported(url), nearMisses: note + misses)
     }
@@ -435,7 +442,7 @@ private struct TesterPanel: View {
 
     @ViewBuilder private func outcome(_ result: RuleTest, url: URL) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            FileRow(name: result.file, detail: "fichier testé")
+            FileRow(name: result.file, detail: String(localized: "fichier testé"))
             if let match = result.match {
                 Image(systemName: "arrow.down").foregroundStyle(.secondary).frame(width: 26)
                 FileRow(name: match.name, detail: UserConfig.abbreviate(match.folder.path))
@@ -453,13 +460,15 @@ private struct TesterPanel: View {
                 .buttonStyle(.plain)
                 .help("Afficher cette règle")
                 if match.dateSource != .unused {
-                    Label(match.dateSource == .document ? "Date du document, lue par le modèle : \(match.date)"
-                          : match.dateSource == .name ? "Date déjà dans le nom : \(match.date)"
-                          : "Pas de date dans le document : date du fichier, \(match.date)", systemImage: "calendar")
+                    Label(match.dateSource == .document ? String(localized: "Date du document, lue par le modèle : \(match.date)")
+                          : match.dateSource == .name ? String(localized: "Date déjà dans le nom : \(match.date)")
+                          : String(localized: "Pas de date dans le document : date du fichier, \(match.date)"),
+                          systemImage: "calendar")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             } else {
-                Label(result.nameable ? "Aucune règle : le modèle le nommera" : "Aucune règle : le fichier ne sera pas touché",
+                Label(result.nameable ? String(localized: "Aucune règle : le modèle le nommera")
+                                      : String(localized: "Aucune règle : le fichier ne sera pas touché"),
                       systemImage: "minus.circle")
                     .foregroundStyle(.secondary)
             }
@@ -469,7 +478,7 @@ private struct TesterPanel: View {
                     ForEach(result.nearMisses, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary) }
                 }
             }
-            Button(result.match == nil ? "Créer une règle depuis ce fichier" : "Créer une variante pour ce fichier") {
+            Button(result.match == nil ? String(localized: "Créer une règle depuis ce fichier") : String(localized: "Créer une variante pour ce fichier")) {
                 model.makeRule(from: url, suggestion: result.match.map(Suggestion.init), undo: undo)
             }
             .buttonStyle(.glass)
@@ -516,8 +525,14 @@ private struct RuleEditor: View {
                             .labelsHidden()
                             .textFieldStyle(.plain)
                             .font(.title2.weight(.semibold))
-                        Text("Priorité \(position) sur \(count) · \(rule.needsText ? "lit le contenu : essayée après les règles sur le nom" : "sur le nom : essayée avant les règles sur le contenu")")
-                            .font(.caption).foregroundStyle(.secondary)
+                        Group {
+                            if rule.needsText {
+                                Text("Priorité \(position) sur \(count) · lit le contenu : essayée après les règles sur le nom")
+                            } else {
+                                Text("Priorité \(position) sur \(count) · sur le nom : essayée avant les règles sur le contenu")
+                            }
+                        }
+                        .font(.caption).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     ControlGroup {
@@ -530,7 +545,7 @@ private struct RuleEditor: View {
                     Toggle("Active", isOn: $rule.enabled)
                         .toggleStyle(.switch)
                         .labelsHidden()
-                        .help(rule.enabled ? "Active (Espace dans la liste pour basculer)" : "Désactivée")
+                        .help(rule.enabled ? String(localized: "Active (Espace dans la liste pour basculer)") : String(localized: "Désactivée"))
                 }
                 .padding(.vertical, 4)
             }
@@ -541,8 +556,8 @@ private struct RuleEditor: View {
                         .labelsHidden()
                         .textFieldStyle(.roundedBorder)
                         .font(.body.monospaced())
-                    if let error = rule.patternError {
-                        Text(error).font(.caption).foregroundStyle(.red)
+                    if rule.patternError != nil {
+                        Text("Expression invalide").font(.caption).foregroundStyle(.red)
                     } else {
                         Text("Vide : tout nom convient. (?i) au début ignore la casse.").font(.caption).foregroundStyle(.secondary)
                     }
@@ -573,7 +588,7 @@ private struct RuleEditor: View {
             Section {
                 LabeledContent("Ranger dans") {
                     HStack {
-                        Text(rule.folder.isEmpty ? "le même dossier" : rule.folder)
+                        Text(rule.folder.isEmpty ? String(localized: "le même dossier") : rule.folder)
                             .foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
                         Button("Choisir…", action: chooseFolder)
                         if !rule.folder.isEmpty {
@@ -591,10 +606,19 @@ private struct RuleEditor: View {
             } header: {
                 Label("Alors", systemImage: "arrow.turn.down.right")
             } footer: {
-                Text(rule.subfolder != .none && !rule.folder.isEmpty && UserConfig.DatedFolder.find(UserConfig.expand(rule.folder), in: model.settings.datedFolders) == nil
-                     ? "Cette règle range encore elle-même dans un sous-dossier \(rule.subfolder == .year ? "d’année" : "de mois") (ancien format). Choisissez un classement du dossier pour le remplacer."
-                     : "Le classement par année ou par mois est celui du dossier : il vaut pour toutes les règles qui y rangent et pour les fichiers posés là à la main (page Dossiers). La date est celle du document, lue par le modèle ; à défaut, celle de création du fichier. L’original est sauvegardé comme pour un renommage.")
-                    .font(.caption).foregroundStyle(.secondary)
+                Group {
+                    if rule.subfolder != .none && !rule.folder.isEmpty
+                        && UserConfig.DatedFolder.find(UserConfig.expand(rule.folder), in: model.settings.datedFolders) == nil {
+                        if rule.subfolder == .year {
+                            Text("Cette règle range encore elle-même dans un sous-dossier d’année (ancien format). Choisissez un classement du dossier pour le remplacer.")
+                        } else {
+                            Text("Cette règle range encore elle-même dans un sous-dossier de mois (ancien format). Choisissez un classement du dossier pour le remplacer.")
+                        }
+                    } else {
+                        Text("Le classement par année ou par mois est celui du dossier : il vaut pour toutes les règles qui y rangent et pour les fichiers posés là à la main (page Dossiers). La date est celle du document, lue par le modèle ; à défaut, celle de création du fichier. L’original est sauvegardé comme pour un renommage.")
+                    }
+                }
+                .font(.caption).foregroundStyle(.secondary)
             }
             Section("Exemple") {
                 FileRow(name: "facture_2026_1185.pdf", detail: "~/Downloads")

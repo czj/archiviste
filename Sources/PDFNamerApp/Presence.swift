@@ -11,9 +11,9 @@ enum Presence {
         var id: Self { self }
         var title: String {
             switch self {
-            case .always: "Toujours"
-            case .withWindow: "Quand la fenêtre est ouverte"
-            case .never: "Jamais"
+            case .always: String(localized: "Toujours")
+            case .withWindow: String(localized: "Quand la fenêtre est ouverte")
+            case .never: String(localized: "Jamais")
             }
         }
     }
@@ -27,9 +27,9 @@ enum Presence {
         var id: Self { self }
         var title: String {
             switch self {
-            case .ask: "Demander"
-            case .background: "Laisser tourner en arrière-plan"
-            case .quit: "Quitter"
+            case .ask: String(localized: "Demander")
+            case .background: String(localized: "Laisser tourner en arrière-plan")
+            case .quit: String(localized: "Quitter")
             }
         }
     }

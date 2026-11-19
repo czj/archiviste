@@ -81,7 +81,7 @@ final class AppModel {
     var rules: [Rule] = [] {
         didSet {
             guard rules != oldValue, loaded, rulesError == nil else { return }
-            do { try Rules.save(rules) } catch { rulesError = "Enregistrement impossible : \(error.localizedDescription)" }
+            do { try Rules.save(rules) } catch { rulesError = String(localized: "Enregistrement impossible : \(error.localizedDescription)") }
         }
     }
     /// rules.json exists but can't be read: shown, and nothing is written.
@@ -114,6 +114,9 @@ final class AppModel {
         do {
             engine = try Engine()
             engineState = .ready
+        } catch EngineError.unavailable(let reason) {
+            // PDFNamerCore's message stays French (the CLI's); this one follows the app's language.
+            engineState = .unavailable(String(localized: "Modèle Apple indisponible (\(reason)). Activez Apple Intelligence dans Réglages Système › Apple Intelligence et Siri."))
         } catch {
             engineState = .unavailable(error.localizedDescription)
         }
@@ -159,7 +162,7 @@ final class AppModel {
         for url in files where (Config.isSupported(url) || !rules.isEmpty) && Config.isFileForRules(url) {
             guard !isQueued(url) else { continue }
             if Marker.isMarked(url) {  // renamed or filed by PDF Namer before, whatever its name now
-                if source == nil { items.append(Item(url: url, source: nil, phase: .skipped("déjà traité"))) }
+                if source == nil { items.append(Item(url: url, source: nil, phase: .skipped(String(localized: "déjà traité")))) }
                 continue
             }
             items.append(Item(url: url, source: source))
@@ -308,9 +311,9 @@ final class AppModel {
                 return
             }
             // 2. The model, for PDFs and images not named "AAAA-MM-JJ - …" yet.
-            guard Config.isSupported(item.url) else { leave(item, "aucune règle"); return }
+            guard Config.isSupported(item.url) else { leave(item, String(localized: "aucune règle")); return }
             guard !Naming.isNamed(item.url.lastPathComponent) else {
-                leave(item, "déjà nommé (« AAAA-MM-JJ - … »)"); return
+                leave(item, String(localized: "déjà nommé (« AAAA-MM-JJ - … »)")); return
             }
             let extraction = startExtraction(item)
             // Overlap the next file's OCR with this file's model call: one file ahead, never more.
@@ -319,7 +322,7 @@ final class AppModel {
             guard let engine else { throw EngineError.unavailable("non chargé") }
             item.phase = .analyzing
             guard let s = try await Namer.suggest(item.url, ex, engine: engine) else {
-                item.phase = .skipped("rien de lisible"); return
+                item.phase = .skipped(String(localized: "rien de lisible")); return
             }
             item.suggestion = s
             item.took = Date().timeIntervalSince(t0)
@@ -404,7 +407,7 @@ final class AppModel {
         return restored
     }
 
-    func skip(_ item: Item) { item.phase = .skipped("ignoré") }
+    func skip(_ item: Item) { item.phase = .skipped(String(localized: "ignoré")) }
 
     /// Rules that date a file ask the model for the issue date (the file's date without it).
     var readDate: Rules.DateReader? { engine.map(Namer.dateReader) }
@@ -472,7 +475,7 @@ final class AppModel {
         var at = rules.count
         if let match = suggestion?.match, !dated {  // filed by one of the rules: start from it, right after it
             rule = match.rule
-            rule.name = rule.label + " (variante)"
+            rule.name = String(localized: "\(rule.label) (variante)")
             at = match.index + 1
         } else if let match = suggestion?.match {
             // Sorted by a classeur, whose inner rule takes any name: keep only where it files and
@@ -481,7 +484,7 @@ final class AppModel {
             rule.datePrefix = match.rule.datePrefix
         }
         rule.id = UUID()
-        changeRules("Nouvelle règle", undo: undo) { $0.insert(rule, at: min(at, $0.count)) }
+        changeRules(String(localized: "Nouvelle règle"), undo: undo) { $0.insert(rule, at: min(at, $0.count)) }
         selectedRuleID = rule.id
         pendingTest = url
         section = .rules
@@ -491,7 +494,7 @@ final class AppModel {
     func stop() {
         for item in items where !item.tidy && item.phase == .waiting {
             item.extraction?.cancel()
-            item.phase = .skipped("arrêté")
+            item.phase = .skipped(String(localized: "arrêté"))
         }
     }
 
@@ -655,7 +658,8 @@ final class AppModel {
     func runHousekeeping() async {
         let r = await Files.housekeeping(backupDir, backupMaxAgeDays: settings.backupMaxAge,
                                          expireMaxAgeDays: settings.expireMaxAge)
-        lastHousekeeping = "\(r.purged.count) sauvegarde(s) supprimée(s), \(r.trashed.count) élément(s) mis à la corbeille"
+        lastHousekeeping = String(localized: "\(r.purged.count) sauvegarde(s) supprimée(s)") + ", "
+            + String(localized: "\(r.trashed.count) élément(s) mis à la corbeille")
         log.info("Ménage : \(r.purged.count) sauvegarde(s), \(r.trashed.count) élément(s) à la corbeille")
     }
 
@@ -676,7 +680,7 @@ final class AppModel {
             try settings.saveLocal()
             localKeys = UserConfig.localKeys()
         } catch {
-            configError = "Enregistrement impossible : \(error.localizedDescription)"
+            configError = String(localized: "Enregistrement impossible : \(error.localizedDescription)")
         }
     }
 
@@ -692,7 +696,7 @@ final class AppModel {
             rulesError = nil
             if fresh != rules { rules = fresh }  // == ignores ids: unchanged rules keep theirs
         } catch {
-            rulesError = "rules.json illisible : \(error.localizedDescription)"
+            rulesError = String(localized: "rules.json illisible : \(error.localizedDescription)")
         }
         do {
             let fresh = try UserConfig.load()
@@ -700,7 +704,7 @@ final class AppModel {
             localKeys = UserConfig.localKeys()
             if fresh != settings { settings = fresh }  // its didSet follows a change of watched folders
         } catch {
-            configError = "Configuration illisible : \(error.localizedDescription)"
+            configError = String(localized: "Configuration illisible : \(error.localizedDescription)")
         }
     }
 
