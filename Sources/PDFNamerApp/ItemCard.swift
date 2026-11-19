@@ -116,7 +116,7 @@ struct ItemCard: View {
             if item.phase == .proposed {
                 Button("Modifier", action: startEditing)
                 Button("Ignorer") { model.skip(item) }
-                Button("Renommer") { model.apply(item, name: displayName) }.buttonStyle(.borderedProminent)
+                Button(item.suggestion?.match == nil ? "Renommer" : "Ranger") { model.apply(item, name: displayName) }.buttonStyle(.borderedProminent)
                     .controlSize(.small)
             } else {
                 Button("Modifier", action: startEditing)

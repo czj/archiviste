@@ -30,16 +30,19 @@ final class Item: Identifiable {
     /// Where the file was before anything happened to it (a rule may move it elsewhere).
     let originalFolder: URL
     let source: String?  // watched folder name, nil for a drop
+    /// Found by "Ranger maintenant" among the files already there: rules only, always proposed first.
+    let tidy: Bool
     var url: URL
     var phase: Phase = .waiting
     var suggestion: Suggestion?
     var took: TimeInterval?
     @ObservationIgnored var extraction: Task<Extracted, Error>?
 
-    init(url: URL, source: String?, phase: Phase = .waiting) {
+    init(url: URL, source: String?, phase: Phase = .waiting, tidy: Bool = false) {
         self.url = url
         self.phase = phase
         self.source = source
+        self.tidy = tidy
         originalName = url.lastPathComponent
         originalFolder = url.deletingLastPathComponent()
     }
@@ -83,8 +86,10 @@ final class AppModel {
     @ObservationIgnored private var housekeepingLoop: Task<Void, Never>?
     @ObservationIgnored private let log = Logger(subsystem: "com.github.czj.pdf-namer", category: "app")
 
-    var isBusy: Bool { items.contains { $0.phase.isPending } }
-    var finishedCount: Int { items.filter { !$0.phase.isPending }.count }
+    /// Dropped files and arrivals; "Ranger maintenant" keeps its own list (`tidyItems`).
+    var batch: [Item] { items.filter { !$0.tidy } }
+    var isBusy: Bool { batch.contains { $0.phase.isPending } }
+    var finishedCount: Int { batch.filter { !$0.phase.isPending }.count }
     var backupDir: URL { settings.backupURL }
     var hasBundle: Bool { Bundle.main.bundleIdentifier != nil }
 
@@ -134,8 +139,58 @@ final class AppModel {
         startWorker()
     }
 
+    /// The next file to read. "Ranger maintenant" only proposes, so its files go on even when paused.
+    private func nextItem() -> Item? { items.first { $0.phase == .waiting && (!paused || $0.tidy) } }
+
     private func startWorker() {
-        if worker == nil && !paused { worker = Task { await drain() } }
+        if worker == nil, nextItem() != nil { worker = Task { await drain() } }
+    }
+
+    // MARK: Ranger maintenant
+
+    /// What the last "Ranger maintenant" found besides the files to file.
+    struct TidyScan: Equatable {
+        var folders: [String]
+        var scanned = 0
+        var alreadyHandled = 0
+        var noRule = 0
+    }
+
+    var tidyScan: TidyScan?
+    var tidyItems: [Item] { items.filter(\.tidy) }
+    var tidyReady: [Item] { tidyItems.filter { $0.phase == .proposed } }
+    var isTidying: Bool { tidyItems.contains { $0.phase.isPending } }
+
+    /// Runs the rules over the files already in the watched folders, like the old Raycast script,
+    /// and proposes each match. Nothing moves before "Tout ranger"; the model renames nothing here.
+    func tidyNow() {
+        let folders = settings.watchedFolders.filter(\.enabled).map(\.url)
+        var scan = TidyScan(folders: folders.map(\.lastPathComponent))
+        items.removeAll { $0.tidy && !$0.phase.isPending && $0.phase != .proposed }  // last pass's leftovers
+        for folder in folders {
+            let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil,
+                                                                      options: .skipsHiddenFiles)) ?? []
+            for url in files.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) where Config.isFileForRules(url) {
+                scan.scanned += 1
+                if Marker.isMarked(url) { scan.alreadyHandled += 1; continue }
+                guard !items.contains(where: { $0.url == url && ($0.phase.isPending || $0.phase == .proposed) }) else { continue }
+                items.append(Item(url: url, source: folder.lastPathComponent, tidy: true))
+            }
+        }
+        tidyScan = scan
+        startWorker()
+    }
+
+    /// Files every proposal as previewed (same folder, name and date: nothing is read again).
+    func tidyAll() {
+        for item in tidyReady { if let name = item.suggestion?.name { apply(item, name: name) } }
+    }
+
+    /// Drops the proposals not filed yet; the files stay where they are.
+    func tidyDismiss() {
+        for item in tidyItems where item.phase.isPending { item.extraction?.cancel() }
+        items.removeAll { $0.tidy && ($0.phase.isPending || $0.phase == .proposed) }
+        tidyScan = nil
     }
 
     /// Nothing to do for this file: say so for a drop, stay silent for a watched folder.
@@ -144,7 +199,7 @@ final class AppModel {
     }
 
     private func drain() async {
-        while !paused, let item = items.first(where: { $0.phase == .waiting }) {
+        while let item = nextItem() {
             await process(item)
         }
         worker = nil
@@ -166,7 +221,18 @@ final class AppModel {
             if let m = await Rules.firstMatch(rules, for: item.url, readDate: readDate) {
                 item.suggestion = Suggestion(m)
                 item.took = Date().timeIntervalSince(t0)
-                if settings.confirmBeforeRename && item.source == nil { item.phase = .proposed } else { apply(item, name: m.name) }
+                if m.folder.appendingPathComponent(m.name).standardizedFileURL == item.url.standardizedFileURL {
+                    // Already where and how the rule wants it: mark it, so it is not read again.
+                    Marker.set(item.url, originalName: item.originalName)
+                    if item.tidy { items.removeAll { $0 === item }; tidyScan?.alreadyHandled += 1 } else { item.phase = .unchanged }
+                    return
+                }
+                if item.tidy || settings.confirmBeforeRename && item.source == nil { item.phase = .proposed } else { apply(item, name: m.name) }
+                return
+            }
+            if item.tidy {  // no rule: left alone, counted, no card
+                items.removeAll { $0 === item }
+                tidyScan?.noRule += 1
                 return
             }
             // 2. The model, for PDFs and images not named "AAAA-MM-JJ - …" yet.
@@ -205,9 +271,11 @@ final class AppModel {
         var name = rawName.trimmingCharacters(in: .whitespaces)
         let ext = "." + item.url.pathExtension.lowercased()
         if !name.lowercased().hasSuffix(ext) { name += ext }
-        guard name != item.url.lastPathComponent, !name.contains("/") else { return }
+        let firstRename = item.phase != .done
+        // Same name is fine when a rule files it elsewhere (a move, no rename).
+        let moves = firstRename && item.suggestion?.match.map { $0.folder.standardizedFileURL != item.url.deletingLastPathComponent().standardizedFileURL } == true
+        guard name != item.url.lastPathComponent || moves, !name.contains("/") else { return }
         do {
-            let firstRename = item.phase != .done
             let final = firstRename
                 ? try Files.rename(item.url, to: name, in: item.suggestion?.match?.folder, backupDir: backupDir)
                 : try Files.move(item.url, to: name)
@@ -218,7 +286,7 @@ final class AppModel {
             recent.insert(RecentEntry(oldName: item.originalName, path: final.path, date: Date(),
                                       rule: item.suggestion?.match?.rule.label), at: 0)
             recent = Array(recent.prefix(500))
-            if firstRename, let source = item.source {
+            if firstRename, !item.tidy, let source = item.source {
                 notify(source, final.lastPathComponent, folder: item.suggestion?.match.map { _ in final.deletingLastPathComponent() })
             }
         } catch {
@@ -307,7 +375,7 @@ final class AppModel {
         }
     }
 
-    func clear() { items.removeAll { !$0.phase.isPending } }
+    func clear() { items.removeAll { !$0.tidy && !$0.phase.isPending } }
 
     func chooseFiles() {
         NSApp.activate()

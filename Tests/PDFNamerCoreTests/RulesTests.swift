@@ -61,6 +61,17 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(!Marker.isMarked(copies[0]))
 }
 
+@Test func `un simple déplacement, même nom, ne copie pas l’original`() throws {
+    let dir = try tempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let file = dir.appendingPathComponent("Réunion 2026-11-19.m4a"), backup = dir.appendingPathComponent("backup")
+    try Data("x".utf8).write(to: file)
+    let final = try Files.rename(file, to: file.lastPathComponent, in: dir.appendingPathComponent("inbox"), backupDir: backup)
+    #expect(final.path == dir.appendingPathComponent("inbox/Réunion 2026-11-19.m4a").path)
+    #expect(Marker.isMarked(final))
+    #expect(!FileManager.default.fileExists(atPath: backup.path))
+}
+
 // MARK: Matching
 
 @Test func `règle sur le nom : expression ICU, Unicode composé`() {

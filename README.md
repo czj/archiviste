@@ -26,6 +26,9 @@ rendu et l'OCR passent en `@concurrent`.
 - « Ouvrir PDF Namer » (⌘0) ouvre la fenêtre complète : Activité (historique des
   renommages, avec recherche), Règles, Dossiers surveillés, Sauvegardes, Général (⌘1 à ⌘5).
   Le panneau garde l'essentiel : dépôt, derniers renommages, pause (⌘P).
+- **Ranger maintenant** (⇧⌘R) passe les règles sur les fichiers déjà présents dans les
+  dossiers surveillés : un aperçu montre où chacun irait, « Tout ranger » (⌘↩) les range.
+  Le modèle ne renomme rien pendant ce passage ; les fichiers sans règle restent en place.
 - Chaque renommage peut être modifié ou annulé. L'option « Valider avant de renommer »
   attend votre accord pour les fichiers déposés.
 - Un fichier renommé ou rangé par PDF Namer n'est plus jamais repris, même si son nom n'a

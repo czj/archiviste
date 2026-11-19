@@ -10,9 +10,10 @@ struct PopoverView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
-            if model.items.isEmpty {
+            if model.batch.isEmpty {
                 DropZone(targeted: targeted)
                 watchRow
+                tidyRow
                 recentList
                 footer
             } else {
@@ -82,6 +83,30 @@ struct PopoverView: View {
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
     }
 
+    /// "Ranger maintenant": the rules over the files already in the watched folders, previewed in the window.
+    @ViewBuilder private var tidyRow: some View {
+        if !model.settings.watchedFolders.filter(\.enabled).isEmpty {
+            HStack(spacing: 8) {
+                if model.isTidying {
+                    ProgressView().controlSize(.mini)
+                    Text("Recherche des fichiers à ranger…").foregroundStyle(.secondary)
+                } else if !model.tidyReady.isEmpty {
+                    Image(systemName: "tray.full").foregroundStyle(.orange)
+                    Text("\(model.tidyReady.count) fichier(s) à ranger")
+                }
+                Spacer()
+                Button(model.tidyScan == nil ? "Ranger maintenant" : "Voir") {
+                    if model.tidyScan == nil { model.tidyNow() }
+                    openWindow.main(.activity, model: model)
+                }
+                .buttonStyle(.glass)
+                .keyboardShortcut("r", modifiers: [.command, .shift])
+                .help("Passer les règles sur les fichiers déjà présents dans les dossiers surveillés, avec un aperçu avant de ranger (⇧⌘R)")
+            }
+            .font(.callout)
+        }
+    }
+
     @ViewBuilder private var recentList: some View {
         if !model.recent.isEmpty {
             VStack(alignment: .leading, spacing: 2) {
@@ -123,7 +148,7 @@ struct PopoverView: View {
     }
 
     private var batch: some View {
-        let total = model.items.count, done = model.finishedCount
+        let total = model.batch.count, done = model.finishedCount
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -137,7 +162,7 @@ struct PopoverView: View {
             }
             ScrollView {
                 VStack(spacing: 6) {
-                    ForEach(model.items) { ItemCard(item: $0) }
+                    ForEach(model.batch) { ItemCard(item: $0) }
                 }
             }
             .frame(maxHeight: 380)

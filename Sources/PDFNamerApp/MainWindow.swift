@@ -65,17 +65,29 @@ struct MainWindow: View {
                 Button(section.title) { model.section = section }.keyboardShortcut(section.key)
             }
             .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
+            // ⇧⌘R from any page: show Activité and run the pass.
+            Button("Ranger maintenant") {
+                model.section = .activity
+                if !model.isTidying { model.tidyNow() }
+            }
+            .keyboardShortcut("r", modifiers: [.command, .shift])
+            .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
         }
         // A menu bar app has no Dock icon nor menu bar; while this window is open it gets both,
         // so ⌘Tab finds it and Édition › Annuler works.
+        // Back to menu bar only when the window really closes: onDisappear also fires when it is
+        // merely hidden or changes space, which would leave a visible window that can't be activated.
         .onAppear { NSApp.setActivationPolicy(.regular) }
-        .onDisappear { NSApp.setActivationPolicy(.accessory) }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { note in
+            guard let window = note.object as? NSWindow, window.identifier?.rawValue.hasPrefix(MainWindow.id) == true else { return }
+            NSApp.setActivationPolicy(.accessory)
+        }
         .frame(minWidth: 940, minHeight: 540)
     }
 
     private func badge(_ section: AppSection) -> Int {
         switch section {
-        case .activity: model.items.filter(\.phase.isPending).count
+        case .activity: model.items.filter { $0.phase.isPending || $0.phase == .proposed }.count
         case .rules: model.rules.filter { $0.patternError != nil || !$0.hasCondition }.count
         default: 0
         }
@@ -111,12 +123,20 @@ struct ActivityPane: View {
                 DropZone(targeted: targeted)
                     .listRowSeparator(.hidden)
             }
-            if !model.items.isEmpty {
+            if let scan = model.tidyScan {
                 Section {
-                    ForEach(model.items) { ItemCard(item: $0).listRowSeparator(.hidden) }
+                    TidyBanner(scan: scan).listRowSeparator(.hidden)
+                    ForEach(model.tidyItems.filter { $0.phase != .waiting }) { ItemCard(item: $0).listRowSeparator(.hidden) }
+                } header: {
+                    Text("Ranger maintenant")
+                }
+            }
+            if !model.batch.isEmpty {
+                Section {
+                    ForEach(model.batch) { ItemCard(item: $0).listRowSeparator(.hidden) }
                 } header: {
                     HStack {
-                        Text(model.isBusy ? "En cours · \(model.finishedCount) sur \(model.items.count)" : "Dernier lot")
+                        Text(model.isBusy ? "En cours · \(model.finishedCount) sur \(model.batch.count)" : "Dernier lot")
                         Spacer()
                         if model.isBusy {
                             Button("Arrêter") { model.stop() }
@@ -147,6 +167,12 @@ struct ActivityPane: View {
         } isTargeted: { targeted = $0 }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+                Button("Ranger maintenant", systemImage: "tray.and.arrow.down") { model.tidyNow() }
+                    .disabled(model.isTidying || model.settings.watchedFolders.filter(\.enabled).isEmpty)
+                    .help("Passer les règles sur les fichiers déjà présents dans les dossiers surveillés, avec un aperçu avant de ranger (⇧⌘R)")
+            }
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarItem(placement: .primaryAction) {
                 Button("Choisir des fichiers…", systemImage: "plus") { model.chooseFiles() }
                     .keyboardShortcut("o")
                     .help("Choisir des fichiers à renommer (⌘O)")
@@ -161,6 +187,52 @@ struct ActivityPane: View {
     private var history: [RecentEntry] {
         guard !query.isEmpty else { return model.recent }
         return model.recent.filter { [$0.newName, $0.oldName, $0.rule ?? "", $0.path].joined(separator: "\n").localizedStandardContains(query) }
+    }
+}
+
+/// The pass over the files already there: progress, then what it found and "Tout ranger".
+private struct TidyBanner: View {
+    @Environment(AppModel.self) private var model
+    let scan: AppModel.TidyScan
+
+    var body: some View {
+        let ready = model.tidyReady.count
+        let reading = model.tidyItems.filter(\.phase.isPending).count
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: model.isTidying ? "magnifyingglass" : ready > 0 ? "tray.full.fill" : "checkmark.circle.fill")
+                .font(.system(size: 26))
+                .foregroundStyle(model.isTidying ? Color.accentColor : ready > 0 ? .orange : .green)
+                .symbolEffect(.pulse, isActive: model.isTidying)
+                .frame(width: 34)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(model.isTidying ? "Lecture des fichiers… encore \(reading)"
+                     : ready > 0 ? "\(ready) fichier(s) à ranger" : "Rien à ranger")
+                    .font(.headline)
+                Text(details).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if model.isTidying {
+                Button("Arrêter") { model.tidyDismiss() }
+            } else {
+                Button("Fermer") { model.tidyDismiss() }
+                    .help("Oublier ces propositions : les fichiers restent où ils sont")
+                if ready > 0 {
+                    Button("Tout ranger (\(ready))") { model.tidyAll() }
+                        .buttonStyle(.glassProminent)
+                        .keyboardShortcut(.return, modifiers: .command)
+                        .help("Ranger chaque fichier comme proposé ci-dessous (⌘↩). Chacun reste annulable.")
+                }
+            }
+        }
+        .padding(12)
+        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var details: String {
+        var parts = ["\(scan.scanned) fichier(s) dans \(scan.folders.formatted(.list(type: .and)))"]
+        if scan.noRule > 0 { parts.append("\(scan.noRule) sans règle, laissés en place") }
+        if scan.alreadyHandled > 0 { parts.append("\(scan.alreadyHandled) déjà traités ou en place") }
+        return parts.joined(separator: " · ")
     }
 }
 

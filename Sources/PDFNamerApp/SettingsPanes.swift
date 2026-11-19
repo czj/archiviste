@@ -90,7 +90,7 @@ struct FoldersPane: View {
                 }
                 Button("Ajouter un dossier…") { model.addFolder() }
             } footer: {
-                Text("Chaque fichier qui arrive dans ces dossiers passe d’abord par les règles (rangé et renommé s’il en suit une), sinon le modèle nomme les PDF et images, avec une notification. Les fichiers déjà présents, ceux déjà traités par PDF Namer et ceux nommés « AAAA-MM-JJ - … » ne sont pas renommés par le modèle.")
+                Text("Chaque fichier qui arrive dans ces dossiers passe d’abord par les règles (rangé et renommé s’il en suit une), sinon le modèle nomme les PDF et images, avec une notification. Les fichiers déjà présents, ceux déjà traités par PDF Namer et ceux nommés « AAAA-MM-JJ - … » ne sont pas renommés par le modèle. « Ranger maintenant » (⇧⌘R) passe les règles sur les fichiers déjà là, avec un aperçu avant de ranger.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

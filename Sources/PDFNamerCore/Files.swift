@@ -23,8 +23,11 @@ public enum Files {
     /// and mark it as handled; returns the final URL.
     @discardableResult
     public static func rename(_ url: URL, to newName: String, in folder: URL? = nil, backupDir: URL) throws -> URL {
-        try fm.createDirectory(at: backupDir, withIntermediateDirectories: true)
-        try fm.copyItem(at: url, to: uniqueURL(backupDir.appendingPathComponent(backupName(url.lastPathComponent))))
+        // A pure move (same name) loses nothing: no copy, which would double every big file a rule files.
+        if newName != url.lastPathComponent {
+            try fm.createDirectory(at: backupDir, withIntermediateDirectories: true)
+            try fm.copyItem(at: url, to: uniqueURL(backupDir.appendingPathComponent(backupName(url.lastPathComponent))))
+        }
         let original = Marker.originalName(url) ?? url.lastPathComponent
         let final = try move(url, to: newName, in: folder)
         Marker.set(final, originalName: original)
@@ -37,7 +40,9 @@ public enum Files {
     public static func move(_ url: URL, to newName: String, in folder: URL? = nil) throws -> URL {
         let dir = folder ?? url.deletingLastPathComponent()
         try fm.createDirectory(at: dir, withIntermediateDirectories: true)
-        let final = uniqueURL(dir.appendingPathComponent(newName))
+        let target = dir.appendingPathComponent(newName)
+        if target.standardizedFileURL == url.standardizedFileURL { return url }  // already there: not "x - 1"
+        let final = uniqueURL(target)
         try fm.moveItem(at: url, to: final)
         return final
     }

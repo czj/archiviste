@@ -9,7 +9,7 @@ struct PDFNamerApp: App {
         MenuBarExtra {
             PopoverView().environment(model)
         } label: {
-            Image(systemName: model.isBusy ? "arrow.triangle.2.circlepath" : "doc.text.magnifyingglass")
+            Image(systemName: model.isBusy || model.isTidying ? "arrow.triangle.2.circlepath" : "doc.text.magnifyingglass")
         }
         .menuBarExtraStyle(.window)
 
