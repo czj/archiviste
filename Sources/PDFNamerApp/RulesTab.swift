@@ -18,8 +18,11 @@ struct RulesTab: View {
             if let error = model.rulesError {
                 Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red).font(.caption).padding(8)
             }
-            HSplitView {
-                list.frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
+            // An HStack, not an HSplitView: the AppKit split view ignores the toolbar's safe area,
+            // so the list scrolled under the tab bar.
+            HStack(spacing: 0) {
+                list.frame(width: 290)
+                Divider()
                 Group {
                     if let i = model.rules.firstIndex(where: { $0.id == selection }) {
                         RuleEditor(rule: $model.rules[i], position: i + 1)
@@ -40,33 +43,68 @@ struct RulesTab: View {
         }
     }
 
+    /// How the list shows the rules. Only the display changes: rules always apply in priority order.
+    enum Sort: String, CaseIterable, Identifiable {
+        case priority, folder, name
+        var id: Self { self }
+        var title: String {
+            switch self {
+            case .priority: "Priorité"
+            case .folder: "Dossier de destination"
+            case .name: "Nom de règle"
+            }
+        }
+    }
+
+    @AppStorage("rulesSort") private var sort = Sort.priority
+
+    /// (rule, its priority) in display order.
+    private var ranked: [(rule: Rule, rank: Int)] {
+        let all = model.rules.enumerated().map { (rule: $1, rank: $0 + 1) }
+        switch sort {
+        case .priority: return all
+        case .name: return all.sorted { $0.rule.label.localizedStandardCompare($1.rule.label) == .orderedAscending }
+        case .folder: return all.sorted { folderKey($0.rule) == folderKey($1.rule) ? $0.rank < $1.rank
+                                                                                   : folderKey($0.rule) < folderKey($1.rule) }
+        }
+    }
+
+    /// Sorted by folder name; the full path keeps two folders of the same name apart.
+    private func folderKey(_ rule: Rule) -> String {
+        rule.folder.isEmpty ? "" : URL(fileURLWithPath: rule.folder).lastPathComponent.lowercased() + "\u{0}" + rule.folder
+    }
+
+    private func folderTitle(_ rule: Rule) -> String {
+        rule.folder.isEmpty ? "Sur place" : URL(fileURLWithPath: rule.folder).lastPathComponent
+    }
+
     private var list: some View {
         VStack(spacing: 0) {
+            Picker("Trier par", selection: $sort) {
+                ForEach(Sort.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.menu)
+            .controlSize(.small)
+            .padding(.horizontal, 10).padding(.vertical, 6)
             List(selection: Binding(get: { model.selectedRuleID }, set: { model.selectedRuleID = $0 })) {
-                ForEach(model.rules) { rule in
-                    HStack(spacing: 6) {
-                        Image(systemName: rule.needsText ? "doc.text.magnifyingglass" : "textformat")
-                            .foregroundStyle(rule.enabled ? Color.accentColor : .secondary)
-                            .help(rule.needsText ? "D’après le contenu" : "D’après le nom")
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(rule.label.isEmpty ? "Nouvelle règle" : rule.label).lineLimit(1)
-                            Text(rule.folder.isEmpty ? "reste sur place" : "→ " + URL(fileURLWithPath: rule.folder).lastPathComponent)
-                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                switch sort {
+                case .priority:
+                    ForEach(ranked, id: \.rule.id) { row($0.rule, rank: $0.rank) }
+                        .onMove { model.rules.move(fromOffsets: $0, toOffset: $1) }
+                case .name:
+                    ForEach(ranked, id: \.rule.id) { row($0.rule, rank: $0.rank) }
+                case .folder:
+                    let groups = Dictionary(grouping: ranked) { folderKey($0.rule) }
+                    ForEach(groups.keys.sorted(), id: \.self) { key in
+                        let rows = groups[key]!.sorted { $0.rank < $1.rank }
+                        Section {
+                            ForEach(rows, id: \.rule.id) { row($0.rule, rank: $0.rank) }
+                        } header: {
+                            Text("\(folderTitle(rows[0].rule)) · \(rows.count)")
+                                .help(rows[0].rule.folder)
                         }
-                        Spacer()
-                        if rule.patternError != nil || !rule.hasCondition {
-                            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                                .help(rule.hasCondition ? "Expression invalide" : "Aucune condition : la règle ne s’applique jamais")
-                        }
-                    }
-                    .opacity(rule.enabled ? 1 : 0.5)
-                    .tag(rule.id)
-                    .contextMenu {
-                        Button("Dupliquer") { duplicate(rule) }
-                        Button("Supprimer", role: .destructive) { model.rules.removeAll { $0.id == rule.id } }
                     }
                 }
-                .onMove { model.rules.move(fromOffsets: $0, toOffset: $1) }
             }
             .listStyle(.inset(alternatesRowBackgrounds: true))
             HStack(spacing: 0) {
@@ -84,6 +122,36 @@ struct RulesTab: View {
             }
             .buttonStyle(.borderless)
             .padding(4)
+        }
+    }
+
+    private func row(_ rule: Rule, rank: Int) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: rule.needsText ? "doc.text.magnifyingglass" : "textformat")
+                .foregroundStyle(rule.enabled ? Color.accentColor : .secondary)
+                .help(rule.needsText ? "D’après le contenu" : "D’après le nom")
+            VStack(alignment: .leading, spacing: 1) {
+                Text(rule.label.isEmpty ? "Nouvelle règle" : rule.label).lineLimit(1)
+                if sort != .folder {
+                    Text(rule.folder.isEmpty ? "reste sur place" : "→ " + URL(fileURLWithPath: rule.folder).lastPathComponent)
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            Spacer()
+            if rule.patternError != nil || !rule.hasCondition {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    .help(rule.hasCondition ? "Expression invalide" : "Aucune condition : la règle ne s’applique jamais")
+            }
+            if sort != .priority {
+                Text("#\(rank)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                    .help("Rang : les règles s’appliquent dans l’ordre de priorité")
+            }
+        }
+        .opacity(rule.enabled ? 1 : 0.5)
+        .tag(rule.id)
+        .contextMenu {
+            Button("Dupliquer") { duplicate(rule) }
+            Button("Supprimer", role: .destructive) { model.rules.removeAll { $0.id == rule.id } }
         }
     }
 
