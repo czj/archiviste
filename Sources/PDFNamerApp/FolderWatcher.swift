@@ -2,21 +2,23 @@ import Foundation
 import OSLog
 import PDFNamerCore
 
-/// Reports PDFs and images that newly arrive in a folder, once their size has settled
-/// (a scanner or a download may still be writing). Files present at start are left alone,
-/// and so are files already named "AAAA-MM-JJ - …".
+/// Reports files that newly arrive in a folder, once their size has settled (a scanner or
+/// a download may still be writing). Files present at start are left alone, and so are those
+/// `accepts` turns down (wrong type, already handled by PDF Namer).
 final class FolderWatcher {
     private let url: URL
+    private let accepts: (URL) -> Bool
     private let onNew: ([URL]) -> Void
     private var source: DispatchSourceFileSystemObject?
     private var known: Set<String>
     private var pending: [String: Int] = [:]  // path → last seen size
     private var settling: Task<Void, Never>?
 
-    init(_ url: URL, onNew: @escaping ([URL]) -> Void) {
+    init(_ url: URL, accepts: @escaping (URL) -> Bool, onNew: @escaping ([URL]) -> Void) {
         self.url = url
+        self.accepts = accepts
         self.onNew = onNew
-        known = Set(Self.candidates(in: url).map(\.path))
+        known = Set(Self.files(in: url).map(\.path))
         let fd = open(url.path, O_EVTONLY)
         guard fd >= 0 else {
             Logger(subsystem: "com.github.czj.pdf-namer", category: "watch")
@@ -38,15 +40,15 @@ final class FolderWatcher {
 
     func ignore(_ file: URL) { known.insert(file.path) }
 
-    private static func candidates(in dir: URL) -> [URL] {
+    private static func files(in dir: URL) -> [URL] {
         let all = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isRegularFileKey],
                                                                 options: .skipsHiddenFiles)) ?? []
-        return all.filter { Config.isSupported($0) && !Naming.isNamed($0.lastPathComponent) }
+        return all.filter { (try? $0.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true }
     }
 
     private func scan() {
         known = known.filter { FileManager.default.fileExists(atPath: $0) }  // forget files that left
-        for file in Self.candidates(in: url) where !known.contains(file.path) && pending[file.path] == nil {
+        for file in Self.files(in: url) where !known.contains(file.path) && pending[file.path] == nil && accepts(file) {
             pending[file.path] = -1
         }
         guard !pending.isEmpty, settling == nil else { return }

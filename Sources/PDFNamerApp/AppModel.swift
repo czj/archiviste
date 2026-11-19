@@ -25,6 +25,8 @@ final class Item: Identifiable {
 
     let id = UUID()
     let originalName: String
+    /// Where the file was before anything happened to it (a rule may move it elsewhere).
+    let originalFolder: URL
     let source: String?  // watched folder name, nil for a drop
     var url: URL
     var phase: Phase = .waiting
@@ -32,10 +34,12 @@ final class Item: Identifiable {
     var took: TimeInterval?
     @ObservationIgnored var extraction: Task<Extracted, Error>?
 
-    init(url: URL, source: String?) {
+    init(url: URL, source: String?, phase: Phase = .waiting) {
         self.url = url
+        self.phase = phase
         self.source = source
         originalName = url.lastPathComponent
+        originalFolder = url.deletingLastPathComponent()
     }
 }
 
@@ -54,6 +58,15 @@ final class AppModel {
             if oldValue.watchedFolders != settings.watchedFolders { syncWatchers() }
         }
     }
+    /// Filing rules (rules.json), tried before the model; the Rules tab edits them.
+    var rules: [Rule] = [] {
+        didSet {
+            guard rules != oldValue, loaded, rulesError == nil else { return }
+            do { try Rules.save(rules) } catch { rulesError = "Enregistrement impossible : \(error.localizedDescription)" }
+        }
+    }
+    /// rules.json exists but can't be read: shown, and nothing is written.
+    var rulesError: String?
     /// A config file exists but can't be read: shown, and nothing is written.
     var configError: String?
     /// Settings this Mac overrides in config.local.json.
@@ -107,13 +120,21 @@ final class AppModel {
                 files.append(url)
             }
         }
-        for url in files where Config.isSupported(url) {
+        // Any file may match a rule; only PDFs and images can be named by the model.
+        for url in files where Config.isSupported(url) || !rules.isEmpty {
             guard !items.contains(where: { $0.url == url && $0.phase.isPending }) else { continue }
-            let item = Item(url: url, source: source)
-            if Naming.isNamed(url.lastPathComponent) { item.phase = .skipped("déjà nommé (« AAAA-MM-JJ - … »)") }
-            items.append(item)
+            if Marker.isMarked(url) {  // renamed or filed by PDF Namer before, whatever its name now
+                if source == nil { items.append(Item(url: url, source: nil, phase: .skipped("déjà traité"))) }
+                continue
+            }
+            items.append(Item(url: url, source: source))
         }
         if worker == nil { worker = Task { await drain() } }
+    }
+
+    /// Nothing to do for this file: say so for a drop, stay silent for a watched folder.
+    private func leave(_ item: Item, _ why: String) {
+        if item.source == nil { item.phase = .skipped(why) } else { items.removeAll { $0 === item } }
     }
 
     private func drain() async {
@@ -135,6 +156,18 @@ final class AppModel {
         let t0 = Date()
         do {
             item.phase = .reading
+            // 1. Filing rules, before any model call.
+            if let m = await Rules.firstMatch(rules, for: item.url) {
+                item.suggestion = Suggestion(m)
+                item.took = Date().timeIntervalSince(t0)
+                if settings.confirmBeforeRename && item.source == nil { item.phase = .proposed } else { apply(item, name: m.name) }
+                return
+            }
+            // 2. The model, for PDFs and images not named "AAAA-MM-JJ - …" yet.
+            guard Config.isSupported(item.url) else { leave(item, "aucune règle"); return }
+            guard !Naming.isNamed(item.url.lastPathComponent) else {
+                leave(item, "déjà nommé (« AAAA-MM-JJ - … »)"); return
+            }
             let extraction = startExtraction(item)
             // Overlap the next file's OCR with this file's model call: one file ahead, never more.
             if let next = items.first(where: { $0.phase == .waiting }) { _ = startExtraction(next) }
@@ -147,6 +180,7 @@ final class AppModel {
             item.suggestion = s
             item.took = Date().timeIntervalSince(t0)
             if s.name == item.url.lastPathComponent {
+                Marker.set(item.url, originalName: item.originalName)  // don't ask the model again next time
                 item.phase = .unchanged
             } else if settings.confirmBeforeRename && item.source == nil {
                 item.phase = .proposed
@@ -168,26 +202,29 @@ final class AppModel {
         guard name != item.url.lastPathComponent, !name.contains("/") else { return }
         do {
             let firstRename = item.phase != .done
-            let final = firstRename ? try Files.rename(item.url, to: name, backupDir: backupDir)
-                                    : try Files.move(item.url, to: name)
+            let final = firstRename
+                ? try Files.rename(item.url, to: name, in: item.suggestion?.match?.folder, backupDir: backupDir)
+                : try Files.move(item.url, to: name)
             ignore(final)
             item.url = final
             item.phase = .done
             recent.removeAll { $0.path == final.path || $0.oldName == item.originalName && !firstRename }
             recent.insert(RecentEntry(oldName: item.originalName, path: final.path, date: Date()), at: 0)
             recent = Array(recent.prefix(20))
-            if firstRename, let source = item.source { notify(source, final.lastPathComponent) }
+            if firstRename, let source = item.source {
+                notify(source, final.lastPathComponent, folder: item.suggestion?.match.map { _ in final.deletingLastPathComponent() })
+            }
         } catch {
             item.phase = .failed(error.localizedDescription)
         }
     }
 
-    /// Put the original name back (the backup copy stays in the backup folder).
+    /// Put the original name and folder back (the backup copy stays in the backup folder).
     func undo(_ item: Item) {
         do {
-            let original = item.url.deletingLastPathComponent().appendingPathComponent(item.originalName)
-            ignore(original)
-            item.url = try Files.move(item.url, to: item.originalName)
+            ignore(item.originalFolder.appendingPathComponent(item.originalName))
+            item.url = try Files.move(item.url, to: item.originalName, in: item.originalFolder)
+            Marker.clear(item.url)
             item.phase = .cancelled
             recent.removeAll { $0.oldName == item.originalName }
         } catch {
@@ -235,7 +272,10 @@ final class AppModel {
         for path in watchers.keys where !wanted.contains(path) { watchers[path] = nil }
         for path in wanted where watchers[path] == nil {
             let url = URL(fileURLWithPath: path)
-            watchers[path] = FolderWatcher(url) { [weak self] urls in self?.add(urls, source: url.lastPathComponent) }
+            watchers[path] = FolderWatcher(url, accepts: { [weak self] file in
+                guard let self, !Marker.isMarked(file) else { return false }
+                return Config.isSupported(file) || !self.rules.isEmpty  // any file may match a rule
+            }) { [weak self] urls in self?.add(urls, source: url.lastPathComponent) }
         }
     }
 
@@ -256,11 +296,11 @@ final class AppModel {
         }
     }
 
-    private func notify(_ folder: String, _ name: String) {
+    private func notify(_ source: String, _ name: String, folder: URL?) {
         guard hasBundle else { return }
         let content = UNMutableNotificationContent()
-        content.title = "PDF Namer · dossier \(folder)"
-        content.body = "Nouveau fichier renommé : « \(name) »"
+        content.title = "PDF Namer · dossier \(source)"
+        content.body = folder.map { "Rangé dans \($0.lastPathComponent) : « \(name) »" } ?? "Nouveau fichier renommé : « \(name) »"
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 
@@ -301,6 +341,13 @@ final class AppModel {
     func reloadConfig() {
         loaded = false
         defer { loaded = true }
+        do {
+            let fresh = try Rules.load()
+            rulesError = nil
+            if fresh != rules { rules = fresh }  // == ignores ids: unchanged rules keep theirs
+        } catch {
+            rulesError = "rules.json illisible : \(error.localizedDescription)"
+        }
         do {
             let fresh = try UserConfig.load()
             configError = nil

@@ -5,10 +5,11 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             GeneralTab().tabItem { Label("Général", systemImage: "gearshape") }
+            RulesTab().tabItem { Label("Règles", systemImage: "line.3.horizontal.decrease.circle") }
             FoldersTab().tabItem { Label("Dossiers surveillés", systemImage: "folder") }
             CleanupTab().tabItem { Label("Sauvegardes et ménage", systemImage: "archivebox") }
         }
-        .frame(width: 560, height: 400)
+        .frame(minWidth: 760, minHeight: 560)
     }
 }
 
@@ -99,7 +100,7 @@ private struct FoldersTab: View {
                 }
                 Button("Ajouter un dossier…") { model.addFolder() }
             } footer: {
-                Text("Les PDF et images qui arrivent dans ces dossiers sont renommés tout seuls, avec une notification. Les fichiers déjà présents et ceux déjà nommés « AAAA-MM-JJ - … » ne sont pas touchés.")
+                Text("Chaque fichier qui arrive dans ces dossiers passe d’abord par les règles (rangé et renommé s’il en suit une), sinon le modèle nomme les PDF et images, avec une notification. Les fichiers déjà présents, ceux déjà traités par PDF Namer et ceux nommés « AAAA-MM-JJ - … » ne sont pas renommés par le modèle.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

@@ -25,15 +25,59 @@ rendu et l'OCR passent en `@concurrent`.
   image qui y arrive est renommé tout seul, avec une notification.
 - Chaque renommage peut être modifié ou annulé. L'option « Valider avant de renommer »
   attend votre accord pour les fichiers déposés.
-- Les fichiers déjà nommés `AAAA-MM-JJ - …` ne sont jamais touchés.
+- Un fichier renommé ou rangé par PDF Namer n'est plus jamais repris, même si son nom n'a
+  pas de date ou a été retouché à la main : une marque cachée (attribut étendu
+  `com.github.czj.pdf-namer.renamed`, qui garde le nom d'origine) le signale. Le modèle ne
+  renomme pas non plus les fichiers déjà nommés `AAAA-MM-JJ - …`.
+
+## Les règles de rangement
+
+Avant tout passage par le modèle, chaque fichier est confronté aux **règles**, dans
+l'ordre : la première qui correspond le renomme et le range, sans appel au modèle. Une
+règle porte sur le nom du fichier (expression régulière), sur son texte (toutes les
+expressions données, majuscules et accents ignorés : PDF, scans, images, fichiers Excel),
+ou les deux. Elle range le fichier dans un dossier, éventuellement dans un sous-dossier
+`2026` ou `2026-11`, sous un nouveau nom préfixé par la date du document (la première
+trouvée dans le texte, sinon la date de création du fichier).
+
+L'onglet **Règles** des réglages les liste, les réordonne et les modifie ; « Tester sur un
+fichier… » (ou un dépôt) montre quelle règle prend un fichier, et ce qui manque aux règles
+qui ont failli le prendre. Elles sont enregistrées dans `~/.config/pdf-namer/rules.json` :
+
+```json
+{
+  "rules": [
+    {
+      "name": "Électricité",
+      "filename": "^Facture_EDF_",
+      "contains": [],
+      "folder": "~/Documents/Factures",
+      "subfolder": "yearMonth",
+      "rename": "Facture EDF",
+      "datePrefix": true
+    },
+    {
+      "name": "Hébergement",
+      "contains": ["Example Hosting", "Facture"],
+      "folder": "~/Documents/Factures",
+      "rename": "Facture Example Hosting"
+    }
+  ]
+}
+```
+
+`subfolder` vaut `none`, `year` ou `yearMonth` ; `folder` vide laisse le fichier sur place,
+`rename` vide garde son nom. Contrairement à `config.json`, l'app écrit ce fichier : s'il
+est versionné avec chezmoi, lancez `chezmoi re-add` après l'avoir modifié dans l'app.
 
 ## La commande `pdf-namer`
 
-    pdf-namer facture.pdf                  # affiche le nom proposé
+    pdf-namer facture.pdf                  # affiche le nom proposé (par une règle ou le modèle)
     pdf-namer facture.pdf --json
-    pdf-namer --rename *.pdf               # renomme (avec sauvegarde)
-    pdf-namer --rename --dry-run *.pdf     # simulation
-    pdf-namer --rename --force *.pdf       # renomme aussi les fichiers déjà nommés
+    pdf-namer --rename *.pdf               # range par règle, sinon renomme (avec sauvegarde)
+    pdf-namer --rename --dry-run *        # simulation ; avec des règles, tout type de fichier
+    pdf-namer --rename --force *.pdf       # reprend aussi les fichiers déjà traités ou nommés
+    pdf-namer --rules *.pdf                # quelle règle prend chaque fichier, et pourquoi pas les autres
     pdf-namer --text scan.pdf              # ce que lit le modèle : texte, dates et montants candidats
 
 ## Sauvegardes et configuration

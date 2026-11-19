@@ -1,17 +1,24 @@
 import Foundation
 import PDFNamerCore
 
-// pdf-namer — same flags as ~/bin/pdf_namer.py:
+// pdf-namer — same flags as ~/bin/pdf_namer.py, plus filing rules (rules.json):
 //   pdf-namer <file> [--json]
 //   pdf-namer --rename [--dry-run] [--force] [--backup-dir <dir>] <files...>
+//   pdf-namer --rules <files...>        which rule each file matches, and why the others don't
 
 func err(_ s: String) { FileHandle.standardError.write(Data((s + "\n").utf8)) }
+
+let usage = "usage: pdf-namer <fichier> [--json] | --rename [--dry-run] [--force] [--backup-dir <dir>] <fichiers…> | --rules <fichiers…>"
 
 let config: UserConfig
 do { config = try UserConfig.load() } catch {
     err("✗ \(UserConfig.fileURL.path) illisible : \(error.localizedDescription)"); exit(1)
 }
-var files: [String] = [], json = false, rename = false, dryRun = false, force = false
+let rules: [Rule]
+do { rules = try Rules.load() } catch {
+    err("✗ \(Rules.fileURL.path) illisible : \(error.localizedDescription)"); exit(1)
+}
+var files: [String] = [], json = false, rename = false, dryRun = false, force = false, rulesTest = false
 var backupDir = config.backupURL
 var customBackupDir = false  // trashing expired files only ever runs on the configured folder
 var args = CommandLine.arguments.dropFirst()
@@ -25,6 +32,7 @@ while let a = args.popFirst() {
             print("── \(f)\n\(t)\n── dates: \(Candidates.dates(t))\n── montants: \(Candidates.amounts(t))")
         }
         exit(0)
+    case "--rules": rulesTest = true
     case "--rename": rename = true
     case "--dry-run": dryRun = true; rename = true
     case "--force": force = true
@@ -33,38 +41,124 @@ while let a = args.popFirst() {
         backupDir = UserConfig.expand(d)
         customBackupDir = true
     case "-h", "--help":
-        err("usage: pdf-namer <fichier> [--json] | --rename [--dry-run] [--force] [--backup-dir <dir>] <fichiers…>")
+        err(usage)
         exit(0)
     default: files.append(a)
     }
 }
-guard !files.isEmpty else {
-    err("usage: pdf-namer <fichier> [--json] | --rename [--dry-run] [--force] [--backup-dir <dir>] <fichiers…>")
-    exit(1)
-}
+guard !files.isEmpty else { err(usage); exit(1) }
 
-let batch = rename || files.count > 1
+let batch = rename || rulesTest || files.count > 1
 func say(_ s: String) { if batch { print(s) } else { err(s) } }
+let home = FileManager.default.homeDirectoryForCurrentUser.path
+func short(_ url: URL) -> String { url.path.hasPrefix(home) ? "~" + url.path.dropFirst(home.count) : url.path }
 
+/// Any file can match a rule; only PDFs and images can be named by the model.
+let anyFile = (rename || rulesTest) && !rules.isEmpty
 var urls: [URL] = []
 for f in files {
     let url = URL(fileURLWithPath: (f as NSString).expandingTildeInPath)
     if !FileManager.default.fileExists(atPath: url.path) { say("⚠ Introuvable : \(f)") }
-    else if !Config.isSupported(url) { say("⚠ Ni PDF ni image : \(f)") }
+    else if !Config.isSupported(url) && !anyFile { say("⚠ Ni PDF ni image : \(f)") }
     else { urls.append(url) }
 }
-// Already named ("2026-11-05 - …"): never touched in batch mode, so hand edits survive.
+
+if rulesTest {
+    if rules.isEmpty { say("Aucune règle dans \(short(Rules.fileURL))"); exit(0) }
+    for url in urls {
+        print("── \(url.lastPathComponent)")
+        if let original = Marker.originalName(url) { print("   déjà traité par PDF Namer (avant : « \(original) »)") }
+        for (i, rule, missing) in await Rules.nearMisses(rules, for: url) {
+            print("   · règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))")
+        }
+        if let m = await Rules.firstMatch(rules, for: url) {
+            print("   ✓ règle \(m.index + 1) « \(m.rule.label) » → \(short(m.folder))/\(m.name)")
+        } else {
+            print("   – aucune règle\(Config.isSupported(url) ? " : nommé par le modèle" : "")")
+        }
+    }
+    exit(0)
+}
+
 if rename && !force {
-    let named = urls.filter { Naming.isNamed($0.lastPathComponent) }
-    urls.removeAll { Naming.isNamed($0.lastPathComponent) }
-    if !named.isEmpty {
-        say("\(named.count) fichier(s) déjà nommé(s) (« AAAA-MM-JJ - … ») laissé(s) tel(s) quel(s) · --force pour les renommer quand même")
+    // Marked by PDF Namer: never touched again, whatever its name.
+    let marked = urls.filter(Marker.isMarked)
+    urls.removeAll(where: Marker.isMarked)
+    if !marked.isEmpty {
+        say("\(marked.count) fichier(s) déjà traité(s) par PDF Namer laissé(s) tel(s) quel(s) · --force pour les reprendre")
     }
     if urls.isEmpty { say("✓ Rien à renommer"); exit(0) }
 }
 guard !urls.isEmpty else { say("✗ Aucun PDF ni image valide"); exit(2) }
 
 if batch { say("── PDF Namer · \(urls.count) fichier(s)\(dryRun ? " · simulation" : "") ──") }
+
+var renamed = 0, filed = 0, unchanged = 0, skipped = 0, errors = 0
+let start = Date()
+
+if rename {
+    let report = await Files.housekeeping(backupDir, dryRun: dryRun, backupMaxAgeDays: config.backupMaxAge,
+                                          expireMaxAgeDays: customBackupDir ? nil : config.expireMaxAge)
+    let would = dryRun ? "seraient " : ""
+    if !report.purged.isEmpty {
+        print("✓ \(report.purged.count) sauvegarde(s) de plus de \(config.backupMaxAgeDays) jours \(would)supprimée(s)")
+    }
+    if !report.trashed.isEmpty {
+        print("✓ \(report.trashed.count) élément(s) de plus de \(config.expireMaxAgeDays / 30) mois \(would)mis à la corbeille :")
+        for t in report.trashed { print("    · \(t)") }
+    }
+    print()
+
+    // 1. Filing rules, before any model call.
+    var left: [URL] = []
+    for url in urls {
+        guard let m = await Rules.firstMatch(rules, for: url) else { left.append(url); continue }
+        print("règle     « \(m.rule.label) »\n  avant    \(url.lastPathComponent)")
+        do {
+            if dryRun {
+                print("  ○ irait  \(short(m.folder))/\(m.name)\n")
+            } else {
+                let final = try Files.rename(url, to: m.name, in: m.folder, backupDir: backupDir)
+                print("  ✓ rangé  \(short(final))\n")
+            }
+            filed += 1
+        } catch {
+            print("  ✗ erreur   \(error.localizedDescription)\n"); errors += 1
+        }
+    }
+    // 2. The model, for PDFs and images no rule took, unless already named "AAAA-MM-JJ - …".
+    let named = left.filter { Config.isSupported($0) && !force && Naming.isNamed($0.lastPathComponent) }
+    if !named.isEmpty {
+        print("\(named.count) fichier(s) déjà nommé(s) (« AAAA-MM-JJ - … ») laissé(s) tel(s) quel(s) · --force pour les renommer quand même")
+    }
+    let other = left.filter { !Config.isSupported($0) }
+    if !other.isEmpty { print("\(other.count) fichier(s) ni PDF ni image sans règle, laissé(s) tel(s) quel(s)") }
+    skipped += named.count + other.count
+    urls = left.filter { Config.isSupported($0) && (force || !Naming.isNamed($0.lastPathComponent)) }
+}
+
+func summary() {
+    let stats = [(filed, dryRun ? "à ranger par règle" : "rangé(s) par règle"),
+                 (renamed, dryRun ? "à renommer" : "renommé(s)"), (unchanged, "inchangé(s)"),
+                 (skipped, "ignoré(s)"), (errors, "erreur(s)")].filter { $0.0 > 0 }.map { "\($0.0) \($0.1)" }
+    print(String(repeating: "─", count: 60))
+    print("\(stats.isEmpty ? "Rien à faire" : stats.joined(separator: " · "))  · \(files.count) fichier(s) en \(Int(Date().timeIntervalSince(start).rounded()))s\(dryRun ? " · simulation, rien n’a été modifié" : "")")
+}
+if urls.isEmpty { summary(); exit(errors > 0 ? 2 : 0) }
+
+// One file, no renaming: a matching rule gives the name, as --rename would.
+if !batch, let m = await Rules.firstMatch(rules, for: urls[0]) {
+    if json {
+        let out: [String: String] = ["original": urls[0].lastPathComponent, "suggested": m.name, "path": urls[0].path,
+                                     "folder": m.folder.path, "rule": m.rule.label]
+        let data = try JSONSerialization.data(withJSONObject: out, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
+        print(String(decoding: data, as: UTF8.self))
+    } else {
+        print((m.name as NSString).deletingPathExtension)
+    }
+    exit(0)
+}
+
 /// Reading a file (OCR) overlaps the model's work on the previous one: one file ahead, never more.
 func prefetch(_ i: Int) -> Task<Extracted, Error>? {
     i < urls.count ? Task { [url = urls[i]] in try await Extractor.extract(url) } : nil
@@ -93,20 +187,6 @@ if !batch {
     exit(0)
 }
 
-let report = await Files.housekeeping(backupDir, dryRun: dryRun, backupMaxAgeDays: config.backupMaxAge,
-                                expireMaxAgeDays: customBackupDir ? nil : config.expireMaxAge)
-let would = dryRun ? "seraient " : ""
-if !report.purged.isEmpty {
-    print("✓ \(report.purged.count) sauvegarde(s) de plus de \(config.backupMaxAgeDays) jours \(would)supprimée(s)")
-}
-if !report.trashed.isEmpty {
-    print("✓ \(report.trashed.count) élément(s) de plus de \(config.expireMaxAgeDays / 30) mois \(would)mis à la corbeille :")
-    for t in report.trashed { print("    · \(t)") }
-}
-print()
-
-var renamed = 0, unchanged = 0, skipped = 0, errors = 0
-let start = Date()
 for (n, url) in urls.enumerated() {
     let filename = url.lastPathComponent, t0 = Date()
     print("\(n + 1)/\(urls.count) avant    \(filename)")
@@ -117,7 +197,10 @@ for (n, url) in urls.enumerated() {
             print("  – ignoré   rien de lisible\n"); skipped += 1; continue
         }
         let took = String(format: "%.1fs", Date().timeIntervalSince(t0))
-        if s.name == filename { print("  = inchangé déjà bien nommé \(took)\n"); unchanged += 1; continue }
+        if s.name == filename {
+            if !dryRun { Marker.set(url, originalName: filename) }  // don't ask the model again next time
+            print("  = inchangé déjà bien nommé \(took)\n"); unchanged += 1; continue
+        }
         if dryRun {
             print("  ○ proposé  \(s.name) \(took)\n")
         } else {
@@ -129,7 +212,4 @@ for (n, url) in urls.enumerated() {
         print("  ✗ erreur   \(error.localizedDescription)\n"); errors += 1
     }
 }
-let stats = [(renamed, dryRun ? "à renommer" : "renommé(s)"), (unchanged, "inchangé(s)"),
-             (skipped, "ignoré(s)"), (errors, "erreur(s)")].filter { $0.0 > 0 }.map { "\($0.0) \($0.1)" }
-print(String(repeating: "─", count: 60))
-print("\(stats.isEmpty ? "Rien à faire" : stats.joined(separator: " · "))  · \(urls.count) fichier(s) en \(Int(Date().timeIntervalSince(start).rounded()))s\(dryRun ? " · simulation, rien n’a été modifié" : "")")
+summary()

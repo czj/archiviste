@@ -19,18 +19,25 @@ public enum Files {
         return URL(fileURLWithPath: "\(root) - \(n)\(ext)")
     }
 
-    /// Copy the original to the backup folder, then rename it in place; returns the final URL.
+    /// Copy the original to the backup folder, then rename it (in place, or into `folder`)
+    /// and mark it as handled; returns the final URL.
     @discardableResult
-    public static func rename(_ url: URL, to newName: String, backupDir: URL) throws -> URL {
+    public static func rename(_ url: URL, to newName: String, in folder: URL? = nil, backupDir: URL) throws -> URL {
         try fm.createDirectory(at: backupDir, withIntermediateDirectories: true)
         try fm.copyItem(at: url, to: uniqueURL(backupDir.appendingPathComponent(backupName(url.lastPathComponent))))
-        return try move(url, to: newName)
+        let original = Marker.originalName(url) ?? url.lastPathComponent
+        let final = try move(url, to: newName, in: folder)
+        Marker.set(final, originalName: original)
+        return final
     }
 
-    /// Plain rename next to the file (undo, manual edit), never overwriting.
+    /// Plain rename (undo, manual edit), next to the file or into `folder`, never overwriting.
+    /// The mark, if any, travels with the file.
     @discardableResult
-    public static func move(_ url: URL, to newName: String) throws -> URL {
-        let final = uniqueURL(url.deletingLastPathComponent().appendingPathComponent(newName))
+    public static func move(_ url: URL, to newName: String, in folder: URL? = nil) throws -> URL {
+        let dir = folder ?? url.deletingLastPathComponent()
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        let final = uniqueURL(dir.appendingPathComponent(newName))
         try fm.moveItem(at: url, to: final)
         return final
     }

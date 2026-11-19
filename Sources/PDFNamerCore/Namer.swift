@@ -5,7 +5,23 @@ public struct Suggestion: Sendable {
     public let fields: [String: String]
     /// New file name, extension included.
     public let name: String
-    public var chips: [String] { Naming.chips(fields) }
+    /// The filing rule that gave this name, nil when the model did.
+    public let match: Rules.Match?
+    public var chips: [String] {
+        guard let match else { return Naming.chips(fields) }
+        let f = match.folder
+        let place = match.rule.subfolder == .none ? f.lastPathComponent
+            : f.deletingLastPathComponent().lastPathComponent + "/" + f.lastPathComponent
+        return ["Règle « \(match.rule.label) »", "→ " + place]
+    }
+
+    public init(fields: [String: String], name: String, match: Rules.Match? = nil) {
+        self.fields = fields
+        self.name = name
+        self.match = match
+    }
+
+    public init(_ match: Rules.Match) { self.init(fields: [:], name: match.name, match: match) }
 }
 
 public enum Namer {
