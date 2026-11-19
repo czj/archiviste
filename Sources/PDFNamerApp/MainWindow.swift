@@ -1,4 +1,5 @@
 import PDFNamerCore
+import QuickLook
 import SwiftUI
 
 /// The main window's pages, in sidebar order.
@@ -58,20 +59,7 @@ struct MainWindow: View {
             }
             .navigationTitle(model.section.title)
         }
-        .background {
-            // ⌘1…⌘5 go from page to page.
-            ForEach(AppSection.allCases) { section in
-                Button(section.title) { model.section = section }.keyboardShortcut(section.key)
-            }
-            .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
-            // ⇧⌘R from any page: show Activité and run the pass.
-            Button("Ranger maintenant") {
-                model.section = .activity
-                if !model.isTidying { model.tidyNow() }
-            }
-            .keyboardShortcut("r", modifiers: [.command, .shift])
-            .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
-        }
+        // Shortcuts (⌘1…⌘5, ⇧⌘R…) live in the menus: AppCommands.
         // By default a menu bar app has no Dock icon nor menu bar; while this window is open it
         // gets both, so ⌘Tab finds it and Édition › Annuler shows (Réglages › Général changes that).
         // Back to menu bar only when the window really closes: onDisappear also fires when it is
@@ -114,13 +102,17 @@ struct MainWindow: View {
 struct ActivityPane: View {
     @Environment(AppModel.self) private var model
     @State private var query = ""
+    @FocusState private var searching: Bool
     @State private var targeted = false
+    /// History rows picked (click, ⇧/⌘-click): Espace previews them, the context menu acts on them.
+    @State private var selection: Set<RecentEntry.ID> = []
+    @State private var preview: URL?
 
     var body: some View {
         // Each read below filters the items: once per redraw.
         let batch = model.batch, history = history
         let busy = batch.contains { $0.phase.isPending }
-        List {
+        List(selection: $selection) {
             Section {
                 DropZone(targeted: targeted)
                     .listRowSeparator(.hidden)
@@ -155,15 +147,29 @@ struct ActivityPane: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(history) { entry in
-                    HistoryRow(entry: entry)
+                    HistoryRow(entry: entry).tag(entry.id)
                 }
             } header: {
                 Text("Historique · \(model.recent.count) fichier(s)")
             }
         }
         .listStyle(.inset)
+        .contextMenu(forSelectionType: RecentEntry.ID.self) { ids in
+            HistoryMenu(entries: model.recent.filter { ids.contains($0.id) }, preview: $preview)
+        } primaryAction: { ids in
+            for entry in model.recent where ids.contains(entry.id) { NSWorkspace.shared.open(entry.url) }
+        }
+        // Espace: Quick Look, as in the Finder; ↑/↓ then move through the previews.
+        .onKeyPress(.space) {
+            guard let entry = history.first(where: { selection.contains($0.id) }) else { return .ignored }
+            preview = preview == nil ? entry.url : nil
+            return .handled
+        }
+        .quickLookPreview($preview, in: history.filter { selection.count < 2 || selection.contains($0.id) }.map(\.url))
         .onPasteCommand(of: [.fileURL]) { _ in model.paste() }  // ⌘V: copied files from the Finder
         .searchable(text: $query, placement: .toolbar, prompt: "Nom, ancien nom, règle…")
+        .searchFocused($searching)
+        .focusedSceneValue(\.search, $searching)
         .dropDestination(for: URL.self) { urls, _ in
             model.add(urls)
             return true
@@ -177,7 +183,6 @@ struct ActivityPane: View {
             ToolbarSpacer(.fixed, placement: .primaryAction)
             ToolbarItem(placement: .primaryAction) {
                 Button("Choisir des fichiers…", systemImage: "plus") { model.chooseFiles() }
-                    .keyboardShortcut("o")
                     .help("Choisir des fichiers à renommer (⌘O)")
             }
             ToolbarItem(placement: .primaryAction) {
@@ -224,7 +229,6 @@ private struct TidyBanner: View {
                 if ready > 0 {
                     Button("Tout ranger (\(ready))") { model.tidyAll() }
                         .buttonStyle(.glassProminent)
-                        .keyboardShortcut(.return, modifiers: .command)
                         .help("Ranger chaque fichier comme proposé ci-dessous (⌘↩). Chacun reste annulable.")
                 }
             }
@@ -243,11 +247,10 @@ private struct TidyBanner: View {
 }
 
 private struct HistoryRow: View {
-    @Environment(AppModel.self) private var model
     let entry: RecentEntry
 
     var body: some View {
-        let url = URL(fileURLWithPath: entry.path)
+        let url = entry.url
         HStack(spacing: 10) {
             FileBadge(ext: url.pathExtension)
             VStack(alignment: .leading, spacing: 1) {
@@ -267,20 +270,45 @@ private struct HistoryRow: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
-        .onTapGesture(count: 2) { NSWorkspace.shared.open(url) }
-        .contextMenu {
-            Button("Ouvrir") { NSWorkspace.shared.open(url) }
-            Button("Afficher dans le Finder") { model.reveal(url) }
-            Button("Créer une règle pour ce type de fichier…") {
-                model.makeRule(from: url, originalName: entry.oldName)
+        // Drag the file itself out: to the Finder, a mail, a web upload.
+        .onDrag { NSItemProvider(contentsOf: url) ?? NSItemProvider() }
+        .help(entry.path)
+    }
+}
+
+/// Right-click on history rows (the one clicked, or all those selected).
+private struct HistoryMenu: View {
+    @Environment(AppModel.self) private var model
+    let entries: [RecentEntry]
+    @Binding var preview: URL?
+
+    var body: some View {
+        let urls = entries.map(\.url)
+        if !entries.isEmpty {
+            Button("Ouvrir") { urls.forEach { NSWorkspace.shared.open($0) } }
+            Button("Aperçu (Espace)") { preview = urls.first }
+            Button("Afficher dans le Finder") { NSWorkspace.shared.activateFileViewerSelecting(urls) }
+            ShareLink(items: urls) { Text("Partager…") }
+            Divider()
+            Button("Copier le nom") { copy(entries.map(\.newName)) }
+            Button("Copier le chemin") { copy(entries.map(\.path)) }
+            if let entry = entries.first, entries.count == 1 {
+                Divider()
+                Button("Créer une règle pour ce type de fichier…") {
+                    model.makeRule(from: entry.url, originalName: entry.oldName)
+                }
             }
             Divider()
-            Button("Copier le nom") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(entry.newName, forType: .string)
+            Button(entries.count == 1 ? "Annuler le renommage" : "Annuler ces \(entries.count) renommages") {
+                entries.forEach(model.undo)
             }
+            .help("Remettre le nom et le dossier d’origine")
         }
-        .help(entry.path)
+    }
+
+    private func copy(_ lines: [String]) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(lines.joined(separator: "\n"), forType: .string)
     }
 }
 

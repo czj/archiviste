@@ -18,9 +18,8 @@ struct PauseButton: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .keyboardShortcut("p")
-        .help(paused ? "Reprendre : renommer et ranger les fichiers en attente (⌘P)"
-                     : "Mettre en pause : les fichiers déposés ou arrivés attendent, rien n’est renommé (⌘P)")
+        .help(paused ? "Reprendre : renommer et ranger les fichiers en attente (⌥⌘P)"
+                     : "Mettre en pause : les fichiers déposés ou arrivés attendent, rien n’est renommé (⌥⌘P)")
         .accessibilityLabel(paused ? "En pause, reprendre" : "Actif, mettre en pause")
     }
 }
@@ -36,7 +35,7 @@ struct DropZone: View {
             HStack(spacing: 4) {
                 Text("ou")
                 Button("choisissez des fichiers…") { model.chooseFiles() }.buttonStyle(.link)
-                    .keyboardShortcut("o").help("Choisir des fichiers (⌘O)")
+                    .help("Choisir des fichiers (⌘O)")
                 Text("· ⌘V pour coller")
             }
             .font(.caption).foregroundStyle(.secondary)

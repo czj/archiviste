@@ -9,11 +9,14 @@ import UserNotifications
 struct RecentEntry: Codable, Identifiable {
     var id = UUID()
     var oldName: String
+    /// Where it was before; nil in entries saved before this was kept (then: its current folder).
+    var oldFolder: String?
     var path: String
     var date: Date
     /// The rule that filed it; nil when the model named it.
     var rule: String?
-    var newName: String { URL(fileURLWithPath: path).lastPathComponent }
+    var newName: String { url.lastPathComponent }
+    var url: URL { URL(fileURLWithPath: path) }
 }
 
 /// One file going through the pipeline.
@@ -102,6 +105,7 @@ final class AppModel {
     var isBusy: Bool { batch.contains { $0.phase.isPending } }
     var backupDir: URL { settings.backupURL }
     var hasBundle: Bool { Bundle.main.bundleIdentifier != nil }
+    @ObservationIgnored private let notifications = Notifications()
 
     init() {
         reloadConfig()
@@ -120,7 +124,7 @@ final class AppModel {
                 try? await Task.sleep(for: .seconds(86400))
             }
         }
-        if hasBundle { UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in } }
+        if hasBundle { notifications.start(model: self) }
     }
 
     // MARK: Queue
@@ -352,11 +356,12 @@ final class AppModel {
             item.phase = .done
             var history = recent  // one change, so one write to UserDefaults
             history.removeAll { $0.path == final.path || $0.oldName == item.originalName && !firstRename }
-            history.insert(RecentEntry(oldName: item.originalName, path: final.path, date: Date(),
-                                       rule: item.suggestion?.match?.rule.label), at: 0)
+            let entry = RecentEntry(oldName: item.originalName, oldFolder: item.originalFolder.path, path: final.path,
+                                    date: Date(), rule: item.suggestion?.match?.rule.label)
+            history.insert(entry, at: 0)
             recent = Array(history.prefix(500))
             if firstRename, !item.tidy, let source = item.source {
-                notify(source, final.lastPathComponent, folder: item.suggestion?.match.map { _ in final.deletingLastPathComponent() })
+                notify(entry, source: source, filed: item.suggestion?.match != nil)
             }
         } catch {
             item.phase = .failed(error.localizedDescription)
@@ -366,17 +371,37 @@ final class AppModel {
     /// Put the original name and folder back (the backup copy stays in the backup folder).
     func undo(_ item: Item) {
         do {
-            item.url = try Files.move(item.url, to: item.originalName, in: item.originalFolder)
-            // The name actually given (`… - 1` if the original is taken), or a watched folder
-            // would take the restored file, now unmarked, for a new arrival. Watcher events run on
-            // the main actor after this returns, so ignoring after the move is in time.
-            ignore(item.url)
-            Marker.clear(item.url)
+            item.url = try restore(item.url, to: item.originalName, in: item.originalFolder)
             item.phase = .cancelled
             recent.removeAll { $0.oldName == item.originalName }
         } catch {
             item.phase = .failed(error.localizedDescription)
         }
+    }
+
+    /// Undo from the history or a notification: the file may have left its batch long ago.
+    func undo(_ entry: RecentEntry) {
+        let folder = entry.oldFolder.map { URL(fileURLWithPath: $0) } ?? entry.url.deletingLastPathComponent()
+        do {
+            let restored = try restore(entry.url, to: entry.oldName, in: folder)
+            if let item = items.first(where: { $0.url == entry.url }) {
+                item.url = restored
+                item.phase = .cancelled
+            }
+            recent.removeAll { $0.id == entry.id }
+        } catch {
+            NSApp.presentError(error)
+        }
+    }
+
+    private func restore(_ url: URL, to name: String, in folder: URL) throws -> URL {
+        let restored = try Files.move(url, to: name, in: folder)
+        // The name actually given (`… - 1` if the original is taken), or a watched folder
+        // would take the restored file, now unmarked, for a new arrival. Watcher events run on
+        // the main actor after this returns, so ignoring after the move is in time.
+        ignore(restored)
+        Marker.clear(restored)
+        return restored
     }
 
     func skip(_ item: Item) { item.phase = .skipped("ignoré") }
@@ -402,6 +427,22 @@ final class AppModel {
     var selectedRuleID: Rule.ID?
     /// A file the Rules window tests as soon as it appears.
     var pendingTest: URL?
+    /// Fichier › Nouvelle règle from another page: the Rules page adds one as it appears.
+    var pendingNewRule = false
+
+    /// Fichier › Tester un fichier sur les règles: the Rules page shows the result.
+    func chooseTestFile() {
+        NSApp.activate()
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.prompt = String(localized: "Tester")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        section = .rules
+        pendingTest = url
+    }
+
+    /// "Ranger maintenant" found files to file: Tout ranger (⌘↩) can run.
+    var canTidyAll: Bool { tidyScan != nil && tidyItems.contains { $0.phase == .proposed } && !tidyItems.contains { $0.phase.isPending } }
 
     /// Changes the rules as one undoable step (⌘Z puts the whole list back, ⇧⌘Z redoes).
     func changeRules(_ action: String, undo: UndoManager?, _ change: (inout [Rule]) -> Void) {
@@ -596,12 +637,17 @@ final class AppModel {
         return already
     }
 
-    private func notify(_ source: String, _ name: String, folder: URL?) {
+    /// A file from a watched folder was renamed: say so, with Annuler and Afficher dans le Finder.
+    private func notify(_ entry: RecentEntry, source: String, filed: Bool) {
         guard hasBundle else { return }
         let content = UNMutableNotificationContent()
-        content.title = "PDF Namer · dossier \(source)"
-        content.body = folder.map { "Rangé dans \($0.lastPathComponent) : « \(name) »" } ?? "Nouveau fichier renommé : « \(name) »"
-        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+        content.title = String(localized: "PDF Namer · dossier \(source)")
+        content.body = filed
+            ? String(localized: "Rangé dans \(entry.url.deletingLastPathComponent().lastPathComponent) : « \(entry.newName) »")
+            : String(localized: "Nouveau fichier renommé : « \(entry.newName) »")
+        content.categoryIdentifier = Notifications.renamed
+        content.userInfo = [Notifications.entry: entry.id.uuidString]
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: entry.id.uuidString, content: content, trigger: nil))
     }
 
     // MARK: Housekeeping, login item

@@ -36,7 +36,8 @@ rendu et l'OCR passent en `@concurrent`.
   - les **boîtes d'arrivée** (Téléchargements, Bureau, Scans…, clé `watchedFolders`) :
     chaque fichier qui y arrive passe par les règles, d'abord celles sur le nom, puis celles
     sur le contenu ; la première qui convient le renomme et le range. Sans règle, le modèle
-    nomme les PDF et images sur place. Une notification suit. Une boîte d'arrivée peut
+    nomme les PDF et images sur place. Une notification suit : un clic montre le fichier
+    dans le Finder, « Annuler » remet son nom d'origine. Une boîte d'arrivée peut
     aussi être un **relais** (« Seulement déplacer vers… », clé `moveTo`) : ce qui y arrive
     est déplacé tel quel vers un autre dossier, par exemple les scans d'une app vers le Bureau ;
   - les **classeurs** (Achats, Ventes…, clé `datedFolders`) : tout fichier posé à leur racine,
@@ -51,6 +52,11 @@ rendu et l'OCR passent en `@concurrent`.
   d'arrivée, le classement par date sur ceux laissés en vrac à la racine des classeurs. Un
   aperçu montre où chacun irait, « Tout ranger » (⌘↩) les range. Le modèle ne renomme rien
   pendant ce passage ; les fichiers sans règle restent en place.
+- L'historique se manipule comme le Finder : Espace pour l'aperçu Quick Look, double-clic
+  pour ouvrir, glisser un fichier vers une autre app, clic droit pour partager, copier le
+  nom ou le chemin, ou annuler le renommage (plusieurs à la fois avec ⇧ ou ⌘).
+- Tous les raccourcis figurent dans les menus (Fichier, Présentation, Renommage, Règles) ;
+  pause : ⌥⌘P.
 - Chaque renommage peut être modifié ou annulé. L'option « Valider avant de renommer »
   attend votre accord pour les fichiers déposés.
 - Dans une boîte d'arrivée, un fichier renommé ou rangé par PDF Namer n'est plus jamais repris, même si son nom n'a
@@ -72,7 +78,7 @@ c'est celui du dossier de destination quand c'est un classeur. L'éditeur de rè
 et permet de le changer, pour toutes les règles qui y rangent.
 
 La page **Règles** de la fenêtre PDF Namer (⌘2) les liste, les cherche,
-les trie, les réordonne et les modifie (⌘N, ⌘D, ⌫, ⌥⌘↑/↓, Espace, ⌘Z). Le testeur (⌘T, ou
+les trie, les réordonne et les modifie (⌘N, ⌘D, ⌫, ⌥⌘↑/↓, Espace, ⌘Z). Le testeur (⌥⌘T, un fichier choisi par ⌥⌘O, ou
 un fichier déposé sur la page) montre quelle règle prend un fichier, et ce qui manque aux
 règles qui ont failli le prendre. Elles sont enregistrées dans `~/.config/pdf-namer/rules.json` :
 
