@@ -1,5 +1,6 @@
 import Foundation
 import PDFKit
+import Synchronization
 
 /// A filing rule, tried before the model: when a file's name and/or text match, it is renamed
 /// and moved as the rule says, with no model call. Rules are tried in order; the first match wins.
@@ -13,7 +14,7 @@ import PDFKit
 ///       "rename": "Facture OVH cloud",            // "" = keeps its name
 ///       "datePrefix": true                        // "2026-11-05 - …"
 ///     }
-public struct Rule: Codable, Equatable, Hashable, Sendable, Identifiable {
+public struct Rule: Codable, Equatable, Sendable, Identifiable {
     public enum Subfolder: String, Codable, CaseIterable, Sendable { case none, year, yearMonth }
 
     /// For lists and editing only; not stored.
@@ -45,11 +46,6 @@ public struct Rule: Codable, Equatable, Hashable, Sendable, Identifiable {
             && a.folder == b.folder && a.subfolder == b.subfolder && a.rename == b.rename && a.datePrefix == b.datePrefix
     }
 
-    public func hash(into h: inout Hasher) {
-        h.combine(name); h.combine(enabled); h.combine(filename); h.combine(contains)
-        h.combine(folder); h.combine(subfolder); h.combine(rename); h.combine(datePrefix)
-    }
-
     enum CodingKeys: String, CodingKey { case name, enabled, filename, contains, folder, subfolder, rename, datePrefix }
 
     public init(from decoder: Decoder) throws {
@@ -76,15 +72,33 @@ public struct Rule: Codable, Equatable, Hashable, Sendable, Identifiable {
     /// The new name or the subfolder depends on the document's date.
     public var usesDate: Bool { datePrefix || subfolder != .none }
 
-    /// Why the filename pattern can't be used, nil when it is fine (or empty).
-    public var patternError: String? {
-        guard !namePattern.isEmpty else { return nil }
-        do { _ = try NSRegularExpression(pattern: namePattern); return nil } catch { return "Expression invalide" }
+    /// Compiled filename patterns (nil: invalid), shared: every file is tried against every rule,
+    /// and the rule list checks them at each redraw.
+    private static let compiled = Mutex<[String: NSRegularExpression?]>([:])
+
+    /// The compiled filename pattern; nil when it is invalid (or empty).
+    private func nameRegex(_ pattern: String) -> NSRegularExpression? {
+        Self.compiled.withLock { cache in
+            if let re = cache[pattern] { return re }
+            let re = try? NSRegularExpression(pattern: pattern)
+            cache[pattern] = re
+            return re
+        }
     }
 
+    /// Why the filename pattern can't be used, nil when it is fine (or empty).
+    public var patternError: String? {
+        let pattern = namePattern
+        return pattern.isEmpty || nameRegex(pattern) != nil ? nil : "Expression invalide"
+    }
+
+    /// It has a condition, and a valid one: it can take files.
+    public var isUsable: Bool { hasCondition && patternError == nil }
+
     public func matchesName(_ filename: String) -> Bool {
-        guard !namePattern.isEmpty else { return true }
-        guard let re = try? NSRegularExpression(pattern: namePattern) else { return false }
+        let pattern = namePattern
+        guard !pattern.isEmpty else { return true }
+        guard let re = nameRegex(pattern) else { return false }
         let s = filename.precomposedStringWithCanonicalMapping
         return re.firstMatch(in: s, range: NSRange(location: 0, length: s.utf16.count)) != nil
     }
@@ -95,7 +109,7 @@ public struct Rule: Codable, Equatable, Hashable, Sendable, Identifiable {
     }
 
     public func matches(filename: String, text: String?) -> Bool {
-        enabled && hasCondition && patternError == nil && matchesName(filename) && missingPhrases(in: text).isEmpty
+        enabled && isUsable && matchesName(filename) && missingPhrases(in: text).isEmpty
     }
 
     /// Short label for lists: its name, else what it looks for.
@@ -136,8 +150,8 @@ public struct Rule: Codable, Equatable, Hashable, Sendable, Identifiable {
         }
         let original = url.lastPathComponent.precomposedStringWithCanonicalMapping
         let ext = original.pySplitExt.1.lowercased()
-        var stem = rename.trimmingCharacters(in: .whitespaces).isEmpty
-            ? original.pySplitExt.0 : rename.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "/", with: "-")
+        let newStem = rename.trimmingCharacters(in: .whitespaces)
+        var stem = newStem.isEmpty ? original.pySplitExt.0 : newStem.replacingOccurrences(of: "/", with: "-")
         if datePrefix {
             // A name already dated gets the date chosen here: the document's when the model read
             // one (an old prefix may be wrong, 10/01 read as January 10), else the same one.
@@ -160,10 +174,9 @@ public enum Rules {
     }
 
     public static func save(_ rules: [Rule], to url: URL = fileURL) throws {
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let enc = JSONEncoder()
         enc.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        try (enc.encode(File(rules: rules)) + Data("\n".utf8)).write(to: url, options: .atomic)
+        try UserConfig.writeJSON(enc.encode(File(rules: rules)), to: url)
     }
 
     /// The outcome of trying the rules on one file.
@@ -197,7 +210,8 @@ public enum Rules {
         var text: String?? = .none  // read once, lazily
         for (i, rule) in rules.enumerated() where rule.enabled && rule.hasCondition && rule.matchesName(filename) {
             if rule.needsText && text == nil { text = .some(await RuleText.read(url)) }
-            guard rule.matches(filename: filename, text: text ?? nil) else { continue }
+            // Enabled, with a condition and a matching name (so a valid pattern): only the phrases are left.
+            guard rule.missingPhrases(in: text ?? nil).isEmpty else { continue }
             var date = fileDate(url), source = DateSource.file
             if !rule.usesDate {
                 source = .unused
@@ -230,10 +244,7 @@ public enum Rules {
 
     /// The file's creation date (what the Ruby script used), today if unknown.
     static func fileDate(_ url: URL) -> String {
-        let v = try? url.resourceValues(forKeys: [.creationDateKey])
-        let d = v?.creationDate ?? Date()
-        let c = Calendar.current.dateComponents([.year, .month, .day], from: d)
-        return Day(c.year!, c.month!, c.day!)?.iso ?? Day.today().iso
+        Day((try? url.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date()).iso
     }
 }
 

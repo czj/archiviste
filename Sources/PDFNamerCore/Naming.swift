@@ -96,9 +96,8 @@ public enum Naming {
     }
 
     /// Only what Python's float() accepts from these digit runs: [-]digits[.digits].
-    static func isPyFloat(_ s: String) -> Bool {
-        s.range(of: #"^-?[0-9]*\.?[0-9]*$"#, options: .regularExpression) != nil && s.contains(where: \.isNumber)
-    }
+    static func isPyFloat(_ s: String) -> Bool { pyFloat.test(s) && s.contains(where: \.isNumber) }
+    static let pyFloat = Rx(#"^-?[0-9]*\.?[0-9]*$"#)
 
     /// Strip special chars and normalize whitespace for filename use.
     static func sanitize(_ s: String) -> String {
@@ -195,7 +194,7 @@ public enum Naming {
             let fmt = DateFormatter()
             fmt.locale = Locale(identifier: "fr_FR")
             fmt.dateFormat = "d MMM yyyy"
-            out.append(fmt.string(from: Calendar.current.date(from: DateComponents(year: day.y, month: day.m, day: day.d))!))
+            out.append(fmt.string(from: day.date()))
         }
         if amountTypes.contains(where: { t.lowercased().contains($0) }), let a = parseAmount(f["amount"] ?? "") {
             out.append(a)

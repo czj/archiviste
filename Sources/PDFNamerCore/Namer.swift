@@ -7,18 +7,21 @@ public struct Suggestion: Sendable {
     public let name: String
     /// The filing rule that gave this name, nil when the model did.
     public let match: Rules.Match?
-    public var chips: [String] {
-        guard let match else { return Naming.chips(fields) }
-        let f = match.folder
-        let place = match.rule.subfolder == .none ? f.lastPathComponent
-            : f.deletingLastPathComponent().lastPathComponent + "/" + f.lastPathComponent
-        return ["Règle « \(match.rule.label) »", "→ " + place]
-    }
+    /// Short labels for the UI, computed once (the cards redraw often).
+    public let chips: [String]
 
     public init(fields: [String: String], name: String, match: Rules.Match? = nil) {
         self.fields = fields
         self.name = name
         self.match = match
+        if let match {
+            let f = match.folder
+            let place = match.rule.subfolder == .none ? f.lastPathComponent
+                : f.deletingLastPathComponent().lastPathComponent + "/" + f.lastPathComponent
+            chips = ["Règle « \(match.rule.label) »", "→ " + place]
+        } else {
+            chips = Naming.chips(fields)
+        }
     }
 
     public init(_ match: Rules.Match) { self.init(fields: [:], name: match.name, match: match) }
@@ -33,6 +36,11 @@ public enum Namer {
               let raw = fields["date"]?.trimmingCharacters(in: .whitespaces),
               let day = Day(iso: raw), day <= .today() else { return nil }
         return day.iso
+    }
+
+    /// `issueDate` as the rules take it.
+    public static func dateReader(_ engine: Engine) -> Rules.DateReader {
+        { url in await issueDate(url, engine: engine) }
     }
 
     /// nil when nothing in the file is readable.

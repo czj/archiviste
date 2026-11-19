@@ -32,8 +32,3 @@ public enum Marker {
 
     public static func isMarked(_ url: URL) -> Bool { originalName(url) != nil }
 }
-
-extension Naming {
-    /// Already handled: marked by PDF Namer, or named "AAAA-MM-JJ - …" (by an earlier version or by hand).
-    public static func isNamed(_ url: URL) -> Bool { Marker.isMarked(url) || isNamed(url.lastPathComponent) }
-}

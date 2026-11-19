@@ -17,19 +17,18 @@ public struct Day: Comparable, Hashable, Sendable {
         self.init(y, m, d)
     }
 
-    public static func today(_ cal: Calendar = .current) -> Day {
-        let c = cal.dateComponents([.year, .month, .day], from: Date())
-        return Day(c.year!, c.month!, c.day!)!
-    }
+    public static func today(_ cal: Calendar = .current) -> Day { Day(Date(), cal) }
 
     public init(_ date: Date, _ cal: Calendar = .current) {
         let c = cal.dateComponents([.year, .month, .day], from: date)
         self = Day(c.year!, c.month!, c.day!)!
     }
 
+    /// Midnight of this day.
+    public func date(_ cal: Calendar = .current) -> Date { cal.date(from: DateComponents(year: y, month: m, day: d))! }
+
     public func adding(days n: Int, _ cal: Calendar = .current) -> Day {
-        let date = cal.date(from: DateComponents(year: y, month: m, day: d))!
-        return Day(cal.date(byAdding: .day, value: n, to: date)!, cal)
+        Day(cal.date(byAdding: .day, value: n, to: date(cal))!, cal)
     }
 
     static func daysIn(_ y: Int, _ m: Int) -> Int {

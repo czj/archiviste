@@ -3,12 +3,6 @@ import Foundation
 import Testing
 @testable import PDFNamerCore
 
-private func tempDir() throws -> URL {
-    let url = FileManager.default.temporaryDirectory.appendingPathComponent("pdf-namer-\(UUID())")
-    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-    return url
-}
-
 /// A one-page PDF with real (selectable) text, one line per string.
 private func writePDF(_ lines: [String], to url: URL) throws {
     let data = NSMutableData()
@@ -34,12 +28,12 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     defer { try? FileManager.default.removeItem(at: dir) }
     let scan = dir.appendingPathComponent("Scan 20261109.pdf")
     try Data("x".utf8).write(to: scan)
-    #expect(!Naming.isNamed(scan))
+    #expect(!Marker.isMarked(scan))
 
     let final = try Files.rename(scan, to: "Attestation Club de basket - Licence joueur.pdf",
                                  backupDir: dir.appendingPathComponent("backup"))
     #expect(!Naming.isNamed(final.lastPathComponent))  // the name alone says nothing
-    #expect(Naming.isNamed(final))
+    #expect(Marker.isMarked(final))
     #expect(Marker.originalName(final) == "Scan 20261109.pdf")
 
     // A later edit or a second rename keeps the very first name.
@@ -47,7 +41,7 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(Marker.originalName(edited) == "Scan 20261109.pdf")
 
     Marker.clear(edited)  // undo
-    #expect(!Naming.isNamed(edited))
+    #expect(!Marker.isMarked(edited))
 }
 
 @Test func `la sauvegarde de l’original ne porte pas la marque`() throws {

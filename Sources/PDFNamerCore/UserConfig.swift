@@ -172,13 +172,14 @@ public struct UserConfig: Codable, Equatable, Sendable {
     }
 
     static func write(_ obj: [String: Any], to url: URL) throws {
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let data = try JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
-        try (data + Data("\n".utf8)).write(to: url, options: .atomic)
+        try writeJSON(JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]), to: url)
     }
 
-    /// The whole configuration as one file (used to seed config.json).
-    public func save(to url: URL) throws { try Self.write(Self.dictionary(self), to: url) }
+    /// A JSON file as people read and version it: one atomic write, ending with a newline.
+    static func writeJSON(_ data: Data, to url: URL) throws {
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try (data + Data("\n".utf8)).write(to: url, options: .atomic)
+    }
 
     public static func expand(_ path: String) -> URL {
         URL(fileURLWithPath: (path as NSString).expandingTildeInPath)

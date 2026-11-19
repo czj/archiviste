@@ -115,8 +115,7 @@ public enum Extractor {
            let date = MDItemCopyAttribute(item, kMDItemContentCreationDate) as? Date {
             return Day(date).iso
         }
-        let created = (try? url.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date()
-        return Day(created).iso
+        return Rules.fileDate(url)
     }
 
     /// PNG bytes (the model takes images by URL, so they get written to a temporary file).

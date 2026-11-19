@@ -2,12 +2,6 @@ import Foundation
 import Testing
 @testable import PDFNamerCore
 
-private func tempDir() throws -> URL {
-    let url = FileManager.default.temporaryDirectory.appendingPathComponent("pdf-namer-\(UUID())")
-    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-    return url
-}
-
 private func write(_ json: String, _ url: URL) throws { try Data(json.utf8).write(to: url) }
 
 @Test func `config partielle : valeurs par défaut pour le reste`() throws {
