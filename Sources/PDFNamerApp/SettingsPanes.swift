@@ -1,20 +1,10 @@
 import PDFNamerCore
 import SwiftUI
 
-struct SettingsView: View {
-    var body: some View {
-        TabView {
-            GeneralTab().tabItem { Label("Général", systemImage: "gearshape") }
-            FoldersTab().tabItem { Label("Dossiers surveillés", systemImage: "folder") }
-            CleanupTab().tabItem { Label("Sauvegardes et ménage", systemImage: "archivebox") }
-        }
-        .frame(minWidth: 620, minHeight: 460)
-    }
-}
+// The main window's settings pages.
 
-private struct GeneralTab: View {
+struct GeneralPane: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.openWindow) private var openWindow
     @State private var launchAtLogin = false
 
     var body: some View {
@@ -24,17 +14,6 @@ private struct GeneralTab: View {
                 Toggle("Valider chaque nom avant de renommer (fichiers déposés)", isOn: $model.settings.confirmBeforeRename)
                 Toggle("Ouvrir au démarrage de la session", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, on in model.launchAtLogin = on }
-            }
-            Section {
-                LabeledContent("Règles de rangement") {
-                    HStack {
-                        Text("\(model.rules.count) règle(s)").foregroundStyle(.secondary)
-                        Button("Ouvrir…") { openWindow.rules() }
-                    }
-                }
-            } footer: {
-                Text("Les règles passent avant le modèle : un fichier qui en suit une est rangé et renommé sans lui. Raccourci : ⌘R depuis le menu de PDF Namer.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Format du nom") {
                 HStack(spacing: 4) {
@@ -86,7 +65,7 @@ private struct GeneralTab: View {
     }
 }
 
-private struct FoldersTab: View {
+struct FoldersPane: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -119,7 +98,7 @@ private struct FoldersTab: View {
     }
 }
 
-private struct CleanupTab: View {
+struct CleanupPane: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {

@@ -2,12 +2,12 @@ import PDFNamerCore
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Filing rules in their own window: a searchable sidebar (first match wins, drag to reorder),
+/// Filing rules, a page of the main window: a searchable list (first match wins, drag to reorder),
 /// the selected rule's editor, and a tester in the inspector that tells which rule takes a file.
 ///
 /// Keyboard: ⌘N new, ⌘D duplicate, ⌫ delete, ⌥⌘↑/↓ priority, Espace on/off, ⌘F search,
 /// ⌘T tester, ⌘O test a file, ⌘Z / ⇧⌘Z undo and redo.
-struct RulesWindow: View {
+struct RulesPane: View {
     @Environment(AppModel.self) private var model
     @Environment(\.undoManager) private var undo
     @AppStorage("rulesSort") private var sort = RuleSort.priority
@@ -17,20 +17,18 @@ struct RulesWindow: View {
     @State private var tester = Tester()
 
     var body: some View {
-        NavigationSplitView {
-            sidebar
-                .searchable(text: $query, placement: .sidebar, prompt: "Nom, dossier, expression…")
-                .searchFocused($searching)
-                .navigationSplitViewColumnWidth(min: 260, ideal: 310, max: 420)
-        } detail: {
-            detail
+        HStack(spacing: 0) {
+            sidebar.frame(width: 310)
+            Divider()
+            detail.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .inspector(isPresented: $showTester) {
             TesterPanel(tester: tester, run: run)
                 .inspectorColumnWidth(min: 260, ideal: 320, max: 460)
         }
-        .navigationTitle("Règles")
         .navigationSubtitle("\(model.rules.count) règles · la première qui correspond gagne")
+        .searchable(text: $query, placement: .toolbar, prompt: "Nom, dossier, expression…")
+        .searchFocused($searching)
         .toolbar { toolbar }
         .background { shortcuts }
         // Drop a file anywhere on the window to see which rule takes it.
@@ -44,11 +42,6 @@ struct RulesWindow: View {
             model.pendingTest = nil
             run(url)
         }
-        // A menu bar app has no Dock icon nor menu bar; while this window is open it gets both,
-        // so ⌘Tab finds it and Édition › Annuler works.
-        .onAppear { NSApp.setActivationPolicy(.regular) }
-        .onDisappear { NSApp.setActivationPolicy(.accessory) }
-        .frame(minWidth: 820, minHeight: 500)
     }
 
     // MARK: Sidebar

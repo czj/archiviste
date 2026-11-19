@@ -23,6 +23,9 @@ rendu et l'OCR passent en `@concurrent`.
 - Déposez des fichiers (ou un dossier) sur le panneau, choisissez-les, ou collez-les avec ⌘V.
 - Ajoutez des **dossiers surveillés** (Scans, Téléchargements…) : chaque nouveau PDF ou
   image qui y arrive est renommé tout seul, avec une notification.
+- « Ouvrir PDF Namer » (⌘0) ouvre la fenêtre complète : Activité (historique des
+  renommages, avec recherche), Règles, Dossiers surveillés, Sauvegardes, Général (⌘1 à ⌘5).
+  Le panneau garde l'essentiel : dépôt, derniers renommages, pause (⌘P).
 - Chaque renommage peut être modifié ou annulé. L'option « Valider avant de renommer »
   attend votre accord pour les fichiers déposés.
 - Un fichier renommé ou rangé par PDF Namer n'est plus jamais repris, même si son nom n'a
@@ -37,12 +40,13 @@ l'ordre : la première qui correspond le renomme et le range, sans appel au mod�
 règle porte sur le nom du fichier (expression régulière), sur son texte (toutes les
 expressions données, majuscules et accents ignorés : PDF, scans, images, fichiers Excel),
 ou les deux. Elle range le fichier dans un dossier, éventuellement dans un sous-dossier
-`2026` ou `2026-11`, sous un nouveau nom préfixé par la date du document (la première
-trouvée dans le texte, sinon la date de création du fichier).
+`2026` ou `2026-11`, sous un nouveau nom préfixé par la date du document (lue par le
+modèle, sinon la date de création du fichier).
 
-L'onglet **Règles** des réglages les liste, les réordonne et les modifie ; « Tester sur un
-fichier… » (ou un dépôt) montre quelle règle prend un fichier, et ce qui manque aux règles
-qui ont failli le prendre. Elles sont enregistrées dans `~/.config/pdf-namer/rules.json` :
+La page **Règles** de la fenêtre PDF Namer (⌘R depuis le panneau) les liste, les cherche,
+les trie, les réordonne et les modifie (⌘N, ⌘D, ⌫, ⌥⌘↑/↓, Espace, ⌘Z). Le testeur (⌘T, ou
+un fichier déposé sur la page) montre quelle règle prend un fichier, et ce qui manque aux
+règles qui ont failli le prendre. Elles sont enregistrées dans `~/.config/pdf-namer/rules.json` :
 
 ```json
 {

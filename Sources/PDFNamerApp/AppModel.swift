@@ -11,6 +11,8 @@ struct RecentEntry: Codable, Identifiable {
     var oldName: String
     var path: String
     var date: Date
+    /// The rule that filed it; nil when the model named it.
+    var rule: String?
     var newName: String { URL(fileURLWithPath: path).lastPathComponent }
 }
 
@@ -213,8 +215,9 @@ final class AppModel {
             item.url = final
             item.phase = .done
             recent.removeAll { $0.path == final.path || $0.oldName == item.originalName && !firstRename }
-            recent.insert(RecentEntry(oldName: item.originalName, path: final.path, date: Date()), at: 0)
-            recent = Array(recent.prefix(20))
+            recent.insert(RecentEntry(oldName: item.originalName, path: final.path, date: Date(),
+                                      rule: item.suggestion?.match?.rule.label), at: 0)
+            recent = Array(recent.prefix(500))
             if firstRename, let source = item.source {
                 notify(source, final.lastPathComponent, folder: item.suggestion?.match.map { _ in final.deletingLastPathComponent() })
             }
@@ -255,7 +258,9 @@ final class AppModel {
 
     // MARK: Rules from a file
 
-    /// The rule the Rules window shows; set from outside to open one.
+    /// The main window's page; set from outside (popover, a card) before opening it.
+    var section: AppSection = .activity
+    /// The rule the Rules page shows; set from outside to open one.
     var selectedRuleID: Rule.ID?
     /// A file the Rules window tests as soon as it appears.
     var pendingTest: URL?
@@ -292,6 +297,7 @@ final class AppModel {
         changeRules("Nouvelle règle", undo: undo) { $0.insert(rule, at: min(at, $0.count)) }
         selectedRuleID = rule.id
         pendingTest = url
+        section = .rules
     }
 
     func stop() {

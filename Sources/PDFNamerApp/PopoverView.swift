@@ -4,7 +4,6 @@ import SwiftUI
 /// The menu bar panel: drop zone and recent renames, or the current batch.
 struct PopoverView: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
     @State private var targeted = false
 
@@ -50,13 +49,10 @@ struct PopoverView: View {
             Spacer()
             GlassEffectContainer(spacing: 6) {
                 HStack(spacing: 6) {
-                    Button("Règles", systemImage: "line.3.horizontal.decrease") { openWindow.rules() }
+                    Button("Règles", systemImage: "line.3.horizontal.decrease") { openWindow.main(.rules, model: model) }
                         .keyboardShortcut("r")
                         .help("Règles de rangement (⌘R)")
-                    Button("Réglages", systemImage: "gearshape") {
-                        NSApp.activate()
-                        openSettings()
-                    }
+                    Button("Réglages", systemImage: "gearshape") { openWindow.main(.general, model: model) }
                     .keyboardShortcut(",")
                     .help("Réglages (⌘,)")
                 }
@@ -114,7 +110,9 @@ struct PopoverView: View {
 
     private var footer: some View {
         HStack {
-            Button("Afficher les sauvegardes") { model.showBackups() }
+            Button("Ouvrir PDF Namer") { openWindow.main(.activity, model: model) }
+                .keyboardShortcut("0").help("Historique, règles et réglages (⌘0)")
+            Button("Sauvegardes") { model.showBackups() }
             Spacer()
             Button("Quitter") { NSApp.terminate(nil) }.keyboardShortcut("q").help("Quitter (⌘Q)")
         }

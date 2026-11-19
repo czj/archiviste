@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct PDFNamerApp: App {
     @State private var model = AppModel()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         MenuBarExtra {
@@ -12,28 +13,18 @@ struct PDFNamerApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("Règles", id: RulesWindow.id) {
-            RulesWindow().environment(model)
+        Window("PDF Namer", id: MainWindow.id) {
+            MainWindow().environment(model)
         }
-        .defaultSize(width: 1080, height: 680)
-        // `-openRulesAtLaunch YES` on the command line opens it right away (handy to look at a build).
-        .defaultLaunchBehavior(UserDefaults.standard.bool(forKey: "openRulesAtLaunch") ? .presented : .suppressed)
+        .defaultSize(width: 1180, height: 720)
+        // `-openAtLaunch YES` on the command line opens it right away (handy to look at a build).
+        .defaultLaunchBehavior(UserDefaults.standard.bool(forKey: "openAtLaunch") ? .presented : .suppressed)
         .restorationBehavior(.disabled)
-
-        Settings {
-            SettingsView().environment(model)
+        .commands {
+            // Réglages… (⌘,) opens the main window's General page: there is no separate settings window.
+            CommandGroup(replacing: .appSettings) {
+                Button("Réglages…") { openWindow.main(.general, model: model) }.keyboardShortcut(",")
+            }
         }
-    }
-}
-
-extension RulesWindow {
-    static let id = "rules"
-}
-
-extension OpenWindowAction {
-    /// Brings the Rules window to the front (a menu bar app is not active by itself).
-    func rules() {
-        NSApp.activate()
-        callAsFunction(id: RulesWindow.id)
     }
 }
