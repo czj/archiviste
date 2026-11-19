@@ -160,6 +160,7 @@ struct ActivityPane: View {
             }
         }
         .listStyle(.inset)
+        .onPasteCommand(of: [.fileURL]) { _ in model.paste() }  // ⌘V: copied files from the Finder
         .searchable(text: $query, placement: .toolbar, prompt: "Nom, ancien nom, règle…")
         .dropDestination(for: URL.self) { urls, _ in
             model.add(urls)

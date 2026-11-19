@@ -454,7 +454,7 @@ private struct TesterPanel: View {
     }
 }
 
-/// A file as the popover's recent list shows it: badge, name, a line of detail.
+/// A file as the history shows it: badge, name, a line of detail.
 struct FileRow: View {
     let name: String
     let detail: String

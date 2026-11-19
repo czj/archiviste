@@ -371,7 +371,7 @@ final class AppModel {
 
     // MARK: Rules from a file
 
-    /// The main window's page; set from outside (popover, a card) before opening it.
+    /// The main window's page; set from outside (menu bar icon, a card) before opening it.
     var section: AppSection = .activity
     /// The rule the Rules page shows; set from outside to open one.
     var selectedRuleID: Rule.ID?

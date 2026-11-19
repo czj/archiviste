@@ -1,17 +1,26 @@
 import SwiftUI
 
+/// A menu bar app: closing its window must not quit it.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+}
+
 @main
 struct PDFNamerApp: App {
-    @State private var model = AppModel()
+    @NSApplicationDelegateAdaptor private var delegate: AppDelegate
+    @State private var model: AppModel
+    @State private var status: StatusItem
     @Environment(\.openWindow) private var openWindow
 
+    init() {
+        let model = AppModel()
+        _model = State(initialValue: model)
+        _status = State(initialValue: StatusItem(model: model))
+    }
+
     var body: some Scene {
-        MenuBarExtra {
-            PopoverView().environment(model)
-        } label: {
-            Image(systemName: model.isBusy || model.isTidying ? "arrow.triangle.2.circlepath" : "doc.text.magnifyingglass")
-        }
-        .menuBarExtraStyle(.window)
+        // The menu bar icon opens this window: one place for everything.
+        let _ = status.open = { [openWindow] in openWindow(id: MainWindow.id) }
 
         Window("PDF Namer", id: MainWindow.id) {
             MainWindow().environment(model)

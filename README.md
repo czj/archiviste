@@ -20,12 +20,14 @@ rendu et l'OCR passent en `@concurrent`.
 
 ## L'app de barre de menus
 
-- Déposez des fichiers (ou un dossier) sur le panneau, choisissez-les, ou collez-les avec ⌘V.
+- Un clic sur l'icône de la barre des menus ouvre la fenêtre PDF Namer : Activité
+  (dépôt de fichiers, historique des renommages avec recherche), Règles, Dossiers surveillés,
+  Sauvegardes, Général (⌘1 à ⌘5). Un clic droit donne un menu court : ouvrir, ranger
+  maintenant, pause, quitter. Fenêtre fermée, l'app reste dans la barre des menus.
+- Déposez des fichiers (ou un dossier) sur l'icône ou sur la page Activité, choisissez-les
+  (⌘O), ou collez-les (⌘V).
 - Ajoutez des **dossiers surveillés** (Scans, Téléchargements…) : chaque nouveau PDF ou
   image qui y arrive est renommé tout seul, avec une notification.
-- « Ouvrir PDF Namer » (⌘0) ouvre la fenêtre complète : Activité (historique des
-  renommages, avec recherche), Règles, Dossiers surveillés, Sauvegardes, Général (⌘1 à ⌘5).
-  Le panneau garde l'essentiel : dépôt, derniers renommages, pause (⌘P).
 - **Ranger maintenant** (⇧⌘R) passe les règles sur les fichiers déjà présents dans les
   dossiers surveillés : un aperçu montre où chacun irait, « Tout ranger » (⌘↩) les range.
   Le modèle ne renomme rien pendant ce passage ; les fichiers sans règle restent en place.
@@ -53,7 +55,7 @@ ou les deux. Elle range le fichier dans un dossier, éventuellement dans un sous
 `2026` ou `2026-11`, sous un nouveau nom préfixé par la date du document (lue par le
 modèle, sinon la date de création du fichier).
 
-La page **Règles** de la fenêtre PDF Namer (⌘R depuis le panneau) les liste, les cherche,
+La page **Règles** de la fenêtre PDF Namer (⌘2) les liste, les cherche,
 les trie, les réordonne et les modifie (⌘N, ⌘D, ⌫, ⌥⌘↑/↓, Espace, ⌘Z). Le testeur (⌘T, ou
 un fichier déposé sur la page) montre quelle règle prend un fichier, et ce qui manque aux
 règles qui ont failli le prendre. Elles sont enregistrées dans `~/.config/pdf-namer/rules.json` :
