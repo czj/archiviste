@@ -42,8 +42,21 @@ final class StatusItem: NSObject, NSMenuDelegate {
 
     func show(_ section: AppSection?) {
         if let section { model.section = section }
-        NSApp.activate()
-        open()
+        // After the status item's own event, so the activation is not lost in the click.
+        DispatchQueue.main.async { [self] in
+            // Cooperative activation alone is refused when another app is active; the click on
+            // our icon is the user asking for us, so take the focus.
+            NSApp.activate(ignoringOtherApps: true)
+            if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix(MainWindow.id) == true }) {
+                // Already open (behind other apps, on another desktop, minimized): bring it here.
+                window.collectionBehavior.insert(.moveToActiveSpace)
+                if window.isMiniaturized { window.deminiaturize(nil) }
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+            } else {
+                open()
+            }
+        }
     }
 
     @objc private func clicked() {
