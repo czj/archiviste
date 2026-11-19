@@ -13,6 +13,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         open()
         return false
     }
+
+    /// Set by an explicit "Quitter PDF Namer" (menu bar icon): no question then.
+    static var quitting = false
+
+    /// ⌘Q on a menu bar app usually means "close this", rarely "stop watching my folders": ask
+    /// (or do what was chosen once and for all). A quit sent by the system (logout, the Dock's
+    /// Quitter, `osascript`) arrives as an Apple event and goes through untouched.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        let event = NSAppleEventManager.shared().currentAppleEvent
+        if Self.quitting || event?.eventID == kAEQuitApplication { return .terminateNow }
+        switch Presence.onQuit {
+        case .quit: return .terminateNow
+        case .background:
+            Presence.goBackground()
+            return .terminateCancel
+        case .ask:
+            let alert = NSAlert()
+            alert.messageText = "Quitter PDF Namer ?"
+            alert.informativeText = """
+                En arrière-plan, il continue de surveiller vos dossiers, sans fenêtre. \
+                Quitté, il rattrapera au prochain lancement ce qui sera arrivé entre-temps.
+                """
+            alert.addButton(withTitle: "Laisser tourner")
+            alert.addButton(withTitle: "Quitter")
+            alert.addButton(withTitle: "Annuler").keyEquivalent = "\u{1b}"
+            alert.showsSuppressionButton = true
+            alert.suppressionButton?.title = "Ne plus demander (modifiable dans Réglages › Général)"
+            let answer = alert.runModal()
+            let remember = alert.suppressionButton?.state == .on
+            switch answer {
+            case .alertFirstButtonReturn:
+                if remember { Presence.onQuit = .background }
+                Presence.goBackground()
+                return .terminateCancel
+            case .alertSecondButtonReturn:
+                if remember { Presence.onQuit = .quit }
+                return .terminateNow
+            default:
+                return .terminateCancel
+            }
+        }
+    }
 }
 
 @main

@@ -9,6 +9,7 @@ struct GeneralPane: View {
     @State private var login = SMAppService.mainApp.status
     @AppStorage(Presence.menuBarKey) private var showInMenuBar = true
     @AppStorage(Presence.dockKey) private var dock = Presence.Dock.withWindow
+    @AppStorage(Presence.quitKey) private var onQuit = Presence.OnQuit.ask
 
     var body: some View {
         @Bindable var model = model
@@ -34,6 +35,9 @@ struct GeneralPane: View {
                 Toggle("Icône dans la barre des menus", isOn: $showInMenuBar)
                 Picker("Icône dans le Dock", selection: $dock) {
                     ForEach(Presence.Dock.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("⌘Q", selection: $onQuit) {
+                    ForEach(Presence.OnQuit.allCases) { Text($0.title).tag($0) }
                 }
             } header: {
                 Text("Démarrage et affichage")

@@ -18,8 +18,8 @@ struct RulesPane: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            sidebar.frame(width: 310)
-            Divider()
+            sidebar.frame(width: listWidth)
+            Divider().overlay { resizeHandle }
             detail.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .inspector(isPresented: $showTester) {
@@ -45,6 +45,26 @@ struct RulesPane: View {
     }
 
     // MARK: Sidebar
+
+    /// The list's width, dragged from its edge and kept across launches.
+    @AppStorage("rulesListWidth") private var listWidth = 310.0
+    @State private var dragStartWidth: Double?
+
+    private var resizeHandle: some View {
+        Color.clear
+            .frame(width: 9)
+            .contentShape(Rectangle())
+            .pointerStyle(.columnResize)
+            .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                .onChanged { drag in
+                    let start = dragStartWidth ?? listWidth
+                    dragStartWidth = start
+                    listWidth = min(max(start + drag.translation.width, 240), 720)
+                }
+                .onEnded { _ in dragStartWidth = nil })
+            .onTapGesture(count: 2) { listWidth = 310 }  // double-click: back to the default
+            .help("Glisser pour élargir la liste · double-clic : largeur par défaut")
+    }
 
     private var sidebar: some View {
         @Bindable var model = model

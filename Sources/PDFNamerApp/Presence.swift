@@ -18,8 +18,35 @@ enum Presence {
         }
     }
 
+    /// What ⌘Q does (also Quitter in the app menu): the Quitter of the menu bar icon, the Dock's
+    /// and a logout always quit.
+    static let quitKey = "onQuit"
+
+    enum OnQuit: String, CaseIterable, Identifiable {
+        case ask, background, quit
+        var id: Self { self }
+        var title: String {
+            switch self {
+            case .ask: "Demander"
+            case .background: "Laisser tourner en arrière-plan"
+            case .quit: "Quitter"
+            }
+        }
+    }
+
+    static var onQuit: OnQuit {
+        get { OnQuit(rawValue: UserDefaults.standard.string(forKey: quitKey) ?? "") ?? .ask }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: quitKey) }
+    }
+
     static func register() {
-        UserDefaults.standard.register(defaults: [menuBarKey: true, dockKey: Dock.withWindow.rawValue])
+        UserDefaults.standard.register(defaults: [menuBarKey: true, dockKey: Dock.withWindow.rawValue,
+                                                  quitKey: OnQuit.ask.rawValue])
+    }
+
+    /// Closes the window and keeps watching folders, as if ⌘Q had said "background".
+    static func goBackground() {
+        for window in NSApp.windows where window.isPDFNamerWindow { window.close() }
     }
 
     static var showInMenuBar: Bool { UserDefaults.standard.bool(forKey: menuBarKey) }

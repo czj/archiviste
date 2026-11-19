@@ -26,7 +26,8 @@ rendu et l'OCR passent en `@concurrent`.
   maintenant, pause, quitter. Fenêtre fermée, l'app reste dans la barre des menus.
 - Page Général : ouverture à l'ouverture de session (`SMAppService`), icône dans la barre
   des menus (oui/non), icône dans le Dock (toujours, quand la fenêtre est ouverte, jamais).
-  Tout s'applique tout de suite, sans relancer. Sans aucune icône, rouvrir l'app depuis le
+  Tout s'applique tout de suite, sans relancer. ⌘Q demande s'il faut quitter ou laisser
+  tourner en arrière-plan (sans fenêtre), sauf si on a choisi une fois pour toutes. Sans aucune icône, rouvrir l'app depuis le
   Finder, Spotlight ou Raycast affiche sa fenêtre.
 - Déposez des fichiers (ou un dossier) sur l'icône ou sur la page Activité, choisissez-les
   (⌘O), ou collez-les (⌘V).
