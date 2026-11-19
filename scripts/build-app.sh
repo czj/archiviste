@@ -22,6 +22,10 @@ if ! xcrun actool "$ROOT/Resources/AppIcon.icon" --compile "$APP/Contents/Resour
   echo "✗ actool : voir build/actool.log" >&2
   exit 1
 fi
+# UI strings (French source, English) → fr.lproj and en.lproj
+for catalog in Resources/Localizable.xcstrings Resources/InfoPlist.xcstrings; do
+  xcrun xcstringstool compile "$catalog" --output-directory "$APP/Contents/Resources"
+done
 codesign --force --sign - --timestamp=none "$APP"
 echo "✓ $APP"
 

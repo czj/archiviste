@@ -19,7 +19,7 @@ final class StatusItem: NSObject, NSMenuDelegate {
         button.target = self
         button.action = #selector(clicked)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        button.toolTip = "PDF Namer · clic droit : menu · déposez des fichiers ici"
+        button.toolTip = String(localized: "PDF Namer · clic droit : menu · déposez des fichiers ici")
         // Files dropped on the icon: the status item's window forwards drags to its delegate. A
         // view laid over the button would break ⌘-dragging the icon along the menu bar.
         button.window?.registerForDraggedTypes([.fileURL])
@@ -86,19 +86,20 @@ final class StatusItem: NSObject, NSMenuDelegate {
 
     private func menu() -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(entry("Ouvrir PDF Namer", "0") { [weak self] in self?.show(nil) })
-        menu.addItem(entry("Ranger maintenant", "") { [weak self] in
+        menu.addItem(entry(String(localized: "Ouvrir PDF Namer"), "0") { [weak self] in self?.show(nil) })
+        menu.addItem(entry(String(localized: "Ranger maintenant"), "") { [weak self] in
             self?.model.tidyNow()
             self?.show(.activity)
         })
-        menu.addItem(entry(model.paused ? "Reprendre" : "Mettre en pause", "") { [weak self] in self?.model.paused.toggle() })
+        let pause = model.paused ? String(localized: "Reprendre") : String(localized: "Mettre en pause")
+        menu.addItem(entry(pause, "") { [weak self] in self?.model.paused.toggle() })
         menu.addItem(.separator())
-        menu.addItem(entry("Règles…", "") { [weak self] in self?.show(.rules) })
-        menu.addItem(entry("Réglages…", ",") { [weak self] in self?.show(.general) })
+        menu.addItem(entry(String(localized: "Règles…"), "") { [weak self] in self?.show(.rules) })
+        menu.addItem(entry(String(localized: "Réglages…"), ",") { [weak self] in self?.show(.general) })
         menu.addItem(.separator())
-        menu.addItem(entry("À propos de PDF Namer", "") { About.show() })
-        menu.addItem(entry("Aide de PDF Namer", "") { NSWorkspace.shared.open(About.readme) })
-        menu.addItem(entry("Quitter PDF Namer", "q") {
+        menu.addItem(entry(String(localized: "À propos de PDF Namer"), "") { About.show() })
+        menu.addItem(entry(String(localized: "Aide de PDF Namer"), "") { NSWorkspace.shared.open(About.readme) })
+        menu.addItem(entry(String(localized: "Quitter PDF Namer"), "q") {
             AppDelegate.quitting = true
             NSApp.terminate(nil)
         })

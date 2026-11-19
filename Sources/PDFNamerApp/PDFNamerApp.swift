@@ -30,16 +30,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return .terminateCancel
         case .ask:
             let alert = NSAlert()
-            alert.messageText = "Quitter PDF Namer ?"
-            alert.informativeText = """
+            alert.messageText = String(localized: "Quitter PDF Namer ?")
+            alert.informativeText = String(localized: """
                 En arrière-plan, il continue de surveiller vos dossiers, sans fenêtre. \
                 Quitté, il rattrapera au prochain lancement ce qui sera arrivé entre-temps.
-                """
-            alert.addButton(withTitle: "Laisser tourner")
-            alert.addButton(withTitle: "Quitter")
-            alert.addButton(withTitle: "Annuler").keyEquivalent = "\u{1b}"
+                """)
+            alert.addButton(withTitle: String(localized: "Laisser tourner"))
+            alert.addButton(withTitle: String(localized: "Quitter"))
+            alert.addButton(withTitle: String(localized: "Annuler")).keyEquivalent = "\u{1b}"
             alert.showsSuppressionButton = true
-            alert.suppressionButton?.title = "Ne plus demander (modifiable dans Réglages › Général)"
+            alert.suppressionButton?.title = String(localized: "Ne plus demander (modifiable dans Réglages › Général)")
             let answer = alert.runModal()
             let remember = alert.suppressionButton?.state == .on
             switch answer {

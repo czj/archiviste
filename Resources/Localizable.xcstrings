@@ -1,0 +1,3263 @@
+{
+  "sourceLanguage" : "fr",
+  "strings" : {
+    "%@ (copie)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (copy)"
+          }
+        }
+      }
+    },
+    "%@ (variante)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (variant)"
+          }
+        }
+      }
+    },
+    "%lld déjà traités ou en place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld already handled or in place"
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld déjà traité ou en place"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld déjà traités ou en place"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld fichier(s) dans %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@files@ in %2$@"
+          },
+          "substitutions" : {
+            "files" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg file"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg files"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@files@ dans %2$@"
+          },
+          "substitutions" : {
+            "files" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg fichier"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg fichiers"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld fichier(s) à ranger" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld file ready to file"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld files ready to file"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld fichier à ranger"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld fichiers à ranger"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld passé(s) par un dossier relais" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld passed on by a relay folder"
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld passé par un dossier relais"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld passés par un dossier relais"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld règles y rangent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld rules file here"
+          }
+        }
+      }
+    },
+    "%lld règles · sur le nom, puis sur le contenu : la première qui correspond gagne" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rule · by name, then by content: the first match wins"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rules · by name, then by content: the first match wins"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld règle · sur le nom, puis sur le contenu : la première qui correspond gagne"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld règles · sur le nom, puis sur le contenu : la première qui correspond gagne"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld sans règle, laissés en place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld without a rule, left in place"
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sans règle, laissé en place"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sans règle, laissés en place"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld sauvegarde(s) supprimée(s)" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld backup deleted"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld backups deleted"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sauvegarde supprimée"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sauvegardes supprimées"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld élément(s) mis à la corbeille" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld item moved to the Trash"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld items moved to the Trash"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld élément mis à la corbeille"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld éléments mis à la corbeille"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "1 an" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 year"
+          }
+        }
+      }
+    },
+    "1 règle y range" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 rule files here"
+          }
+        }
+      }
+    },
+    "18 mois" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "18 months"
+          }
+        }
+      }
+    },
+    "2 ans" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 years"
+          }
+        }
+      }
+    },
+    "2026, 2026-11, ou à la racine (seulement le préfixe de date)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2026, 2026-11, or at the top (date prefix only)"
+          }
+        }
+      }
+    },
+    "6 mois" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 months"
+          }
+        }
+      }
+    },
+    "Actif" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active"
+          }
+        }
+      }
+    },
+    "Actif, mettre en pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active, pause"
+          }
+        }
+      }
+    },
+    "Active" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enabled"
+          }
+        }
+      }
+    },
+    "Active (Espace dans la liste pour basculer)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enabled (Space in the list to toggle)"
+          }
+        }
+      }
+    },
+    "Activer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable"
+          }
+        }
+      }
+    },
+    "Activer la règle (Espace)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Rule (Space)"
+          }
+        }
+      }
+    },
+    "Activité" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity"
+          }
+        }
+      }
+    },
+    "Afficher" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in Finder"
+          }
+        }
+      }
+    },
+    "Afficher cette règle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show this rule"
+          }
+        }
+      }
+    },
+    "Afficher dans le Finder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in Finder"
+          }
+        }
+      }
+    },
+    "Afficher le dossier dans le Finder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Folder in Finder"
+          }
+        }
+      }
+    },
+    "Afficher le fichier dans le Finder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the file in the Finder"
+          }
+        }
+      }
+    },
+    "Afficher le testeur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Tester"
+          }
+        }
+      }
+    },
+    "Afficher les sauvegardes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Backups"
+          }
+        }
+      }
+    },
+    "Aide de PDF Namer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF Namer Help"
+          }
+        }
+      }
+    },
+    "Ajouter un classeur…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a Binder…"
+          }
+        }
+      }
+    },
+    "Ajouter une boîte d’arrivée…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add an Inbox…"
+          }
+        }
+      }
+    },
+    "Ajoutez un nom ou une expression : sans condition, la règle ne s’applique jamais." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a name or a phrase: without a condition, the rule never applies."
+          }
+        }
+      }
+    },
+    "Alors" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Then"
+          }
+        }
+      }
+    },
+    "Annuler" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Annuler ces %lld renommages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo These %lld Renames"
+          }
+        }
+      }
+    },
+    "Annuler le renommage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo Rename"
+          }
+        }
+      }
+    },
+    "Aperçu (Espace)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Look (Space)"
+          }
+        }
+      }
+    },
+    "Appliquer ce nom (l’original est sauvegardé)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply this name (the original is backed up)"
+          }
+        }
+      }
+    },
+    "Arrêter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
+          }
+        }
+      }
+    },
+    "Aucun" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "Aucun classeur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No binders"
+          }
+        }
+      }
+    },
+    "Aucun fichier ne contient « %@ »." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No file contains “%@”."
+          }
+        }
+      }
+    },
+    "Aucune boîte d’arrivée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No inboxes"
+          }
+        }
+      }
+    },
+    "Aucune condition : la règle ne s’applique jamais" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No condition: the rule never applies"
+          }
+        }
+      }
+    },
+    "Aucune règle :" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rule:"
+          }
+        }
+      }
+    },
+    "Aucune règle : le fichier ne sera pas touché" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rule: the file won’t be touched"
+          }
+        }
+      }
+    },
+    "Aucune règle : le modèle le nommera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rule: the model will name it"
+          }
+        }
+      }
+    },
+    "Aucune règle choisie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Rule Selected"
+          }
+        }
+      }
+    },
+    "Aucune règle ne contient « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rule contains “%@”"
+          }
+        }
+      }
+    },
+    "Autres destinations des règles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other Rule Destinations"
+          }
+        }
+      }
+    },
+    "Boîte d’arrivée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inbox"
+          }
+        }
+      }
+    },
+    "Boîtes d’arrivée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inboxes"
+          }
+        }
+      }
+    },
+    "Ce Mac suit config.json." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac follows config.json."
+          }
+        }
+      }
+    },
+    "Ces dossiers reçoivent des fichiers par les règles, tels quels, sans sous-dossier. Un classeur les rangerait par année." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These folders receive files from your rules as is, with no subfolder. A binder would sort them by year."
+          }
+        }
+      }
+    },
+    "Cette règle range encore elle-même dans un sous-dossier de mois (ancien format). Choisissez un classement du dossier pour le remplacer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This rule still files into a month subfolder itself (old format). Choose a sorting for the folder to replace it."
+          }
+        }
+      }
+    },
+    "Cette règle range encore elle-même dans un sous-dossier d’année (ancien format). Choisissez un classement du dossier pour le remplacer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This rule still files into a year subfolder itself (old format). Choose a sorting for the folder to replace it."
+          }
+        }
+      }
+    },
+    "Changer la priorité (⌥⌘↑ / ⌥⌘↓)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the priority (⌥⌘↑ / ⌥⌘↓)"
+          }
+        }
+      }
+    },
+    "Changer le nom donné" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the name given"
+          }
+        }
+      }
+    },
+    "Changer le nom proposé avant de renommer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the proposed name before renaming"
+          }
+        }
+      }
+    },
+    "Changer…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change…"
+          }
+        }
+      }
+    },
+    "Chaque fichier qui arrive passe par les règles : d’abord celles sur le nom, puis celles sur le contenu. La première qui convient le renomme et le range. Sans règle, le modèle nomme les PDF et les images sur place (« Date - Type Émetteur - Détail »). Un relais déplace ses fichiers tels quels vers un autre dossier, par exemple les scans d’une app vers le Bureau." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each file that arrives goes through the rules: first those on the name, then those on the content. The first that fits renames and files it. With no rule, the model names PDFs and images in place (“Date - Type Issuer - Detail”). A relay moves its files as is to another folder, for example a scanning app’s scans to the Desktop."
+          }
+        }
+      }
+    },
+    "Chaque original est copié sous le nom « RENAME BACKUP <date> - … » avant d’être renommé. Les autres fichiers de ce dossier (rangés là à la main) peuvent aussi être mis à la corbeille après un temps, d’après leur date d’ajout." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each original is copied as “RENAME BACKUP <date> - …” before it is renamed. Other files in this folder (put there by hand) can also be moved to the Trash after a while, based on their date added."
+          }
+        }
+      }
+    },
+    "Chargement du modèle…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading the model…"
+          }
+        }
+      }
+    },
+    "Chargement…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading…"
+          }
+        }
+      }
+    },
+    "Choisir des fichiers (⌘O)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose files (⌘O)"
+          }
+        }
+      }
+    },
+    "Choisir des fichiers à renommer (⌘O)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose files to rename (⌘O)"
+          }
+        }
+      }
+    },
+    "Choisir des fichiers à renommer…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Files to Rename…"
+          }
+        }
+      }
+    },
+    "Choisir des fichiers…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Files…"
+          }
+        }
+      }
+    },
+    "Choisir…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose…"
+          }
+        }
+      }
+    },
+    "Classement du dossier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder sorting"
+          }
+        }
+      }
+    },
+    "Classeur › 2026" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Binder › 2026"
+          }
+        }
+      }
+    },
+    "Classeurs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Binders"
+          }
+        }
+      }
+    },
+    "Code source sur GitHub" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source code on GitHub"
+          }
+        }
+      }
+    },
+    "Configuration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configuration"
+          }
+        }
+      }
+    },
+    "Configuration illisible : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unreadable configuration: %@"
+          }
+        }
+      }
+    },
+    "Copier le chemin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Path"
+          }
+        }
+      }
+    },
+    "Copier le nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Name"
+          }
+        }
+      }
+    },
+    "Créer une règle depuis ce fichier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Rule from This File"
+          }
+        }
+      }
+    },
+    "Créer une règle pour ce type de fichier…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Rule for This Kind of File…"
+          }
+        }
+      }
+    },
+    "Créer une règle…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Rule…"
+          }
+        }
+      }
+    },
+    "Créer une variante pour ce fichier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Variant for This File"
+          }
+        }
+      }
+    },
+    "Date" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date"
+          }
+        }
+      }
+    },
+    "Date du document, lue par le modèle : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document date, read by the model: %@"
+          }
+        }
+      }
+    },
+    "Date déjà dans le nom : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date already in the name: %@"
+          }
+        }
+      }
+    },
+    "Dater les noms" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date the names"
+          }
+        }
+      }
+    },
+    "Demander" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask"
+          }
+        }
+      }
+    },
+    "Dernier lot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Batch"
+          }
+        }
+      }
+    },
+    "Descendre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move Down"
+          }
+        }
+      }
+    },
+    "Dossier de destination" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination Folder"
+          }
+        }
+      }
+    },
+    "Dossier des originaux" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Originals folder"
+          }
+        }
+      }
+    },
+    "Dossiers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folders"
+          }
+        }
+      }
+    },
+    "Dupliquer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate"
+          }
+        }
+      }
+    },
+    "Dupliquer la règle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate Rule"
+          }
+        }
+      }
+    },
+    "Dupliquer la règle (⌘D)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate the rule (⌘D)"
+          }
+        }
+      }
+    },
+    "Déjà dans la liste : %@. Un dossier est soit une boîte d’arrivée, soit un classeur." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already listed: %@. A folder is either an inbox or a binder."
+          }
+        }
+      }
+    },
+    "Déjà traité par PDF Namer (avant : « %@ ») : l’app le laisse de côté, seule la commande pdf-namer --force le reprend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already handled by PDF Namer (was “%@”): the app leaves it alone, only the pdf-namer --force command takes it again"
+          }
+        }
+      }
+    },
+    "Démarrage et affichage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Startup and Appearance"
+          }
+        }
+      }
+    },
+    "Déplacer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move"
+          }
+        }
+      }
+    },
+    "Déplacer vers %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to %@"
+          }
+        }
+      }
+    },
+    "Déposez des PDF ou des images" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop PDFs or images"
+          }
+        }
+      }
+    },
+    "Déposez un fichier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop a file"
+          }
+        }
+      }
+    },
+    "Désactiver" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disable"
+          }
+        }
+      }
+    },
+    "Désactiver la règle (Espace)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disable Rule (Space)"
+          }
+        }
+      }
+    },
+    "Désactivée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disabled"
+          }
+        }
+      }
+    },
+    "Détail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detail"
+          }
+        }
+      }
+    },
+    "D’après le contenu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By content"
+          }
+        }
+      }
+    },
+    "D’après le nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By name"
+          }
+        }
+      }
+    },
+    "Effacer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
+    "En arrière-plan, il continue de surveiller vos dossiers, sans fenêtre. Quitté, il rattrapera au prochain lancement ce qui sera arrivé entre-temps." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the background, it keeps watching your folders, with no window. If it quits, it catches up at the next launch on whatever arrived in the meantime."
+          }
+        }
+      }
+    },
+    "En cours · %lld sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Progress · %1$lld of %2$lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "En cours · %1$lld sur %2$lld"
+          }
+        }
+      }
+    },
+    "En faire un classeur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make It a Binder"
+          }
+        }
+      }
+    },
+    "En pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused"
+          }
+        }
+      }
+    },
+    "En pause, reprendre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused, resume"
+          }
+        }
+      }
+    },
+    "Enregistrement impossible : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t save: %@"
+          }
+        }
+      }
+    },
+    "Exemple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example"
+          }
+        }
+      }
+    },
+    "Exemple : 2026-03-14 - Facture Kiné Durand - Séances de rééducation genou - 180.00 EUR.pdf" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example: 2026-03-14 - Facture Kiné Durand - Séances de rééducation genou - 180.00 EUR.pdf"
+          }
+        }
+      }
+    },
+    "Expression invalide" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid expression"
+          }
+        }
+      }
+    },
+    "Faire le ménage maintenant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean Up Now"
+          }
+        }
+      }
+    },
+    "Fermer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "Fichiers posés à la main : mettre « AAAA-MM-JJ - » devant leur nom. Ceux qu’une règle range gardent le nom qu’elle leur donne." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files put here by hand: add “YYYY-MM-DD - ” before their name. Files a rule puts here keep the name it gives them."
+          }
+        }
+      }
+    },
+    "Format du nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name Format"
+          }
+        }
+      }
+    },
+    "Glisser pour élargir la liste · double-clic : largeur par défaut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to widen the list · double-click: default width"
+          }
+        }
+      }
+    },
+    "Général" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        }
+      }
+    },
+    "Historique · %lld fichier(s)" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "History · %lld file"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "History · %lld files"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Historique · %lld fichier"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Historique · %lld fichiers"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Icône dans la barre des menus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu bar icon"
+          }
+        }
+      }
+    },
+    "Icône dans le Dock" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock icon"
+          }
+        }
+      }
+    },
+    "Ignorer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        }
+      }
+    },
+    "Jamais" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        }
+      }
+    },
+    "Laisser ce fichier tel quel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave this file as is"
+          }
+        }
+      }
+    },
+    "Laisser le fichier sur place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave the file where it is"
+          }
+        }
+      }
+    },
+    "Laisser tourner" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep Running"
+          }
+        }
+      }
+    },
+    "Laisser tourner en arrière-plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep running in the background"
+          }
+        }
+      }
+    },
+    "Le classement par année ou par mois est celui du dossier : il vaut pour toutes les règles qui y rangent et pour les fichiers posés là à la main (page Dossiers). La date est celle du document, lue par le modèle ; à défaut, celle de création du fichier. L’original est sauvegardé comme pour un renommage." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorting by year or by month belongs to the folder: it applies to every rule filing there and to files put there by hand (Folders page). The date is the document’s, read by the model; failing that, the file’s creation date. The original is backed up as for a rename."
+          }
+        }
+      }
+    },
+    "Le montant n’apparaît que pour les factures, reçus, devis, avoirs, quittances et notes de frais. Les photos et captures d’écran prennent la date de prise de vue." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The amount only appears for invoices, receipts, quotes, credit notes, rent receipts and expense reports. Photos and screenshots take the date they were taken."
+          }
+        }
+      }
+    },
+    "Le nom du fichier correspond à" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file name matches"
+          }
+        }
+      }
+    },
+    "Le texte contient (toutes ces expressions, une par ligne)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text contains (all of these phrases, one per line)"
+          }
+        }
+      }
+    },
+    "Lecture de %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading %@"
+          }
+        }
+      }
+    },
+    "Lecture des fichiers… encore %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading files… %lld left"
+          }
+        }
+      }
+    },
+    "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The rules (name, then content), else the model, on each file that arrives"
+          }
+        }
+      }
+    },
+    "Majuscules et accents ignorés. PDF (scans compris), images, fichiers Excel." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Case and accents are ignored. PDFs (scans included), images, Excel files."
+          }
+        }
+      }
+    },
+    "Mettre en pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        }
+      }
+    },
+    "Mettre en pause : les fichiers déposés ou arrivés attendent, rien n’est renommé (⌥⌘P)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause: dropped or arriving files wait, nothing is renamed (⌥⌘P)"
+          }
+        }
+      }
+    },
+    "Mettre à la corbeille les autres fichiers après" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move other files to the Trash after"
+          }
+        }
+      }
+    },
+    "Modifier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        }
+      }
+    },
+    "Modèle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model"
+          }
+        }
+      }
+    },
+    "Modèle Apple indisponible (%@). Activez Apple Intelligence dans Réglages Système › Apple Intelligence et Siri." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple model unavailable (%@). Turn on Apple Intelligence in System Settings › Apple Intelligence & Siri."
+          }
+        }
+      }
+    },
+    "Modèle Apple sur l’appareil, prêt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple on-device model, ready"
+          }
+        }
+      }
+    },
+    "Modèle prêt, sur l’appareil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model ready, on device"
+          }
+        }
+      }
+    },
+    "Montant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amount"
+          }
+        }
+      }
+    },
+    "Monter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move Up"
+          }
+        }
+      }
+    },
+    "Ne plus demander (modifiable dans Réglages › Général)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don’t ask again (can be changed in Settings › General)"
+          }
+        }
+      }
+    },
+    "Ne plus surveiller ce dossier (ses fichiers ne bougent pas)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop watching this folder (its files stay where they are)"
+          }
+        }
+      }
+    },
+    "Nom de la règle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule name"
+          }
+        }
+      }
+    },
+    "Nom de règle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule Name"
+          }
+        }
+      }
+    },
+    "Nom du fichier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File name"
+          }
+        }
+      }
+    },
+    "Nom, ancien nom, règle…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name, old name, rule…"
+          }
+        }
+      }
+    },
+    "Nom, dossier, expression…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name, folder, phrase…"
+          }
+        }
+      }
+    },
+    "Non surveillé : les règles y rangent toujours par année ou par mois, mais rien de posé à la main n’est rangé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not watched: rules still file here by year or by month, but nothing put here by hand is sorted"
+          }
+        }
+      }
+    },
+    "Nouveau fichier renommé : « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New file renamed: “%@”"
+          }
+        }
+      }
+    },
+    "Nouveau nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New name"
+          }
+        }
+      }
+    },
+    "Nouvelle règle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Rule"
+          }
+        }
+      }
+    },
+    "Nouvelle règle, après celle choisie (⌘N)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New rule, after the selected one (⌘N)"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Oublier ces propositions : les fichiers restent où ils sont" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forget these proposals: the files stay where they are"
+          }
+        }
+      }
+    },
+    "Ouvrir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        }
+      }
+    },
+    "Ouvrir PDF Namer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open PDF Namer"
+          }
+        }
+      }
+    },
+    "Ouvrir le dossier de configuration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Configuration Folder"
+          }
+        }
+      }
+    },
+    "Ouvrir le dossier des originaux" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the originals folder"
+          }
+        }
+      }
+    },
+    "Ouvrir les Réglages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        }
+      }
+    },
+    "Ouvrir à l’ouverture de session" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open at login"
+          }
+        }
+      }
+    },
+    "Où déplacer les fichiers qui arrivent dans « %@ » ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where should files arriving in “%@” go?"
+          }
+        }
+      }
+    },
+    "PDF Namer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF Namer"
+          }
+        }
+      }
+    },
+    "PDF Namer · clic droit : menu · déposez des fichiers ici" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF Namer · right-click: menu · drop files here"
+          }
+        }
+      }
+    },
+    "PDF Namer · dossier %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF Namer · %@ folder"
+          }
+        }
+      }
+    },
+    "Par année" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Year"
+          }
+        }
+      }
+    },
+    "Par année (2026)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Year (2026)"
+          }
+        }
+      }
+    },
+    "Par mois" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Month"
+          }
+        }
+      }
+    },
+    "Par mois (2026-11)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Month (2026-11)"
+          }
+        }
+      }
+    },
+    "Partager…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share…"
+          }
+        }
+      }
+    },
+    "Pas de date dans le document : date du fichier, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No date in the document: file date, %@"
+          }
+        }
+      }
+    },
+    "Passer les règles sur les fichiers déjà présents dans les dossiers surveillés, avec un aperçu avant de ranger (⇧⌘R)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run the rules over the files already in the watched folders, with a preview before filing (⇧⌘R)"
+          }
+        }
+      }
+    },
+    "Posé à la main dans un classeur :" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put in a binder by hand:"
+          }
+        }
+      }
+    },
+    "Presque" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Almost"
+          }
+        }
+      }
+    },
+    "Priorité" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priority"
+          }
+        }
+      }
+    },
+    "Priorité %lld sur %lld · lit le contenu : essayée après les règles sur le nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priority %1$lld of %2$lld · reads the content: tried after the rules on the name"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Priorité %1$lld sur %2$lld · lit le contenu : essayée après les règles sur le nom"
+          }
+        }
+      }
+    },
+    "Priorité %lld sur %lld · sur le nom : essayée avant les règles sur le contenu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priority %1$lld of %2$lld · on the name: tried before the rules on the content"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Priorité %1$lld sur %2$lld · sur le nom : essayée avant les règles sur le contenu"
+          }
+        }
+      }
+    },
+    "Propre à ce Mac : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Specific to this Mac: %@"
+          }
+        }
+      }
+    },
+    "Préfixer par la date du document (AAAA-MM-JJ - …)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prefix with the document date (YYYY-MM-DD - …)"
+          }
+        }
+      }
+    },
+    "Quand" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When"
+          }
+        }
+      }
+    },
+    "Quand la fenêtre est ouverte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the window is open"
+          }
+        }
+      }
+    },
+    "Quitter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit"
+          }
+        }
+      }
+    },
+    "Quitter PDF Namer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit PDF Namer"
+          }
+        }
+      }
+    },
+    "Quitter PDF Namer ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit PDF Namer?"
+          }
+        }
+      }
+    },
+    "Rang : les règles s’appliquent dans l’ordre de priorité" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rank: rules apply in order of priority"
+          }
+        }
+      }
+    },
+    "Ranger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        }
+      }
+    },
+    "Ranger chaque fichier comme proposé ci-dessous (⌘↩). Chacun reste annulable." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File each one as proposed below (⌘↩). Each can still be undone."
+          }
+        }
+      }
+    },
+    "Ranger dans" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File in"
+          }
+        }
+      }
+    },
+    "Ranger maintenant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidy Up Now"
+          }
+        }
+      }
+    },
+    "Rangé dans %@ : « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filed in %1$@: “%2$@”"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rangé dans %1$@ : « %2$@ »"
+          }
+        }
+      }
+    },
+    "Rechercher" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find"
+          }
+        }
+      }
+    },
+    "Relais : chaque fichier qui arrive est déplacé vers %@, sans autre traitement" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relay: each file that arrives is moved to %@, with no other processing"
+          }
+        }
+      }
+    },
+    "Remettre le nom et le dossier d’origine" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore the original name and folder"
+          }
+        }
+      }
+    },
+    "Renommage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renaming"
+          }
+        }
+      }
+    },
+    "Renomme vos PDF, scans et images d’après leur contenu, entièrement sur votre Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renames your PDFs, scans and images from their content, entirely on your Mac."
+          }
+        }
+      }
+    },
+    "Renommer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename"
+          }
+        }
+      }
+    },
+    "Renommer en" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename to"
+          }
+        }
+      }
+    },
+    "Reprendre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume"
+          }
+        }
+      }
+    },
+    "Reprendre : renommer et ranger les fichiers en attente (⌥⌘P)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume: rename and file the waiting files (⌥⌘P)"
+          }
+        }
+      }
+    },
+    "Retirer %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove %@"
+          }
+        }
+      }
+    },
+    "Retirer ce classeur (ses fichiers ne bougent pas)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove this binder (its files stay where they are)"
+          }
+        }
+      }
+    },
+    "Revenir à config.json" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revert to config.json"
+          }
+        }
+      }
+    },
+    "Rien de renommé pour l’instant." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing renamed yet."
+          }
+        }
+      }
+    },
+    "Rien à ranger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to file"
+          }
+        }
+      }
+    },
+    "Règle %lld « %@ » : manque %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule %1$lld “%2$@”: missing %3$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Règle %1$lld « %2$@ » : manque %3$@"
+          }
+        }
+      }
+    },
+    "Règle %lld · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule %1$lld · %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Règle %1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "Règle sur le nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule on the name"
+          }
+        }
+      }
+    },
+    "Règles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rules"
+          }
+        }
+      }
+    },
+    "Règles, puis le modèle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rules, Then the Model"
+          }
+        }
+      }
+    },
+    "Règles…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rules…"
+          }
+        }
+      }
+    },
+    "Réglage du dossier « %@ » (page Dossiers) : vaut pour toutes les règles qui y rangent et pour les fichiers posés là à la main." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setting of the “%@” folder (Folders page): applies to every rule filing there and to files put there by hand."
+          }
+        }
+      }
+    },
+    "Réglages…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings…"
+          }
+        }
+      }
+    },
+    "Sans icône, PDF Namer travaille en arrière-plan : rouvrez-le depuis le Finder, Spotlight ou Raycast pour retrouver cette fenêtre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With no icon, PDF Namer works in the background: open it again from the Finder, Spotlight or Raycast to get this window back."
+          }
+        }
+      }
+    },
+    "Sans sous-dossier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Subfolder"
+          }
+        }
+      }
+    },
+    "Sauvegardes et ménage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backups and Cleanup"
+          }
+        }
+      }
+    },
+    "Seulement déplacer vers…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only Move To…"
+          }
+        }
+      }
+    },
+    "Signaler un problème…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report an Issue…"
+          }
+        }
+      }
+    },
+    "Sous-dossier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subfolder"
+          }
+        }
+      }
+    },
+    "Supprimer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "Supprimer la règle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Rule"
+          }
+        }
+      }
+    },
+    "Supprimer la règle (⌫, annulable par ⌘Z)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete the rule (⌫, undo with ⌘Z)"
+          }
+        }
+      }
+    },
+    "Supprimer les sauvegardes après" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete backups after"
+          }
+        }
+      }
+    },
+    "Supprimer « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete “%@”"
+          }
+        }
+      }
+    },
+    "Sur place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Place"
+          }
+        }
+      }
+    },
+    "Surveillé : chaque fichier posé à la racine est rangé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watched: each file put at the top is sorted"
+          }
+        }
+      }
+    },
+    "Surveillé : décocher pour suspendre ce dossier seulement" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watched: turn off to pause this folder only"
+          }
+        }
+      }
+    },
+    "Suspendu : rien n’y est renommé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused: nothing is renamed there"
+          }
+        }
+      }
+    },
+    "Tester" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test"
+          }
+        }
+      }
+    },
+    "Tester les règles sur un fichier (⌥⌘T) : déposez-le n’importe où dans la fenêtre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test the rules on a file (⌥⌘T): drop it anywhere in the window"
+          }
+        }
+      }
+    },
+    "Tester un fichier sur les règles…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test a File Against the Rules…"
+          }
+        }
+      }
+    },
+    "Tester un fichier…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test a File…"
+          }
+        }
+      }
+    },
+    "Toujours" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always"
+          }
+        }
+      }
+    },
+    "Tout fichier posé à la racine d’un classeur, à la main ou par une règle, part dans son sous-dossier d’année ou de mois : date du document, sinon celle du nom, sinon celle du fichier. Une règle qui range ici y dépose directement le fichier, au bon endroit. Pour les fichiers déjà en vrac, utilisez « Ranger maintenant » (⇧⌘R) : un aperçu s’affiche avant de déplacer quoi que ce soit." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Any file put at the top of a binder, by hand or by a rule, goes to its year or month subfolder: the document’s date, else the name’s, else the file’s. A rule filing here puts the file straight in the right place. For files already lying loose, use “Tidy Up Now” (⇧⌘R): a preview shows before anything moves."
+          }
+        }
+      }
+    },
+    "Tout ranger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File All"
+          }
+        }
+      }
+    },
+    "Tout ranger (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File All (%lld)"
+          }
+        }
+      }
+    },
+    "Trier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort"
+          }
+        }
+      }
+    },
+    "Trier la liste : l’ordre d’application reste celui de priorité" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort the list: rules still apply in order of priority"
+          }
+        }
+      }
+    },
+    "Trier par" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort By"
+          }
+        }
+      }
+    },
+    "Type" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type"
+          }
+        }
+      }
+    },
+    "Une règle pour les fichiers nommés comme celui-ci : où les ranger et comment les nommer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A rule for files named like this one: where to file them and how to name them"
+          }
+        }
+      }
+    },
+    "Une règle range et renomme un fichier d’après son nom ou son contenu, avant tout passage par le modèle." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A rule files and renames a file based on its name or content, before the model sees it."
+          }
+        }
+      }
+    },
+    "Valider chaque nom avant de renommer (fichiers déposés)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm each name before renaming (dropped files)"
+          }
+        }
+      }
+    },
+    "Vide : tout nom convient. (?i) au début ignore la casse." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty: any name matches. (?i) at the start ignores case."
+          }
+        }
+      }
+    },
+    "analyse…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "analyzing…"
+          }
+        }
+      }
+    },
+    "annulé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "undone"
+          }
+        }
+      }
+    },
+    "arrêté" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "stopped"
+          }
+        }
+      }
+    },
+    "aucun : c’est une boîte d’arrivée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "none: it is an inbox"
+          }
+        }
+      }
+    },
+    "aucune condition" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no condition"
+          }
+        }
+      }
+    },
+    "aucune règle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no rule"
+          }
+        }
+      }
+    },
+    "aucune règle n’y range" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no rule files here"
+          }
+        }
+      }
+    },
+    "choisissez des fichiers…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "choose files…"
+          }
+        }
+      }
+    },
+    "config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande pdf-namer lit les deux." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "config.json is the shared configuration (to keep with your dotfiles); the app never changes it. What you change here goes to config.local.json, which only applies to this Mac. The pdf-namer command reads both."
+          }
+        }
+      }
+    },
+    "contient %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "contains %@"
+          }
+        }
+      }
+    },
+    "dans la fenêtre, ou ⌥⌘O" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in the window, or ⌥⌘O"
+          }
+        }
+      }
+    },
+    "déjà bien nommé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "already well named"
+          }
+        }
+      }
+    },
+    "déjà nommé (« AAAA-MM-JJ - … »)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "already named (“YYYY-MM-DD - …”)"
+          }
+        }
+      }
+    },
+    "déjà traité" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "already handled"
+          }
+        }
+      }
+    },
+    "en attente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "waiting"
+          }
+        }
+      }
+    },
+    "en pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "paused"
+          }
+        }
+      }
+    },
+    "erreur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "error"
+          }
+        }
+      }
+    },
+    "ex. Factures OVH" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. OVH invoices"
+          }
+        }
+      }
+    },
+    "expression régulière, ex. ^Facture_EDF_" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "regular expression, e.g. ^Facture_EDF_"
+          }
+        }
+      }
+    },
+    "fichier testé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "file tested"
+          }
+        }
+      }
+    },
+    "garder le nom du fichier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "keep the file name"
+          }
+        }
+      }
+    },
+    "ignoré" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "skipped"
+          }
+        }
+      }
+    },
+    "le modèle nomme le fichier sur place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the model names the file in place"
+          }
+        }
+      }
+    },
+    "le même dossier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the same folder"
+          }
+        }
+      }
+    },
+    "lecture…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "reading…"
+          }
+        }
+      }
+    },
+    "ou" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "or"
+          }
+        }
+      }
+    },
+    "rangé dans 2026 ou 2026-11" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "filed in 2026 or 2026-11"
+          }
+        }
+      }
+    },
+    "reste sur place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "stays in place"
+          }
+        }
+      }
+    },
+    "rien de lisible" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nothing readable"
+          }
+        }
+      }
+    },
+    "rules.json illisible : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unreadable rules.json: %@"
+          }
+        }
+      }
+    },
+    "sinon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "else"
+          }
+        }
+      }
+    },
+    "sur le contenu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "on the content"
+          }
+        }
+      }
+    },
+    "undo-rename" : {
+      "comment" : "Undo a rename (not Cancel)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
+          }
+        }
+      }
+    },
+    "« %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@”"
+          }
+        }
+      }
+    },
+    "· ⌘V pour coller" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· ⌘V to paste"
+          }
+        }
+      }
+    },
+    "À autoriser dans Réglages Système › Général › Ouverture." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow it in System Settings › General › Login Items & Extensions."
+          }
+        }
+      }
+    },
+    "À propos de PDF Namer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About PDF Namer"
+          }
+        }
+      }
+    },
+    "Émetteur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Issuer"
+          }
+        }
+      }
+    },
+    "à valider" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "to review"
+          }
+        }
+      }
+    },
+    "était « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "was “%@”"
+          }
+        }
+      }
+    },
+    "⌘Q" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘Q"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

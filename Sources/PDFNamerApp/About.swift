@@ -16,7 +16,7 @@ enum About {
             .paragraphStyle: style,
         ]
         let credits = NSMutableAttributedString(
-            string: String(localized: "Renomme vos PDF, scans et images d’après leur contenu, entièrement sur votre Mac.\n\n"),
+            string: String(localized: "Renomme vos PDF, scans et images d’après leur contenu, entièrement sur votre Mac.") + "\n\n",
             attributes: small)
         var link = small
         link[.link] = repository

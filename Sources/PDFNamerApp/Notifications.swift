@@ -18,7 +18,8 @@ final class Notifications: NSObject, UNUserNotificationCenterDelegate {
         center.setNotificationCategories([UNNotificationCategory(
             identifier: Self.renamed,
             actions: [
-                UNNotificationAction(identifier: Self.undoAction, title: String(localized: "Annuler")),
+                UNNotificationAction(identifier: Self.undoAction, title: String(localized: "undo-rename", defaultValue: "Annuler",
+                                                                                     comment: "Undo a rename (not Cancel)")),
                 UNNotificationAction(identifier: Self.revealAction, title: String(localized: "Afficher dans le Finder")),
             ],
             intentIdentifiers: [])])
