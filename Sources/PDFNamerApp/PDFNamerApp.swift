@@ -2,7 +2,17 @@ import SwiftUI
 
 /// A menu bar app: closing its window must not quit it.
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    /// Opens the main window; set by the App, which holds SwiftUI's openWindow.
+    var open: @MainActor () -> Void = {}
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    /// Opening the app again (Finder, Spotlight, Raycast, the Dock) shows its window: the way
+    /// back when both the menu bar icon and the Dock icon are hidden.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        MainActor.assumeIsolated { open() }
+        return false
+    }
 }
 
 @main
@@ -13,6 +23,7 @@ struct PDFNamerApp: App {
     @Environment(\.openWindow) private var openWindow
 
     init() {
+        Presence.register()
         let model = AppModel()
         _model = State(initialValue: model)
         _status = State(initialValue: StatusItem(model: model))
@@ -21,6 +32,7 @@ struct PDFNamerApp: App {
     var body: some Scene {
         // The menu bar icon opens this window: one place for everything.
         let _ = status.open = { [openWindow] in openWindow(id: MainWindow.id) }
+        let _ = delegate.open = { [status] in status.show(nil) }
 
         Window("PDF Namer", id: MainWindow.id) {
             MainWindow().environment(model)

@@ -27,6 +27,20 @@ final class StatusItem: NSObject, NSMenuDelegate {
         drop.autoresizingMask = [.width, .height]
         button.addSubview(drop)
         track()
+        item.isVisible = Presence.showInMenuBar
+        var dock = Presence.dock
+        if dock == .always { Presence.applyDock(windowOpen: false) }
+        // The settings apply at once, whoever changes them (the General page, `defaults write`).
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                if self.item.isVisible != Presence.showInMenuBar { self.item.isVisible = Presence.showInMenuBar }
+                if dock != Presence.dock {
+                    dock = Presence.dock
+                    Presence.applyDock()
+                }
+            }
+        }
     }
 
     /// The icon follows the state: busy, paused, idle.

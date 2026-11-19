@@ -73,14 +73,14 @@ struct MainWindow: View {
             .keyboardShortcut("r", modifiers: [.command, .shift])
             .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
         }
-        // A menu bar app has no Dock icon nor menu bar; while this window is open it gets both,
-        // so ⌘Tab finds it and Édition › Annuler works.
+        // By default a menu bar app has no Dock icon nor menu bar; while this window is open it
+        // gets both, so ⌘Tab finds it and Édition › Annuler shows (Réglages › Général changes that).
         // Back to menu bar only when the window really closes: onDisappear also fires when it is
         // merely hidden or changes space, which would leave a visible window that can't be activated.
-        .onAppear { NSApp.setActivationPolicy(.regular) }
+        .onAppear { Presence.applyDock(windowOpen: true) }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { note in
             guard let window = note.object as? NSWindow, window.identifier?.rawValue.hasPrefix(MainWindow.id) == true else { return }
-            NSApp.setActivationPolicy(.accessory)
+            Presence.applyDock(windowOpen: false)
         }
         .frame(minWidth: 940, minHeight: 540)
     }

@@ -1,19 +1,50 @@
 import PDFNamerCore
+import ServiceManagement
 import SwiftUI
 
 // The main window's settings pages.
 
 struct GeneralPane: View {
     @Environment(AppModel.self) private var model
-    @State private var launchAtLogin = false
+    @State private var login = SMAppService.mainApp.status
+    @AppStorage(Presence.menuBarKey) private var showInMenuBar = true
+    @AppStorage(Presence.dockKey) private var dock = Presence.Dock.withWindow
 
     var body: some View {
         @Bindable var model = model
         Form {
             Section {
                 Toggle("Valider chaque nom avant de renommer (fichiers déposés)", isOn: $model.settings.confirmBeforeRename)
-                Toggle("Ouvrir au démarrage de la session", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { _, on in model.launchAtLogin = on }
+            }
+            Section {
+                Toggle("Ouvrir à l’ouverture de session", isOn: Binding(
+                    get: { login == .enabled || login == .requiresApproval },
+                    set: { on in
+                        model.launchAtLogin = on
+                        login = SMAppService.mainApp.status
+                    }))
+                if login == .requiresApproval {
+                    HStack {
+                        Text("À autoriser dans Réglages Système › Général › Ouverture.")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Ouvrir les Réglages") { SMAppService.openSystemSettingsLoginItems() }
+                    }
+                }
+                Toggle("Icône dans la barre des menus", isOn: $showInMenuBar)
+                Picker("Icône dans le Dock", selection: $dock) {
+                    ForEach(Presence.Dock.allCases) { Text($0.title).tag($0) }
+                }
+            } header: {
+                Text("Démarrage et affichage")
+            } footer: {
+                if !showInMenuBar && dock != .always {
+                    Text("Sans icône, PDF Namer travaille en arrière-plan : rouvrez-le depuis le Finder, Spotlight ou Raycast pour retrouver cette fenêtre.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                login = SMAppService.mainApp.status  // approved meanwhile in System Settings
             }
             Section("Format du nom") {
                 HStack(spacing: 4) {
@@ -61,7 +92,7 @@ struct GeneralPane: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear { launchAtLogin = model.launchAtLogin }
+
     }
 }
 

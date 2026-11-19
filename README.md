@@ -24,6 +24,10 @@ rendu et l'OCR passent en `@concurrent`.
   (dépôt de fichiers, historique des renommages avec recherche), Règles, Dossiers surveillés,
   Sauvegardes, Général (⌘1 à ⌘5). Un clic droit donne un menu court : ouvrir, ranger
   maintenant, pause, quitter. Fenêtre fermée, l'app reste dans la barre des menus.
+- Page Général : ouverture à l'ouverture de session (`SMAppService`), icône dans la barre
+  des menus (oui/non), icône dans le Dock (toujours, quand la fenêtre est ouverte, jamais).
+  Tout s'applique tout de suite, sans relancer. Sans aucune icône, rouvrir l'app depuis le
+  Finder, Spotlight ou Raycast affiche sa fenêtre.
 - Déposez des fichiers (ou un dossier) sur l'icône ou sur la page Activité, choisissez-les
   (⌘O), ou collez-les (⌘V).
 - Ajoutez des **dossiers surveillés** (Scans, Téléchargements…) : chaque nouveau PDF ou
