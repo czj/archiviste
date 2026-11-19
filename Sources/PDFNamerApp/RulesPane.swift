@@ -370,7 +370,7 @@ struct RuleTest {
             "Règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))"
         }
         var note: [String] = []
-        if let original = Marker.originalName(url) { note.append("Déjà traité par PDF Namer (avant : « \(original) ») : ignoré sauf dépôt forcé") }
+        if let original = Marker.originalName(url) { note.append("Déjà traité par PDF Namer (avant : « \(original) ») : l’app le laisse de côté, seule la commande pdf-namer --force le reprend") }
         return RuleTest(file: url.lastPathComponent, match: await Rules.firstMatch(rules, for: url, readDate: readDate),
                         nameable: Config.isSupported(url), nearMisses: note + misses)
     }

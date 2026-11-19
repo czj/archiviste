@@ -94,7 +94,8 @@ struct ItemCard: View {
     /// "Files like this one: rename and file them so" — opens the Rules window on a drafted rule.
     private var ruleButton: some View {
         Button("Créer une règle…") {
-            model.makeRule(from: item.url, suggestion: item.suggestion, originalName: item.originalName)
+            model.makeRule(from: item.url, suggestion: item.suggestion, originalName: item.originalName,
+                           dated: item.dating != nil)
             openWindow.main(model: model)  // makeRule already chose the Rules page
         }
         .help("Une règle pour les fichiers nommés comme celui-ci : où les ranger et comment les nommer")

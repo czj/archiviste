@@ -39,7 +39,8 @@ rendu et l'OCR passent en `@concurrent`.
   Le modèle ne renomme rien pendant ce passage ; les fichiers sans règle restent en place.
   Il range aussi par date les fichiers laissés en vrac à la racine des dossiers listés sous
   **Classement par date** (clé `datedFolders` : sous-dossier `2026` ou `2026-11`, préfixe
-  `AAAA-MM-JJ - `), en gardant la date d'un nom déjà daté. Seuls ces dossiers sont touchés ;
+  `AAAA-MM-JJ - `) : date du document, sinon celle d'un nom déjà daté, sinon celle du
+  fichier. Seuls ces dossiers sont touchés ;
   l'app suggère les destinations de règles datées qui n'y figurent pas.
 - Un dossier surveillé peut être un **relais** (« Seulement déplacer vers… », clé `moveTo`) :
   ce qui y arrive est déplacé tel quel vers un autre dossier, par exemple les scans d'une app

@@ -170,7 +170,7 @@ struct FoldersPane: View {
             } header: {
                 Text("Classement par date")
             } footer: {
-                Text("« Ranger maintenant » propose de ranger les fichiers laissés à la racine de ces dossiers, et seulement de ceux-là, dans leur sous-dossier d’année ou de mois, préfixés par leur date : celle du nom s’il en a une, sinon celle du document, sinon celle du fichier.")
+                Text("« Ranger maintenant » propose de ranger les fichiers laissés à la racine de ces dossiers, et seulement de ceux-là, dans leur sous-dossier d’année ou de mois, préfixés par leur date : celle du document, sinon celle du nom s’il en a une, sinon celle du fichier.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             let suggestions = model.settings.datedSuggestions(model.rules)

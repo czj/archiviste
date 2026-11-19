@@ -349,8 +349,11 @@ final class AppModel {
     /// Put the original name and folder back (the backup copy stays in the backup folder).
     func undo(_ item: Item) {
         do {
-            ignore(item.originalFolder.appendingPathComponent(item.originalName))
             item.url = try Files.move(item.url, to: item.originalName, in: item.originalFolder)
+            // The name actually given (`… - 1` if the original is taken), or a watched folder
+            // would take the restored file, now unmarked, for a new arrival. Watcher events run on
+            // the main actor after this returns, so ignoring after the move is in time.
+            ignore(item.url)
             Marker.clear(item.url)
             item.phase = .cancelled
             recent.removeAll { $0.oldName == item.originalName }
@@ -403,23 +406,33 @@ final class AppModel {
 
     /// A new rule drafted from a file ("files named like this go there, named so"), selected in the
     /// Rules window with the file under test, for the user to adjust.
-    func makeRule(from url: URL, suggestion: Suggestion? = nil, originalName: String? = nil, undo: UndoManager? = nil) {
+    /// `dated`: the suggestion comes from "Classement par date", not from one of the rules.
+    func makeRule(from url: URL, suggestion: Suggestion? = nil, originalName: String? = nil, dated: Bool = false,
+                  undo: UndoManager? = nil) {
         var rule = Rule.draft(from: originalName ?? Marker.originalName(url) ?? url.lastPathComponent,
                               suggestedName: suggestion?.match == nil ? suggestion?.name : nil)
-        if let match = suggestion?.match {  // filed by a rule: start from it
+        var at = rules.count
+        if let match = suggestion?.match, !dated {  // filed by one of the rules: start from it, right after it
             rule = match.rule
             rule.name = rule.label + " (variante)"
+            at = match.index + 1
+        } else if let match = suggestion?.match {
+            // Dated by "Classement par date", whose inner rule takes any name: keep only where it
+            // files (folder, subfolder, prefix), with a name pattern drafted from this file.
+            rule.folder = match.rule.folder
+            rule.subfolder = match.rule.subfolder
+            rule.datePrefix = match.rule.datePrefix
         }
         rule.id = UUID()
-        let at = suggestion?.match.map { $0.index + 1 } ?? rules.count
         changeRules("Nouvelle règle", undo: undo) { $0.insert(rule, at: min(at, $0.count)) }
         selectedRuleID = rule.id
         pendingTest = url
         section = .rules
     }
 
+    /// Stops the batch only: "Ranger maintenant" has its own way out (`tidyDismiss`).
     func stop() {
-        for item in items where item.phase == .waiting {
+        for item in items where !item.tidy && item.phase == .waiting {
             item.extraction?.cancel()
             item.phase = .skipped("arrêté")
         }
