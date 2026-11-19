@@ -2,6 +2,7 @@ import CoreServices
 import Foundation
 import ImageIO
 import PDFKit
+import Synchronization
 import UniformTypeIdentifiers
 import Vision
 
@@ -23,10 +24,36 @@ public enum ExtractionError: LocalizedError {
 public enum Extractor {
     /// PDF: native text (Vision OCR for scans) + page 1. Image: OCR + downscaled image + shot date.
     /// Rendering and OCR are CPU-heavy, so this always runs off the caller's actor.
+    /// The same file is read up to three times in a row (content rules, the issue date, the name),
+    /// and a scan's OCR takes seconds: the last few results are kept while the file is unchanged.
     @concurrent
     public static func extract(_ url: URL) async throws -> Extracted {
-        Config.isImage(url) ? try await extractImage(url) : try await extractPDF(url)
+        let key = CacheKey(url)
+        if let key, let hit = recent.withLock({ $0.first { $0.key == key }?.value }) { return hit }
+        let ex = Config.isImage(url) ? try await extractImage(url) : try await extractPDF(url)
+        if let key {
+            recent.withLock { entries in
+                entries.removeAll { $0.key == key }
+                entries.insert((key, ex), at: 0)
+                if entries.count > 4 { entries.removeLast() }
+            }
+        }
+        return ex
     }
+
+    /// A file's identity for the cache: same path, same size, same modification date.
+    /// Read from the file system each time: a URL's resource values are cached on the URL itself.
+    struct CacheKey: Hashable {
+        let path: String, size: Int, modified: Date
+        init?(_ url: URL) {
+            let path = url.standardizedFileURL.path
+            guard let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+                  let size = attrs[.size] as? Int, let modified = attrs[.modificationDate] as? Date else { return nil }
+            (self.path, self.size, self.modified) = (path, size, modified)
+        }
+    }
+
+    private static let recent = Mutex<[(key: CacheKey, value: Extracted)]>([])
 
     static func limit(_ text: String) -> String? {
         let t = text.pyStrip.pySlice(nil, Config.maxChars)
