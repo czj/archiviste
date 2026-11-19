@@ -49,9 +49,19 @@ public struct Day: Comparable, Hashable, Sendable {
 public enum Candidates {
     static let months = ["janv": 1, "fevr": 2, "mars": 3, "avri": 4, "mai": 5, "juin": 6, "juil": 7,
                          "aout": 8, "sept": 9, "octo": 10, "nove": 11, "dece": 12]
-    static let dNum = Rx(#"\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4}|\d{2})\b"#)
+    /// English months by their first three letters ("Oct", "October", "Sept.").
+    static let monthsEN = ["jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7,
+                           "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12]
+    static let dNum = Rx(#"\b(\d{1,2})([/.\-])(\d{1,2})[/.\-](\d{4}|\d{2})\b"#)
     static let dIso = Rx(#"\b((?:19|20)\d\d)-(\d\d)-(\d\d)\b"#)
-    static let dTxt = Rx(#"\b(\d{1,2})(?:er)?\s+([a-zéû]{3,9})\.?\s+((?:19|20)\d\d)\b"#, [.caseInsensitive])
+    static let dTxt = Rx(#"\b(\d{1,2})(?:er|st|nd|rd|th)?\s+([a-zéû]{3,9})\.?,?\s+((?:19|20)\d\d)\b"#, [.caseInsensitive])
+    /// "October 31, 2026", "Oct. 31 2026": month first, as English writes it.
+    static let dTxtUS = Rx(#"\b([a-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+((?:19|20)\d\d)\b"#, [.caseInsensitive])
+
+    static func month(_ word: String) -> Int? {
+        let w = word.strippingAccents.lowercased()
+        return months[w.pySlice(nil, 4)] ?? monthsEN[String(w.prefix(3))]
+    }
     static let aDec = Rx("(?<![\\d.,])(\\d{1,3}(?:[ \u{202F}\u{00A0}.]\\d{3})+|\\d+)[.,](\\d{2})(?![\\d.,%])")
     static let aKey = Rx("(total|montant|net à payer|à payer|ttc|payé|réglé|honoraires|solde|somme)",
                          [.caseInsensitive])
@@ -59,6 +69,29 @@ public enum Candidates {
                          + "(\\d{1,3}(?:[ .]\\d{3})+|\\d+)(?![\\d.,])", [.caseInsensitive])
     static let groupSeps = Rx("[ .\u{202F}\u{00A0}]")
     static let intSeps = Rx("[ .]")
+
+    /// "a/b/y" dates and how to read each one (see `dates`).
+    static func numericDates(_ text: String) -> [(a: Int, b: Int, y: String, monthFirst: Bool)] {
+        let nums = dNum.matches(text).compactMap { r -> (a: Int, slash: Bool, b: Int, y: String)? in
+            guard let a = r.group(1, in: text).flatMap({ Int($0) }), let b = r.group(3, in: text).flatMap({ Int($0) }),
+                  let y = r.group(4, in: text) else { return nil }
+            return (a, r.group(2, in: text) == "/", b, y)
+        }
+        let usDoc = nums.contains { $0.slash && $0.a <= 12 && $0.b > 12 } && !nums.contains { $0.a > 12 && $0.b <= 12 }
+        return nums.map { ($0.a, $0.b, $0.y, $0.slash && (usDoc || $0.a <= 12 && $0.b > 12)) }
+    }
+
+    /// Dates an always-day-first reading got wrong in this text: wrong ISO → right ISO.
+    /// What an older version (and the old Python renamer) put in names for US documents.
+    public static func misreadDates(_ text: String) -> [String: String] {
+        var out: [String: String] = [:]
+        for n in numericDates(text) where n.monthFirst && n.a != n.b {
+            guard var y = Int(n.y) else { continue }
+            if y < 100 { y += 2000 }
+            if let wrong = Day(y, n.b, n.a), let right = Day(y, n.a, n.b) { out[wrong.iso] = right.iso }
+        }
+        return out
+    }
 
     /// Every plausible date in the text, ISO, in order of appearance.
     public static func dates(_ text: String, today: Day = .today()) -> [String] {
@@ -69,16 +102,23 @@ public enum Candidates {
             guard let day = Day(y, m, d) else { return }
             if y >= 1990 && day <= today { found.append(day.iso) }  // an issue date is never in the future
         }
-        for r in dNum.matches(text) {
-            add(r.group(3, in: text), r.group(2, in: text).flatMap { Int($0) }, r.group(1, in: text).flatMap { Int($0) })
+        // 03/04/2026: day first (France, Europe) unless the document itself shows it writes
+        // month first, with a slash date like 10/31/2026 and none like 31/10/2026. Dots and
+        // dashes are always day first; an impossible day/month reading is read the other way.
+        for n in numericDates(text) {
+            if n.monthFirst { add(n.y, n.a, n.b) } else { add(n.y, n.b, n.a) }
         }
         for r in dIso.matches(text) {
             add(r.group(1, in: text), r.group(2, in: text).flatMap { Int($0) }, r.group(3, in: text).flatMap { Int($0) })
         }
         for r in dTxt.matches(text) {
-            let key = r.group(2, in: text)!.strippingAccents.lowercased().pySlice(nil, 4)
-            if let month = months[key] {
+            if let month = month(r.group(2, in: text)!) {
                 add(r.group(3, in: text), month, r.group(1, in: text).flatMap { Int($0) })
+            }
+        }
+        for r in dTxtUS.matches(text) {
+            if let month = month(r.group(1, in: text)!) {
+                add(r.group(3, in: text), month, r.group(2, in: text).flatMap { Int($0) })
             }
         }
         return Array(unique(found).prefix(20))

@@ -32,6 +32,24 @@ while let a = args.popFirst() {
             print("── \(f)\n\(t)\n── dates: \(Candidates.dates(t))\n── montants: \(Candidates.amounts(t))")
         }
         exit(0)
+    case "--audit-dates":  // read-only: dated names whose date is a US date read day first
+        var found = 0, seen = 0
+        for f in args {
+            let root = UserConfig.expand(f)
+            let walk = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+            while let url = walk?.nextObject() as? URL {
+                let name = url.lastPathComponent.precomposedStringWithCanonicalMapping
+                guard url.pathExtension.lowercased() == "pdf", Naming.isNamed(name),
+                      let text = RuleText.pdfText(url) else { continue }
+                seen += 1
+                if let right = Candidates.misreadDates(text)[String(name.prefix(10))] {
+                    found += 1
+                    print("✗ \(name.prefix(10)) → \(right)  \(url.path.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~"))")
+                }
+            }
+        }
+        print("\(found) nom(s) mal daté(s) sur \(seen) PDF datés lus")
+        exit(0)
     case "--rules": rulesTest = true
     case "--rename": rename = true
     case "--dry-run": dryRun = true; rename = true

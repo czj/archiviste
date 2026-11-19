@@ -138,7 +138,11 @@ public struct Rule: Codable, Equatable, Hashable, Sendable, Identifiable {
         let ext = original.pySplitExt.1.lowercased()
         var stem = rename.trimmingCharacters(in: .whitespaces).isEmpty
             ? original.pySplitExt.0 : rename.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "/", with: "-")
-        if datePrefix && !Naming.isNamed(stem + ext) { stem = "\(date) - \(stem)" }
+        if datePrefix {
+            // A name already dated gets the date chosen here: the document's when the model read
+            // one (an old prefix may be wrong, 10/01 read as January 10), else the same one.
+            stem = Naming.isNamed(stem + ext) ? date + String(stem.dropFirst(10)) : "\(date) - \(stem)"
+        }
         return (dir, stem + ext)
     }
 }
@@ -197,12 +201,12 @@ public enum Rules {
             var date = fileDate(url), source = DateSource.file
             if !rule.usesDate {
                 source = .unused
-            } else if let named = nameDate(filename) {  // "2025-03-14 - …": already dated, keep it
-                date = named
-                source = .name
-            } else if let read = await readDate?(url) {
+            } else if let read = await readDate?(url) {  // the document first: a name's date may be wrong
                 date = read
                 source = .document
+            } else if let named = nameDate(filename) {  // "2025-03-14 - …": unreadable, keep its date
+                date = named
+                source = .name
             }
             let (folder, name) = rule.destination(for: url, date: date)
             return Match(rule: rule, index: i, folder: folder, name: name, date: date, dateSource: source)
@@ -240,16 +244,20 @@ public enum RuleText {
     public static func read(_ url: URL) async -> String? {
         switch url.pathExtension.lowercased() {
         case "pdf":
-            if let doc = PDFDocument(url: url) {
-                let text = (0..<doc.pageCount).compactMap { doc.page(at: $0)?.string }.joined(separator: "\n")
-                if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return text }
-            }
-            return try? await Extractor.extract(url).text  // scan
+            if let text = pdfText(url) { return text }
+            return try? await Extractor.extract(url).text  // a scan: OCR
         case "xlsx":
             return xlsxStrings(url)
         default:
             return Config.isImage(url) ? try? await Extractor.extract(url).text : nil
         }
+    }
+
+    /// A PDF's own text layer, nil for a scan (no OCR: fast enough to sweep whole folders).
+    public static func pdfText(_ url: URL) -> String? {
+        guard let doc = PDFDocument(url: url) else { return nil }
+        let text = (0..<doc.pageCount).compactMap { doc.page(at: $0)?.string }.joined(separator: "\n")
+        return text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : text
     }
 
     /// Enough for any real sheet; a crafted zip (a watched Downloads folder takes anything)

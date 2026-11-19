@@ -118,7 +118,10 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(plain.name == "Invoice-34E86D02-0001.pdf")
 
     let dated = URL(fileURLWithPath: "/tmp/2025-01-02 - Facture.pdf")
-    #expect(Rule(filename: "x").destination(for: dated, date: "2026-11-05").name == "2025-01-02 - Facture.pdf")
+    // An existing prefix takes the date chosen (firstMatch passes the name's own when nothing better).
+    #expect(Rule(filename: "x").destination(for: dated, date: "2026-11-05").name == "2026-11-05 - Facture.pdf")
+    #expect(Rule(filename: "x").destination(for: dated, date: "2025-01-02").name == "2025-01-02 - Facture.pdf")
+    #expect(Rule(filename: "x", datePrefix: false).destination(for: dated, date: "2026-11-05").name == "2025-01-02 - Facture.pdf")
     #expect(Rule(filename: "x", rename: "A/B").destination(for: file, date: "2026-11-05").name == "2026-11-05 - A-B.pdf")
 }
 
@@ -164,17 +167,36 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(p.dateSource == .unused && p.name == "DSN_123.pdf")
 }
 
-@Test func `un nom déjà daté donne sa date, sans lire le document`() async throws {
+@Test func `nom déjà daté : la date du document d’abord, celle du nom à défaut`() async throws {
     let dir = try tempDir()
     defer { try? FileManager.default.removeItem(at: dir) }
-    let file = dir.appendingPathComponent("2025-03-14 - Facture Example.pdf")
+    // An old renamer read the US 10/01/2026 (October 1) as January 10.
+    let file = dir.appendingPathComponent("2026-01-10 - Facture Example.pdf")
     try Data("x".utf8).write(to: file)
-    // A loose file in a destination dated by year: it goes to its own year, name unchanged.
-    let dating = Rule(name: "Classement par date", filename: ".", folder: dir.path, subfolder: .year)
-    let m = try #require(await Rules.firstMatch([dating], for: file, readDate: { _ in Issue.record("lu"); return nil }))
-    #expect(m.dateSource == .name && m.date == "2025-03-14")
-    #expect(m.folder.path == dir.appendingPathComponent("2025").path && m.name == file.lastPathComponent)
+    let dating = Rule(name: "Classement par date", filename: ".", folder: dir.path, subfolder: .yearMonth)
+
+    let read = try #require(await Rules.firstMatch([dating], for: file, readDate: { _ in "2026-10-31" }))
+    #expect(read.dateSource == .document)
+    #expect(read.folder.path == dir.appendingPathComponent("2026-10").path)
+    #expect(read.name == "2026-10-31 - Facture Example.pdf")  // the wrong prefix is replaced
+
+    // Unreadable document: the name's date stands, the name is unchanged.
+    let kept = try #require(await Rules.firstMatch([dating], for: file, readDate: { _ in nil }))
+    #expect(kept.dateSource == .name && kept.date == "2026-01-10" && kept.name == file.lastPathComponent)
     #expect(Rules.nameDate("2025-13-40 - x.pdf") == nil)  // not a real date
+}
+
+@Test func `dates américaines : mois d’abord quand le document l’écrit ainsi`() {
+    let today = Day(2026, 11, 19)!
+    // solute-style English invoice: 10/31 can only be month first, so 10/01 is October 1.
+    let us = "Date\n10/31/2026\nPeriod 10/01/2026 - 10/31/2026\nDue on 11/14/2026"
+    #expect(Candidates.dates(us, today: today) == ["2026-10-31", "2026-10-01", "2026-11-14"])
+    // French: 31/10 is day first; ambiguous 01/10 follows it.
+    #expect(Candidates.dates("Facture du 01/10/2026, échéance 31/10/2026", today: today) == ["2026-10-01", "2026-10-31"])
+    // No evidence either way: day first. Dots are always day first.
+    #expect(Candidates.dates("03/04/2026 · 05.06.2026", today: today) == ["2026-04-03", "2026-06-05"])
+    // Month names in English, both orders.
+    #expect(Candidates.dates("Invoice date: October 31, 2026. Paid 1st Nov 2026", today: today) == ["2026-11-01", "2026-10-31"])
 }
 
 @Test func `dossier relais : moveTo lu, écrit seulement s’il existe`() throws {
