@@ -96,6 +96,8 @@ final class StatusItem: NSObject, NSMenuDelegate {
         menu.addItem(entry("Règles…", "") { [weak self] in self?.show(.rules) })
         menu.addItem(entry("Réglages…", ",") { [weak self] in self?.show(.general) })
         menu.addItem(.separator())
+        menu.addItem(entry("À propos de PDF Namer", "") { About.show() })
+        menu.addItem(entry("Aide de PDF Namer", "") { NSWorkspace.shared.open(About.readme) })
         menu.addItem(entry("Quitter PDF Namer", "q") {
             AppDelegate.quitting = true
             NSApp.terminate(nil)

@@ -116,13 +116,19 @@ struct ItemCard: View {
             Spacer()
             if item.phase == .proposed {
                 Button("Modifier", action: startEditing)
+                    .help("Changer le nom proposé avant de renommer")
                 Button("Ignorer") { model.skip(item) }
+                    .help("Laisser ce fichier tel quel")
                 Button(item.suggestion?.match == nil ? "Renommer" : "Ranger") { model.apply(item, name: displayName) }.buttonStyle(.borderedProminent)
                     .controlSize(.small)
+                    .help("Appliquer ce nom (l’original est sauvegardé)")
             } else {
                 Button("Modifier", action: startEditing)
+                    .help("Changer le nom donné")
                 Button("Annuler") { model.undo(item) }
+                    .help("Remettre le nom et le dossier d’origine")
                 Button("Afficher") { model.reveal(item.url) }
+                    .help("Afficher le fichier dans le Finder")
                 ruleButton
             }
         }

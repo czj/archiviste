@@ -183,10 +183,12 @@ private struct InboxRow: View {
             .help(folder.relay.map { "Relais : chaque fichier qui arrive est déplacé vers \(UserConfig.abbreviate($0.path)), sans autre traitement" }
                   ?? "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive")
             Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
+                .help(folder.enabled ? "Surveillé : décocher pour suspendre ce dossier seulement" : "Suspendu : rien n’y est renommé")
             Button {
                 model.settings.watchedFolders.removeAll { $0.path == folder.path }
             } label: { Image(systemName: "minus.circle") }
             .buttonStyle(.borderless)
+            .help("Ne plus surveiller ce dossier (ses fichiers ne bougent pas)")
             .accessibilityLabel("Retirer \(folder.name)")
         }
     }
@@ -220,10 +222,12 @@ private struct ClasseurRow: View {
                 .toggleStyle(.checkbox).fixedSize()
                 .help("Fichiers posés à la main : mettre « AAAA-MM-JJ - » devant leur nom. Ceux qu’une règle range gardent le nom qu’elle leur donne.")
             Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
+                .help(folder.enabled ? "Surveillé : chaque fichier posé à la racine est rangé" : "Non surveillé : les règles y rangent toujours par année ou par mois, mais rien de posé à la main n’est rangé")
             Button {
                 model.settings.datedFolders.removeAll { $0.path == folder.path }
             } label: { Image(systemName: "minus.circle") }
             .buttonStyle(.borderless)
+            .help("Retirer ce classeur (ses fichiers ne bougent pas)")
             .accessibilityLabel("Retirer \(folder.name)")
         }
     }

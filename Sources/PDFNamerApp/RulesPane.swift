@@ -5,8 +5,8 @@ import UniformTypeIdentifiers
 /// Filing rules, a page of the main window: a searchable list (first match wins, drag to reorder),
 /// the selected rule's editor, and a tester in the inspector that tells which rule takes a file.
 ///
-/// Keyboard: ⌘N new, ⌘D duplicate, ⌫ delete, ⌥⌘↑/↓ priority, Espace on/off, ⌘F search,
-/// ⌘T tester, ⌘O test a file, ⌘Z / ⇧⌘Z undo and redo.
+/// Keyboard: the menus (AppCommands) for ⌘N, ⌘D, ⌥⌘↑/↓, ⌘F, ⌥⌘T, ⌥⌘O; here ⌫ delete,
+/// Espace on/off, ⌘Z / ⇧⌘Z undo and redo.
 struct RulesPane: View {
     @Environment(AppModel.self) private var model
     @Environment(\.undoManager) private var undo
@@ -30,7 +30,13 @@ struct RulesPane: View {
         .searchable(text: $query, placement: .toolbar, prompt: "Nom, dossier, expression…")
         .searchFocused($searching)
         .toolbar { toolbar }
-        .background { shortcuts }
+        .focusedSceneValue(\.rules, commands)
+        .focusedSceneValue(\.search, $searching)
+        .task(id: model.pendingNewRule) {
+            guard model.pendingNewRule else { return }
+            model.pendingNewRule = false
+            add()
+        }
         // Drop a file anywhere on the window to see which rule takes it.
         .dropDestination(for: URL.self) { urls, _ in
             guard let url = urls.first else { return false }
@@ -186,7 +192,7 @@ struct RulesPane: View {
                 Text("Une règle range et renomme un fichier d’après son nom ou son contenu, avant tout passage par le modèle.")
             } actions: {
                 Button("Nouvelle règle", action: add).buttonStyle(.glassProminent)
-                Button("Tester un fichier…", action: chooseTestFile).buttonStyle(.glass)
+                Button("Tester un fichier…") { model.chooseTestFile() }.buttonStyle(.glass)
             }
         }
     }
@@ -196,10 +202,8 @@ struct RulesPane: View {
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             Button("Nouvelle règle", systemImage: "plus", action: add)
-                .keyboardShortcut("n")
                 .help("Nouvelle règle, après celle choisie (⌘N)")
             Button("Dupliquer", systemImage: "plus.square.on.square") { selection.map(duplicate) }
-                .keyboardShortcut("d")
                 .disabled(selection == nil)
                 .help("Dupliquer la règle (⌘D)")
             Button("Supprimer", systemImage: "trash") { selection.map(delete) }
@@ -223,20 +227,23 @@ struct RulesPane: View {
             Toggle(isOn: $showTester) {
                 Label("Tester", systemImage: "testtube.2")
             }
-            .keyboardShortcut("t")
-            .help("Tester les règles sur un fichier (⌘T) : déposez-le n’importe où dans la fenêtre")
+            .help("Tester les règles sur un fichier (⌥⌘T) : déposez-le n’importe où dans la fenêtre")
         }
     }
 
-    /// Shortcuts without a visible button.
-    private var shortcuts: some View {
-        Group {
-            Button("Monter") { selection.map { move($0, by: -1) } }.keyboardShortcut(.upArrow, modifiers: [.command, .option])
-            Button("Descendre") { selection.map { move($0, by: 1) } }.keyboardShortcut(.downArrow, modifiers: [.command, .option])
-            Button("Rechercher") { searching = true }.keyboardShortcut("f")
-            Button("Tester un fichier") { chooseTestFile() }.keyboardShortcut("o")
-        }
-        .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
+    /// The Règles menu acts on the selection through this.
+    private var commands: RulesCommands {
+        let i = selectedIndex
+        return RulesCommands(
+            hasSelection: i != nil,
+            selectionEnabled: i.map { model.rules[$0].enabled } ?? true,
+            canMoveUp: i.map { $0 > 0 } ?? false,
+            canMoveDown: i.map { $0 < model.rules.count - 1 } ?? false,
+            showTester: $showTester,
+            duplicate: { selection.map(duplicate) },
+            toggle: { selection.map(toggle) },
+            move: { step in selection.map { move($0, by: step) } },
+            delete: { selection.map(delete) })
     }
 
     // MARK: Actions
@@ -280,14 +287,6 @@ struct RulesPane: View {
     private func move(_ id: Rule.ID, by step: Int) {
         guard let i = model.rules.firstIndex(where: { $0.id == id }), model.rules.indices.contains(i + step) else { return }
         model.changeRules(step < 0 ? "Monter" : "Descendre", undo: undo) { $0.swapAt(i, i + step) }
-    }
-
-    private func chooseTestFile() {
-        NSApp.activate()
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.prompt = "Tester"
-        if panel.runModal() == .OK, let url = panel.url { run(url) }
     }
 
     private func run(_ url: URL) {
@@ -422,7 +421,7 @@ private struct TesterPanel: View {
             } else {
                 Image(systemName: "arrow.down.doc").font(.system(size: 26, weight: .light)).foregroundStyle(.tint)
                 Text("Déposez un fichier").font(.callout.weight(.semibold))
-                Text("dans la fenêtre, ou ⌘O").font(.caption).foregroundStyle(.secondary)
+                Text("dans la fenêtre, ou ⌥⌘O").font(.caption).foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, minHeight: 110)

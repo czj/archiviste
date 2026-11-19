@@ -83,11 +83,6 @@ struct PDFNamerApp: App {
         // `-openAtLaunch YES` on the command line opens it right away (handy to look at a build).
         .defaultLaunchBehavior(UserDefaults.standard.bool(forKey: "openAtLaunch") ? .presented : .suppressed)
         .restorationBehavior(.disabled)
-        .commands {
-            // Réglages… (⌘,) opens the main window's General page: there is no separate settings window.
-            CommandGroup(replacing: .appSettings) {
-                Button("Réglages…") { openWindow.main(.general, model: model) }.keyboardShortcut(",")
-            }
-        }
+        .commands { AppCommands(model: model) }
     }
 }
