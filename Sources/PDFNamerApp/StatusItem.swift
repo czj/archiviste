@@ -20,12 +20,10 @@ final class StatusItem: NSObject, NSMenuDelegate {
         button.action = #selector(clicked)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.toolTip = "PDF Namer · clic droit : menu · déposez des fichiers ici"
-        let drop = DropTarget(frame: button.bounds) { [weak self] urls in
-            self?.model.add(urls)
-            self?.show(.activity)
-        }
-        drop.autoresizingMask = [.width, .height]
-        button.addSubview(drop)
+        // Files dropped on the icon: the status item's window forwards drags to its delegate. A
+        // view laid over the button would break ⌘-dragging the icon along the menu bar.
+        button.window?.registerForDraggedTypes([.fileURL])
+        button.window?.delegate = self
         track()
         item.isVisible = Presence.showInMenuBar
         var dock = Presence.dock
@@ -120,32 +118,21 @@ final class StatusItem: NSObject, NSMenuDelegate {
     @objc private func runItem(_ sender: NSMenuItem) { (sender.representedObject as? Action)?.run() }
 }
 
-/// Lets files be dropped on the menu bar icon, as on the old panel. Clicks pass through.
-private final class DropTarget: NSView {
-    private let onDrop: ([URL]) -> Void
-
-    init(frame: NSRect, onDrop: @escaping ([URL]) -> Void) {
-        self.onDrop = onDrop
-        super.init(frame: frame)
-        registerForDraggedTypes([.fileURL])
-    }
-
-    nonisolated required init?(coder: NSCoder) { fatalError("not used") }
-
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }  // clicks go to the button
-
-    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        superview.map { ($0 as? NSButton)?.highlight(true) }
+/// Files dropped on the menu bar icon are renamed.
+extension StatusItem: NSWindowDelegate, NSDraggingDestination {
+    func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        item.button?.highlight(true)
         return .copy
     }
 
-    override func draggingExited(_ sender: NSDraggingInfo?) { (superview as? NSButton)?.highlight(false) }
+    func draggingExited(_ sender: NSDraggingInfo?) { item.button?.highlight(false) }
 
-    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        (superview as? NSButton)?.highlight(false)
+    func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        item.button?.highlight(false)
         let urls = sender.draggingPasteboard.fileURLs
         guard !urls.isEmpty else { return false }
-        onDrop(urls)
+        model.add(urls)
+        show(.activity)
         return true
     }
 }
