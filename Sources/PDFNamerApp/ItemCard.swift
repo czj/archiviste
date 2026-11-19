@@ -4,7 +4,7 @@ import SwiftUI
 /// One file in the batch: progress, then the new name with Modifier / Annuler.
 struct ItemCard: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
     let item: Item
     @State private var editing = false
     @State private var draft = ""
@@ -91,12 +91,11 @@ struct ItemCard: View {
         }
     }
 
-    /// "Files like this one: rename and file them so" — opens the Rules tab on a drafted rule.
+    /// "Files like this one: rename and file them so" — opens the Rules window on a drafted rule.
     private var ruleButton: some View {
         Button("Créer une règle…") {
             model.makeRule(from: item.url, suggestion: item.suggestion, originalName: item.originalName)
-            NSApp.activate()
-            openSettings()
+            openWindow.rules()
         }
         .help("Une règle pour les fichiers nommés comme celui-ci : où les ranger et comment les nommer")
     }

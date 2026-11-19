@@ -1,25 +1,20 @@
 import PDFNamerCore
 import SwiftUI
 
-enum SettingsTab: Hashable { case general, rules, folders, cleanup }
-
 struct SettingsView: View {
-    @Environment(AppModel.self) private var model
-
     var body: some View {
-        @Bindable var model = model
-        TabView(selection: $model.settingsTab) {
-            GeneralTab().tabItem { Label("Général", systemImage: "gearshape") }.tag(SettingsTab.general)
-            RulesTab().tabItem { Label("Règles", systemImage: "line.3.horizontal.decrease.circle") }.tag(SettingsTab.rules)
-            FoldersTab().tabItem { Label("Dossiers surveillés", systemImage: "folder") }.tag(SettingsTab.folders)
-            CleanupTab().tabItem { Label("Sauvegardes et ménage", systemImage: "archivebox") }.tag(SettingsTab.cleanup)
+        TabView {
+            GeneralTab().tabItem { Label("Général", systemImage: "gearshape") }
+            FoldersTab().tabItem { Label("Dossiers surveillés", systemImage: "folder") }
+            CleanupTab().tabItem { Label("Sauvegardes et ménage", systemImage: "archivebox") }
         }
-        .frame(minWidth: 760, minHeight: 560)
+        .frame(minWidth: 620, minHeight: 460)
     }
 }
 
 private struct GeneralTab: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.openWindow) private var openWindow
     @State private var launchAtLogin = false
 
     var body: some View {
@@ -29,6 +24,17 @@ private struct GeneralTab: View {
                 Toggle("Valider chaque nom avant de renommer (fichiers déposés)", isOn: $model.settings.confirmBeforeRename)
                 Toggle("Ouvrir au démarrage de la session", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, on in model.launchAtLogin = on }
+            }
+            Section {
+                LabeledContent("Règles de rangement") {
+                    HStack {
+                        Text("\(model.rules.count) règle(s)").foregroundStyle(.secondary)
+                        Button("Ouvrir…") { openWindow.rules() }
+                    }
+                }
+            } footer: {
+                Text("Les règles passent avant le modèle : un fichier qui en suit une est rangé et renommé sans lui. Raccourci : ⌘R depuis le menu de PDF Namer.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Format du nom") {
                 HStack(spacing: 4) {

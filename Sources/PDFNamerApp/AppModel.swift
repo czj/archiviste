@@ -255,15 +255,32 @@ final class AppModel {
 
     // MARK: Rules from a file
 
-    var settingsTab: SettingsTab = .general
-    /// The rule the Rules tab shows; set from outside to open one.
+    /// The rule the Rules window shows; set from outside to open one.
     var selectedRuleID: Rule.ID?
-    /// A file the Rules tab tests as soon as it appears.
+    /// A file the Rules window tests as soon as it appears.
     var pendingTest: URL?
 
+    /// Changes the rules as one undoable step (⌘Z puts the whole list back, ⇧⌘Z redoes).
+    func changeRules(_ action: String, undo: UndoManager?, _ change: (inout [Rule]) -> Void) {
+        let before = rules
+        change(&rules)
+        if before != rules || before.map(\.id) != rules.map(\.id) { registerRestore(before, action, undo) }
+    }
+
+    private func registerRestore(_ old: [Rule], _ action: String, _ undo: UndoManager?) {
+        guard let undo else { return }
+        undo.registerUndo(withTarget: self) { model in
+            let now = model.rules
+            model.rules = old
+            if let id = model.selectedRuleID, !old.contains(where: { $0.id == id }) { model.selectedRuleID = nil }
+            model.registerRestore(now, action, undo)
+        }
+        undo.setActionName(action)
+    }
+
     /// A new rule drafted from a file ("files named like this go there, named so"), selected in the
-    /// Rules tab with the file under test, for the user to adjust.
-    func makeRule(from url: URL, suggestion: Suggestion? = nil, originalName: String? = nil) {
+    /// Rules window with the file under test, for the user to adjust.
+    func makeRule(from url: URL, suggestion: Suggestion? = nil, originalName: String? = nil, undo: UndoManager? = nil) {
         var rule = Rule.draft(from: originalName ?? Marker.originalName(url) ?? url.lastPathComponent,
                               suggestedName: suggestion?.match == nil ? suggestion?.name : nil)
         if let match = suggestion?.match {  // filed by a rule: start from it
@@ -272,10 +289,9 @@ final class AppModel {
         }
         rule.id = UUID()
         let at = suggestion?.match.map { $0.index + 1 } ?? rules.count
-        rules.insert(rule, at: min(at, rules.count))
+        changeRules("Nouvelle règle", undo: undo) { $0.insert(rule, at: min(at, $0.count)) }
         selectedRuleID = rule.id
         pendingTest = url
-        settingsTab = .rules
     }
 
     func stop() {

@@ -5,6 +5,7 @@ import SwiftUI
 struct PopoverView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
     @State private var targeted = false
 
     var body: some View {
@@ -47,15 +48,22 @@ struct PopoverView: View {
                 }
             }
             Spacer()
-            Button {
-                NSApp.activate()
-                openSettings()
-            } label: {
-                Image(systemName: "gearshape")
+            GlassEffectContainer(spacing: 6) {
+                HStack(spacing: 6) {
+                    Button("Règles", systemImage: "line.3.horizontal.decrease") { openWindow.rules() }
+                        .keyboardShortcut("r")
+                        .help("Règles de rangement (⌘R)")
+                    Button("Réglages", systemImage: "gearshape") {
+                        NSApp.activate()
+                        openSettings()
+                    }
+                    .keyboardShortcut(",")
+                    .help("Réglages (⌘,)")
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
             }
-            .buttonStyle(.borderless)
-            .help("Réglages")
-            .accessibilityLabel("Réglages")
         }
     }
 
@@ -108,7 +116,7 @@ struct PopoverView: View {
         HStack {
             Button("Afficher les sauvegardes") { model.showBackups() }
             Spacer()
-            Button("Quitter") { NSApp.terminate(nil) }
+            Button("Quitter") { NSApp.terminate(nil) }.keyboardShortcut("q").help("Quitter (⌘Q)")
         }
         .buttonStyle(.link)
         .font(.callout)
@@ -161,17 +169,20 @@ struct PauseButton: View {
 
     var body: some View {
         let paused = model.paused
-        Button { model.paused.toggle() } label: {
+        let color = paused ? Color.orange : Color.green
+        Button { withAnimation(.snappy) { model.paused.toggle() } } label: {
             Label(paused ? "En pause" : "Actif", systemImage: paused ? "play.fill" : "pause.fill")
+                .contentTransition(.symbolEffect(.replace))
                 .font(.caption.weight(.medium))
-                .padding(.horizontal, 8).padding(.vertical, 3)
-                .foregroundStyle(paused ? Color.orange : Color.green)
-                .background((paused ? Color.orange : Color.green).opacity(0.15), in: Capsule())
+                .padding(.horizontal, 9).padding(.vertical, 4)
+                .foregroundStyle(color)
+                .glassEffect(.regular.tint(color.opacity(0.25)).interactive(), in: Capsule())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .help(paused ? "Reprendre : renommer et ranger les fichiers en attente"
-                     : "Mettre en pause : les fichiers déposés ou arrivés attendent, rien n’est renommé")
+        .keyboardShortcut("p")
+        .help(paused ? "Reprendre : renommer et ranger les fichiers en attente (⌘P)"
+                     : "Mettre en pause : les fichiers déposés ou arrivés attendent, rien n’est renommé (⌘P)")
         .accessibilityLabel(paused ? "En pause, reprendre" : "Actif, mettre en pause")
     }
 }
@@ -187,6 +198,7 @@ struct DropZone: View {
             HStack(spacing: 4) {
                 Text("ou")
                 Button("choisissez des fichiers…") { model.chooseFiles() }.buttonStyle(.link)
+                    .keyboardShortcut("o").help("Choisir des fichiers (⌘O)")
                 Text("· ⌘V pour coller")
             }
             .font(.caption).foregroundStyle(.secondary)
