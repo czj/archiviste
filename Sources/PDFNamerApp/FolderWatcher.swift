@@ -58,8 +58,9 @@ final class FolderWatcher {
     }
 
     private func scan() {
-        known = known.filter { FileManager.default.fileExists(atPath: $0) }  // forget files that left
-        for file in Self.files(in: url) where !known.contains(file.path) && pending[file.path] == nil && accepts(file) {
+        let present = Self.files(in: url)
+        known.formIntersection(present.map(\.path))  // forget files that left (one listing, no stat per file)
+        for file in present where !known.contains(file.path) && pending[file.path] == nil && accepts(file) {
             pending[file.path] = -1
         }
         guard !pending.isEmpty, settling == nil else { return }

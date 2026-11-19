@@ -25,12 +25,10 @@ enum Presence {
     static var showInMenuBar: Bool { UserDefaults.standard.bool(forKey: menuBarKey) }
     static var dock: Dock { Dock(rawValue: UserDefaults.standard.string(forKey: dockKey) ?? "") ?? .withWindow }
 
-    @MainActor static var windowIsOpen: Bool {
-        NSApp.windows.contains { $0.identifier?.rawValue.hasPrefix(MainWindow.id) == true && $0.isVisible }
-    }
+    static var windowIsOpen: Bool { NSApp.windows.contains { $0.isPDFNamerWindow && $0.isVisible } }
 
     /// Dock icon (and with it the app menu and ⌘Tab) according to the setting.
-    @MainActor static func applyDock(windowOpen: Bool? = nil) {
+    static func applyDock(windowOpen: Bool? = nil) {
         let open = windowOpen ?? windowIsOpen
         let regular = switch dock {
         case .always: true

@@ -22,7 +22,12 @@ final class Item: Identifiable {
     enum Phase: Equatable {
         case waiting, reading, analyzing, proposed, done, unchanged, cancelled
         case skipped(String), failed(String)
-        var isPending: Bool { [.waiting, .reading, .analyzing].contains(self) }
+        var isPending: Bool {
+            switch self {
+            case .waiting, .reading, .analyzing: true
+            default: false
+            }
+        }
     }
 
     let id = UUID()
@@ -58,12 +63,13 @@ final class AppModel {
     var engineState: EngineState = .loading
     var items: [Item] = []
     var recent: [RecentEntry] = [] { didSet { save(recent, "recent") } }
-    /// ~/.config/pdf-namer/config.json, written back on every change from the settings window.
+    /// ~/.config/pdf-namer/config.json and config.local.json; changes from the settings window
+    /// are written back to config.local.json.
     var settings = UserConfig() {
         didSet {
-            guard settings != oldValue, loaded else { return }  // loading the file must not rewrite it
-            saveConfig()
+            guard settings != oldValue else { return }
             if oldValue.watchedFolders != settings.watchedFolders { syncWatchers() }
+            if loaded { saveConfig() }  // loading the file must not rewrite it
         }
     }
     /// Filing rules (rules.json), tried before the model; the Rules tab edits them.
@@ -92,7 +98,6 @@ final class AppModel {
     /// Dropped files and arrivals; "Ranger maintenant" keeps its own list (`tidyItems`).
     var batch: [Item] { items.filter { !$0.tidy } }
     var isBusy: Bool { batch.contains { $0.phase.isPending } }
-    var finishedCount: Int { batch.filter { !$0.phase.isPending }.count }
     var backupDir: URL { settings.backupURL }
     var hasBundle: Bool { Bundle.main.bundleIdentifier != nil }
 
@@ -260,6 +265,7 @@ final class AppModel {
 
     private func process(_ item: Item) async {
         let t0 = Date()
+        defer { item.extraction = nil }  // its page image is no longer needed: don't keep it with the card
         do {
             item.phase = .reading
             // 1. Filing rules, before any model call.
@@ -327,10 +333,11 @@ final class AppModel {
             ignore(final)
             item.url = final
             item.phase = .done
-            recent.removeAll { $0.path == final.path || $0.oldName == item.originalName && !firstRename }
-            recent.insert(RecentEntry(oldName: item.originalName, path: final.path, date: Date(),
-                                      rule: item.suggestion?.match?.rule.label), at: 0)
-            recent = Array(recent.prefix(500))
+            var history = recent  // one change, so one write to UserDefaults
+            history.removeAll { $0.path == final.path || $0.oldName == item.originalName && !firstRename }
+            history.insert(RecentEntry(oldName: item.originalName, path: final.path, date: Date(),
+                                       rule: item.suggestion?.match?.rule.label), at: 0)
+            recent = Array(history.prefix(500))
             if firstRename, !item.tidy, let source = item.source {
                 notify(source, final.lastPathComponent, folder: item.suggestion?.match.map { _ in final.deletingLastPathComponent() })
             }
@@ -355,9 +362,7 @@ final class AppModel {
     func skip(_ item: Item) { item.phase = .skipped("ignoré") }
 
     /// Rules that date a file ask the model for the issue date (the file's date without it).
-    var readDate: Rules.DateReader? {
-        engine.map { engine in { @Sendable url in await Namer.issueDate(url, engine: engine) } }
-    }
+    var readDate: Rules.DateReader? { engine.map(Namer.dateReader) }
 
     // MARK: Pause
 
@@ -431,15 +436,16 @@ final class AppModel {
         if panel.runModal() == .OK { add(panel.urls) }
     }
 
-    func paste() {
-        let urls = NSPasteboard.general.readObjects(forClasses: [NSURL.self],
-                                                    options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
-        add(urls)
-    }
+    func paste() { add(NSPasteboard.general.fileURLs) }
 
-    func showBackups() {
-        try? FileManager.default.createDirectory(at: backupDir, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(backupDir)
+    func showBackups() { openFolder(backupDir) }
+
+    func openConfigFolder() { openFolder(UserConfig.directory) }
+
+    /// Shows a folder in the Finder, creating it if needed.
+    private func openFolder(_ url: URL) {
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(url)
     }
 
     func reveal(_ url: URL) { NSWorkspace.shared.activateFileViewerSelecting([url]) }
@@ -515,13 +521,7 @@ final class AppModel {
     }
 
     func addFolder() {
-        NSApp.activate()
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = true
-        guard panel.runModal() == .OK else { return }
-        for url in panel.urls where !settings.watchedFolders.contains(where: { $0.url.path == url.path }) {
+        for url in chooseFolders(multiple: true) where !settings.watchedFolders.contains(where: { $0.url.path == url.path }) {
             settings.watchedFolders.append(UserConfig.Folder(path: url.path))
         }
     }
@@ -543,14 +543,11 @@ final class AppModel {
         log.info("Ménage : \(r.purged.count) sauvegarde(s), \(r.trashed.count) élément(s) à la corbeille")
     }
 
-    var launchAtLogin: Bool {
-        get { SMAppService.mainApp.status == .enabled }
-        set {
-            do {
-                if newValue { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-            } catch {
-                log.error("Ouverture au démarrage : \(error.localizedDescription, privacy: .public)")
-            }
+    func setLaunchAtLogin(_ on: Bool) {
+        do {
+            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+        } catch {
+            log.error("Ouverture au démarrage : \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -582,10 +579,7 @@ final class AppModel {
             let fresh = try UserConfig.load()
             configError = nil
             localKeys = UserConfig.localKeys()
-            guard fresh != settings else { return }
-            let foldersChanged = fresh.watchedFolders != settings.watchedFolders
-            settings = fresh
-            if foldersChanged { syncWatchers() }
+            if fresh != settings { settings = fresh }  // its didSet follows a change of watched folders
         } catch {
             configError = "Configuration illisible : \(error.localizedDescription)"
         }
@@ -595,11 +589,6 @@ final class AppModel {
     func resetLocalConfig() {
         try? FileManager.default.removeItem(at: UserConfig.localFileURL)
         reloadConfig()
-    }
-
-    func openConfigFolder() {
-        try? FileManager.default.createDirectory(at: UserConfig.directory, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(UserConfig.directory)
     }
 
     private func watchConfig() {

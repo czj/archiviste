@@ -67,3 +67,28 @@ struct FileBadge: View {
             .frame(width: 26, height: 32)
     }
 }
+
+/// Folders picked in an open panel, [] if cancelled. The app comes to the front first:
+/// a menu bar app is not active by itself.
+func chooseFolders(multiple: Bool = false, canCreate: Bool = false, message: String? = nil) -> [URL] {
+    NSApp.activate()
+    let panel = NSOpenPanel()
+    panel.canChooseFiles = false
+    panel.canChooseDirectories = true
+    if multiple { panel.allowsMultipleSelection = true }
+    if canCreate { panel.canCreateDirectories = true }
+    if let message { panel.message = message }
+    return panel.runModal() == .OK ? panel.urls : []
+}
+
+extension NSPasteboard {
+    /// The file URLs on the pasteboard (files copied or dragged from the Finder).
+    var fileURLs: [URL] {
+        readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+    }
+}
+
+extension NSWindow {
+    /// The main window (SwiftUI names it after the scene's id).
+    var isPDFNamerWindow: Bool { identifier?.rawValue.hasPrefix(MainWindow.id) == true }
+}

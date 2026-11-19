@@ -20,7 +20,7 @@ struct GeneralPane: View {
                 Toggle("Ouvrir à l’ouverture de session", isOn: Binding(
                     get: { login == .enabled || login == .requiresApproval },
                     set: { on in
-                        model.launchAtLogin = on
+                        model.setLaunchAtLogin(on)
                         login = SMAppService.mainApp.status
                     }))
                 if login == .requiresApproval {
@@ -69,7 +69,7 @@ struct GeneralPane: View {
             Section {
                 LabeledContent("Configuration") {
                     HStack {
-                        Text((UserConfig.directory.path as NSString).abbreviatingWithTildeInPath).foregroundStyle(.secondary)
+                        Text(UserConfig.abbreviate(UserConfig.directory.path)).foregroundStyle(.secondary)
                         Button("Afficher") { model.openConfigFolder() }
                     }
                 }
@@ -122,7 +122,7 @@ struct FoldersPane: View {
                             Text(folder.relay.map { "→ \($0.lastPathComponent)" } ?? "Renommer et ranger")
                         }
                         .fixedSize()
-                        .help(folder.relay.map { "Dossier relais : chaque fichier qui arrive est déplacé vers \(($0.path as NSString).abbreviatingWithTildeInPath), sans autre traitement (pour la boîte d’envoi d’une app de scan, par exemple)" }
+                        .help(folder.relay.map { "Dossier relais : chaque fichier qui arrive est déplacé vers \(UserConfig.abbreviate($0.path)), sans autre traitement (pour la boîte d’envoi d’une app de scan, par exemple)" }
                               ?? "Les règles, puis le modèle, sur chaque fichier qui arrive")
                         Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
                         Button {
@@ -209,25 +209,16 @@ struct FoldersPane: View {
     }
 
     private func addDatedFolder() {
-        NSApp.activate()
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = true
-        guard panel.runModal() == .OK else { return }
-        for url in panel.urls where !model.settings.datedFolders.contains(where: { $0.url.standardizedFileURL == url.standardizedFileURL }) {
+        for url in chooseFolders(multiple: true)
+        where !model.settings.datedFolders.contains(where: { $0.url.standardizedFileURL == url.standardizedFileURL }) {
             model.settings.datedFolders.append(UserConfig.DatedFolder(path: url.path))
         }
     }
 
     private func chooseRelay(for folder: Binding<UserConfig.Folder>) {
-        NSApp.activate()
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        panel.message = "Où déplacer les fichiers qui arrivent dans « \(folder.wrappedValue.name) » ?"
-        guard panel.runModal() == .OK, let url = panel.url, url.standardizedFileURL != folder.wrappedValue.url.standardizedFileURL else { return }
+        let message = "Où déplacer les fichiers qui arrivent dans « \(folder.wrappedValue.name) » ?"
+        guard let url = chooseFolders(canCreate: true, message: message).first,
+              url.standardizedFileURL != folder.wrappedValue.url.standardizedFileURL else { return }
         folder.wrappedValue.moveTo = UserConfig.abbreviate(url.path)
     }
 }
@@ -273,11 +264,6 @@ struct CleanupPane: View {
     }
 
     private func chooseBackupDir() {
-        NSApp.activate()
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        if panel.runModal() == .OK, let url = panel.url { model.settings.backupDir = UserConfig.abbreviate(url.path) }
+        if let url = chooseFolders(canCreate: true).first { model.settings.backupDir = UserConfig.abbreviate(url.path) }
     }
 }

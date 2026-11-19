@@ -31,12 +31,11 @@ enum AppSection: String, CaseIterable, Identifiable {
 }
 
 /// Everything in one window: a sidebar of pages, the page on the right.
-/// The menu bar panel stays for the quick things (drop, glance, pause).
+/// The menu bar icon opens it, takes dropped files and has a short menu.
 struct MainWindow: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        @Bindable var model = model
         NavigationSplitView {
             List(selection: Binding(get: { model.section }, set: { if let s = $0 { model.section = s } })) {
                 ForEach(AppSection.allCases) { section in
@@ -79,7 +78,7 @@ struct MainWindow: View {
         // merely hidden or changes space, which would leave a visible window that can't be activated.
         .onAppear { Presence.applyDock(windowOpen: true) }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { note in
-            guard let window = note.object as? NSWindow, window.identifier?.rawValue.hasPrefix(MainWindow.id) == true else { return }
+            guard (note.object as? NSWindow)?.isPDFNamerWindow == true else { return }
             Presence.applyDock(windowOpen: false)
         }
         .frame(minWidth: 940, minHeight: 540)
@@ -87,8 +86,8 @@ struct MainWindow: View {
 
     private func badge(_ section: AppSection) -> Int {
         switch section {
-        case .activity: model.items.filter { $0.phase.isPending || $0.phase == .proposed }.count
-        case .rules: model.rules.filter { $0.patternError != nil || !$0.hasCondition }.count
+        case .activity: model.items.count { $0.phase.isPending || $0.phase == .proposed }
+        case .rules: model.rules.count { !$0.isUsable }
         default: 0
         }
     }
@@ -118,6 +117,9 @@ struct ActivityPane: View {
     @State private var targeted = false
 
     var body: some View {
+        // Each read below filters the items: once per redraw.
+        let batch = model.batch, history = history
+        let busy = batch.contains { $0.phase.isPending }
         List {
             Section {
                 DropZone(targeted: targeted)
@@ -131,14 +133,14 @@ struct ActivityPane: View {
                     Text("Ranger maintenant")
                 }
             }
-            if !model.batch.isEmpty {
+            if !batch.isEmpty {
                 Section {
-                    ForEach(model.batch) { ItemCard(item: $0).listRowSeparator(.hidden) }
+                    ForEach(batch) { ItemCard(item: $0).listRowSeparator(.hidden) }
                 } header: {
                     HStack {
-                        Text(model.isBusy ? "En cours · \(model.finishedCount) sur \(model.batch.count)" : "Dernier lot")
+                        Text(busy ? "En cours · \(batch.count { !$0.phase.isPending }) sur \(batch.count)" : "Dernier lot")
                         Spacer()
-                        if model.isBusy {
+                        if busy {
                             Button("Arrêter") { model.stop() }
                         } else {
                             Button("Effacer") { model.clear() }
@@ -169,7 +171,7 @@ struct ActivityPane: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Ranger maintenant", systemImage: "tray.and.arrow.down") { model.tidyNow() }
-                    .disabled(model.isTidying || model.settings.watchedFolders.filter(\.enabled).isEmpty)
+                    .disabled(model.isTidying || !model.settings.watchedFolders.contains(where: \.enabled))
                     .help("Passer les règles sur les fichiers déjà présents dans les dossiers surveillés, avec un aperçu avant de ranger (⇧⌘R)")
             }
             ToolbarSpacer(.fixed, placement: .primaryAction)
@@ -197,22 +199,24 @@ private struct TidyBanner: View {
     let scan: AppModel.TidyScan
 
     var body: some View {
-        let ready = model.tidyReady.count
-        let reading = model.tidyItems.filter(\.phase.isPending).count
+        let items = model.tidyItems
+        let ready = items.count { $0.phase == .proposed }
+        let reading = items.count(where: \.phase.isPending)
+        let tidying = reading > 0
         HStack(alignment: .center, spacing: 14) {
-            Image(systemName: model.isTidying ? "magnifyingglass" : ready > 0 ? "tray.full.fill" : "checkmark.circle.fill")
+            Image(systemName: tidying ? "magnifyingglass" : ready > 0 ? "tray.full.fill" : "checkmark.circle.fill")
                 .font(.system(size: 26))
-                .foregroundStyle(model.isTidying ? Color.accentColor : ready > 0 ? .orange : .green)
-                .symbolEffect(.pulse, isActive: model.isTidying)
+                .foregroundStyle(tidying ? Color.accentColor : ready > 0 ? .orange : .green)
+                .symbolEffect(.pulse, isActive: tidying)
                 .frame(width: 34)
             VStack(alignment: .leading, spacing: 3) {
-                Text(model.isTidying ? "Lecture des fichiers… encore \(reading)"
+                Text(tidying ? "Lecture des fichiers… encore \(reading)"
                      : ready > 0 ? "\(ready) fichier(s) à ranger" : "Rien à ranger")
                     .font(.headline)
                 Text(details).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            if model.isTidying {
+            if tidying {
                 Button("Arrêter") { model.tidyDismiss() }
             } else {
                 Button("Fermer") { model.tidyDismiss() }

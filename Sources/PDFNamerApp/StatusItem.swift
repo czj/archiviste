@@ -45,12 +45,14 @@ final class StatusItem: NSObject, NSMenuDelegate {
 
     /// The icon follows the state: busy, paused, idle.
     private func track() {
-        withObservationTracking {
-            let symbol = model.isBusy || model.isTidying ? "arrow.triangle.2.circlepath"
-                : model.paused ? "pause.circle" : "doc.text.magnifyingglass"
-            item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "PDF Namer")
-        } onChange: { [weak self] in
-            Task { @MainActor in self?.track() }
+        Task { [weak self, model] in
+            let symbols = Observations {
+                model.isBusy || model.isTidying ? "arrow.triangle.2.circlepath"
+                    : model.paused ? "pause.circle" : "doc.text.magnifyingglass"
+            }
+            for await symbol in symbols {
+                self?.item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "PDF Namer")
+            }
         }
     }
 
@@ -61,7 +63,7 @@ final class StatusItem: NSObject, NSMenuDelegate {
             // Cooperative activation alone is refused when another app is active; the click on
             // our icon is the user asking for us, so take the focus.
             NSApp.activate(ignoringOtherApps: true)
-            if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix(MainWindow.id) == true }) {
+            if let window = NSApp.windows.first(where: \.isPDFNamerWindow) {
                 // Already open (behind other apps, on another desktop, minimized): bring it here.
                 window.collectionBehavior.insert(.moveToActiveSpace)
                 if window.isMiniaturized { window.deminiaturize(nil) }
@@ -138,8 +140,7 @@ private final class DropTarget: NSView {
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         (superview as? NSButton)?.highlight(false)
-        let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self],
-                                                         options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+        let urls = sender.draggingPasteboard.fileURLs
         guard !urls.isEmpty else { return false }
         onDrop(urls)
         return true

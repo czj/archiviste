@@ -47,7 +47,9 @@ struct RulesPane: View {
     // MARK: Sidebar
 
     private var sidebar: some View {
-        List(selection: Binding(get: { model.selectedRuleID }, set: { model.selectedRuleID = $0 })) {
+        @Bindable var model = model
+        let shown = shown
+        return List(selection: $model.selectedRuleID) {
             if let error = model.rulesError {
                 Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.caption)
             }
@@ -63,7 +65,7 @@ struct RulesPane: View {
             case .folder:
                 let groups = Dictionary(grouping: shown) { RuleStyle.folderKey($0.rule) }
                 ForEach(groups.keys.sorted(), id: \.self) { key in
-                    let rows = groups[key]!.sorted { $0.rank < $1.rank }
+                    let rows = groups[key]!  // already by rank: grouping keeps the order of `shown`
                     Section {
                         ForEach(rows, id: \.rule.id) { row($0.rule, rank: $0.rank) }
                     } header: {
@@ -81,8 +83,8 @@ struct RulesPane: View {
         }
         .onDeleteCommand(perform: delete)
         .onKeyPress(.space) {
-            guard let i = selectedIndex else { return .ignored }
-            model.changeRules(model.rules[i].enabled ? "Désactiver" : "Activer", undo: undo) { $0[i].enabled.toggle() }
+            guard let selection else { return .ignored }
+            toggle(selection)
             return .handled
         }
         .animation(.snappy, value: model.rules.map(\.id))
@@ -95,8 +97,10 @@ struct RulesPane: View {
         switch sort {
         case .priority: return all
         case .name: return all.sorted { $0.rule.label.localizedStandardCompare($1.rule.label) == .orderedAscending }
-        case .folder: return all.sorted { RuleStyle.folderKey($0.rule) == RuleStyle.folderKey($1.rule) ? $0.rank < $1.rank
-                                          : RuleStyle.folderKey($0.rule) < RuleStyle.folderKey($1.rule) }
+        case .folder:
+            return all.map { (key: RuleStyle.folderKey($0.rule), row: $0) }
+                .sorted { ($0.key, $0.row.rank) < ($1.key, $1.row.rank) }
+                .map(\.row)
         }
     }
 
@@ -119,7 +123,7 @@ struct RulesPane: View {
                     .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
             }
             Spacer(minLength: 4)
-            if rule.patternError != nil || !rule.hasCondition {
+            if !rule.isUsable {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                     .help(rule.hasCondition ? "Expression invalide" : "Aucune condition : la règle ne s’applique jamais")
             }
@@ -132,18 +136,14 @@ struct RulesPane: View {
         .opacity(rule.enabled ? 1 : 0.45)
         .tag(rule.id)
         .contextMenu {
-            Button(rule.enabled ? "Désactiver" : "Activer") {
-                model.changeRules("Activer", undo: undo) { rules in
-                    if let i = rules.firstIndex(where: { $0.id == rule.id }) { rules[i].enabled.toggle() }
-                }
-            }
+            Button(rule.enabled ? "Désactiver" : "Activer") { toggle(rule.id) }
             Button("Dupliquer") { duplicate(rule.id) }
             Divider()
             Button("Monter") { move(rule.id, by: -1) }.disabled(rank == 1)
             Button("Descendre") { move(rule.id, by: 1) }.disabled(rank == model.rules.count)
             if !rule.folder.isEmpty {
                 Button("Afficher le dossier dans le Finder") {
-                    NSWorkspace.shared.open(URL(fileURLWithPath: (rule.folder as NSString).expandingTildeInPath))
+                    NSWorkspace.shared.open(UserConfig.expand(rule.folder))
                 }
             }
             Divider()
@@ -250,6 +250,11 @@ struct RulesPane: View {
         if model.selectedRuleID == id {
             model.selectedRuleID = model.rules.indices.contains(i) ? model.rules[i].id : model.rules.last?.id
         }
+    }
+
+    private func toggle(_ id: Rule.ID) {
+        guard let i = model.rules.firstIndex(where: { $0.id == id }) else { return }
+        model.changeRules(model.rules[i].enabled ? "Désactiver" : "Activer", undo: undo) { $0[i].enabled.toggle() }
     }
 
     private func move(_ id: Rule.ID, by step: Int) {
@@ -414,7 +419,7 @@ private struct TesterPanel: View {
             FileRow(name: result.file, detail: "fichier testé")
             if let match = result.match {
                 Image(systemName: "arrow.down").foregroundStyle(.secondary).frame(width: 26)
-                FileRow(name: match.name, detail: (match.folder.path as NSString).abbreviatingWithTildeInPath)
+                FileRow(name: match.name, detail: UserConfig.abbreviate(match.folder.path))
                 Button {
                     model.selectedRuleID = model.rules.indices.contains(match.index) ? model.rules[match.index].id : nil
                 } label: {
@@ -579,17 +584,12 @@ private struct RuleEditor: View {
     }
 
     private var example: (name: String, folder: String) {
-        let sample = URL(fileURLWithPath: ("~/Downloads/facture_2026_1185.pdf" as NSString).expandingTildeInPath)
+        let sample = UserConfig.expand("~/Downloads/facture_2026_1185.pdf")
         let d = rule.destination(for: sample, date: Day.today().iso)
-        return (d.name, (d.folder.path as NSString).abbreviatingWithTildeInPath)
+        return (d.name, UserConfig.abbreviate(d.folder.path))
     }
 
     private func chooseFolder() {
-        NSApp.activate()
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        if panel.runModal() == .OK, let url = panel.url { rule.folder = UserConfig.abbreviate(url.path) }
+        if let url = chooseFolders(canCreate: true).first { rule.folder = UserConfig.abbreviate(url.path) }
     }
 }
