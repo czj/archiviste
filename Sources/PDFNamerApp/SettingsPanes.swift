@@ -103,11 +103,90 @@ struct FoldersPane: View {
                 }
                 Button("Ajouter un dossier…") { model.addFolder() }
             } footer: {
-                Text("Chaque fichier qui arrive dans ces dossiers passe d’abord par les règles (rangé et renommé s’il en suit une), sinon le modèle nomme les PDF et images, avec une notification. Les fichiers déjà présents, ceux déjà traités par PDF Namer et ceux nommés « AAAA-MM-JJ - … » ne sont pas renommés par le modèle. Un dossier relais (« Seulement déplacer vers… ») passe ses fichiers à un autre dossier, par exemple les scans d’une app vers le Bureau. « Ranger maintenant » (⇧⌘R) passe les règles sur les fichiers déjà là, et range par date les fichiers laissés en vrac dans les dossiers de destination, avec un aperçu avant de ranger.")
+                Text("Chaque fichier qui arrive dans ces dossiers passe d’abord par les règles (rangé et renommé s’il en suit une), sinon le modèle nomme les PDF et images, avec une notification. Les fichiers déjà présents, ceux déjà traités par PDF Namer et ceux nommés « AAAA-MM-JJ - … » ne sont pas renommés par le modèle. Un dossier relais (« Seulement déplacer vers… ») passe ses fichiers à un autre dossier, par exemple les scans d’une app vers le Bureau. « Ranger maintenant » (⇧⌘R) passe les règles sur les fichiers déjà là, avec un aperçu avant de ranger.")
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                if model.settings.datedFolders.isEmpty {
+                    Text("Aucun dossier classé par date").foregroundStyle(.secondary)
+                }
+                ForEach($model.settings.datedFolders) { $folder in
+                    HStack {
+                        Image(systemName: "calendar").foregroundStyle(.tint).frame(width: 20)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(folder.name)
+                            Text(folder.path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
+                        }
+                        Spacer()
+                        Picker("Sous-dossier", selection: $folder.subfolder) {
+                            Text("Année").tag(Rule.Subfolder.year)
+                            Text("Année-mois").tag(Rule.Subfolder.yearMonth)
+                            Text("Aucun").tag(Rule.Subfolder.none)
+                        }
+                        .labelsHidden().fixedSize()
+                        Toggle("Préfixe AAAA-MM-JJ", isOn: $folder.datePrefix)
+                            .toggleStyle(.checkbox).fixedSize()
+                            .help("Ajouter « AAAA-MM-JJ - » devant les noms qui ne l’ont pas")
+                        Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
+                        Button {
+                            model.settings.datedFolders.removeAll { $0.path == folder.path }
+                        } label: { Image(systemName: "minus.circle") }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel("Retirer \(folder.name)")
+                    }
+                }
+                Button("Ajouter un dossier…", action: addDatedFolder)
+            } header: {
+                Text("Classement par date")
+            } footer: {
+                Text("« Ranger maintenant » propose de ranger les fichiers laissés à la racine de ces dossiers, et seulement de ceux-là, dans leur sous-dossier d’année ou de mois, préfixés par leur date : celle du nom s’il en a une, sinon celle du document, sinon celle du fichier.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            let suggestions = model.settings.datedSuggestions(model.rules)
+            if !suggestions.isEmpty {
+                Section {
+                    ForEach(suggestions, id: \.folder.path) { suggestion in
+                        HStack {
+                            Image(systemName: "sparkles").foregroundStyle(.secondary).frame(width: 20)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(suggestion.folder.name)
+                                Text("règle « \(suggestion.rule) » · \(subfolderTitle(suggestion.folder.subfolder))\(suggestion.folder.datePrefix ? ", préfixe" : "")")
+                                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                            .help(suggestion.folder.path)
+                            Spacer()
+                            Button("Ajouter") { model.settings.datedFolders.append(suggestion.folder) }
+                        }
+                    }
+                } header: {
+                    Text("Suggestions · destinations de règles datées")
+                } footer: {
+                    Text("Ces dossiers reçoivent des fichiers datés par tes règles, mais ne sont pas classés par date. Ajoutés, ils prennent les réglages de la première règle qui les vise.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
         .formStyle(.grouped)
+    }
+
+    private func subfolderTitle(_ s: Rule.Subfolder) -> String {
+        switch s {
+        case .none: "sans sous-dossier"
+        case .year: "par année"
+        case .yearMonth: "par mois"
+        }
+    }
+
+    private func addDatedFolder() {
+        NSApp.activate()
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        guard panel.runModal() == .OK else { return }
+        for url in panel.urls where !model.settings.datedFolders.contains(where: { $0.url.standardizedFileURL == url.standardizedFileURL }) {
+            model.settings.datedFolders.append(UserConfig.DatedFolder(path: url.path))
+        }
     }
 
     private func chooseRelay(for folder: Binding<UserConfig.Folder>) {

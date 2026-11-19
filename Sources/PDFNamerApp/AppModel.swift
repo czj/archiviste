@@ -213,16 +213,9 @@ final class AppModel {
         items.contains { $0.url == url && ($0.phase.isPending || $0.phase == .proposed) }
     }
 
-    /// Each destination folder whose rules date files, with the settings of its first rule.
+    /// The folders listed under "Classement par date", and only those.
     private func datedFolders() -> [(URL, Rule)] {
-        var seen = Set<String>(), found: [(URL, Rule)] = []
-        for rule in rules where rule.enabled && !rule.folder.isEmpty && rule.usesDate {
-            let url = UserConfig.expand(rule.folder).standardizedFileURL
-            guard seen.insert(url.path).inserted else { continue }
-            found.append((url, Rule(name: "Classement par date", filename: ".", folder: rule.folder,
-                                    subfolder: rule.subfolder, datePrefix: rule.datePrefix)))
-        }
-        return found
+        settings.datedFolders.filter(\.enabled).map { ($0.url.standardizedFileURL, $0.rule) }
     }
 
     /// The files directly in a folder (no subfolders, nothing hidden or still downloading).

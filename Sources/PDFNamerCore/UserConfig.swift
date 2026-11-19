@@ -53,6 +53,52 @@ public struct UserConfig: Codable, Equatable, Sendable {
     public var watchedFolders: [Folder] = []
     /// Dropped files: show the name and wait for "Renommer".
     public var confirmBeforeRename = false
+    /// Folders "Ranger maintenant" keeps sorted by date: loose files at the top go to their
+    /// year (or month) subfolder, dated. Only these: never a folder that is not listed.
+    public var datedFolders: [DatedFolder] = []
+
+    public struct DatedFolder: Codable, Equatable, Hashable, Sendable, Identifiable {
+        public var path: String
+        public var subfolder: Rule.Subfolder = .year
+        public var datePrefix = true
+        public var enabled = true
+        public var id: String { path }
+        public var url: URL { UserConfig.expand(path) }
+        public var name: String { url.lastPathComponent }
+
+        public init(path: String, subfolder: Rule.Subfolder = .year, datePrefix: Bool = true, enabled: Bool = true) {
+            self.path = UserConfig.abbreviate(path)
+            self.subfolder = subfolder
+            self.datePrefix = datePrefix
+            self.enabled = enabled
+        }
+
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            path = try c.decode(String.self, forKey: .path)
+            subfolder = try c.decodeIfPresent(Rule.Subfolder.self, forKey: .subfolder) ?? .year
+            datePrefix = try c.decodeIfPresent(Bool.self, forKey: .datePrefix) ?? true
+            enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        }
+
+        /// The rule that dates a loose file of this folder (matches any name).
+        public var rule: Rule {
+            Rule(name: "Classement par date", filename: ".", folder: path, subfolder: subfolder, datePrefix: datePrefix)
+        }
+    }
+
+    /// Destinations of rules that date files but are not in `datedFolders`: worth suggesting.
+    /// Settings come from the first such rule; each folder once.
+    public func datedSuggestions(_ rules: [Rule]) -> [(folder: DatedFolder, rule: String)] {
+        var seen = Set(datedFolders.map { $0.url.standardizedFileURL.path })
+        var found: [(DatedFolder, String)] = []
+        for rule in rules where rule.enabled && !rule.folder.isEmpty && rule.usesDate {
+            let folder = DatedFolder(path: rule.folder, subfolder: rule.subfolder, datePrefix: rule.datePrefix)
+            guard seen.insert(folder.url.standardizedFileURL.path).inserted else { continue }
+            found.append((folder, rule.label))
+        }
+        return found
+    }
 
     public init() {}
 
@@ -64,6 +110,7 @@ public struct UserConfig: Codable, Equatable, Sendable {
         expireMaxAgeDays = try c.decodeIfPresent(Int.self, forKey: .expireMaxAgeDays) ?? d.expireMaxAgeDays
         watchedFolders = try c.decodeIfPresent([Folder].self, forKey: .watchedFolders) ?? d.watchedFolders
         confirmBeforeRename = try c.decodeIfPresent(Bool.self, forKey: .confirmBeforeRename) ?? d.confirmBeforeRename
+        datedFolders = try c.decodeIfPresent([DatedFolder].self, forKey: .datedFolders) ?? d.datedFolders
     }
 
     public var backupURL: URL { Self.expand(backupDir) }

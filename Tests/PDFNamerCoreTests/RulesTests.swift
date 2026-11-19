@@ -185,6 +185,24 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(!String(decoding: try JSONEncoder().encode(plain), as: UTF8.self).contains("moveTo"))
 }
 
+@Test func `classement par date : liste explicite, suggestions tirées des règles datées`() throws {
+    var config = UserConfig()
+    config.datedFolders = [UserConfig.DatedFolder(path: "/F/Achats", subfolder: .yearMonth)]
+    let rules = [
+        Rule(name: "Achats", filename: "a", folder: "/F/Achats", subfolder: .year),   // listed already
+        Rule(name: "Ventes", filename: "v", folder: "/F/Ventes", subfolder: .year, datePrefix: false),
+        Rule(name: "Ventes 2", filename: "w", folder: "/F/Ventes/", subfolder: .yearMonth),  // same folder: once
+        Rule(name: "Réunions", filename: "r", folder: "/F/Meetings", datePrefix: false),  // no date: no
+        Rule(name: "Off", filename: "o", folder: "/F/Off", enabled: false),
+    ]
+    let s = config.datedSuggestions(rules)
+    #expect(s.map(\.folder.path) == ["/F/Ventes"])
+    #expect(s[0].rule == "Ventes" && s[0].folder.subfolder == .year && !s[0].folder.datePrefix)
+
+    let decoded = try JSONDecoder().decode(UserConfig.self, from: Data(#"{"datedFolders": [{"path": "~/X"}]}"#.utf8))
+    #expect(decoded.datedFolders.first?.subfolder == .year && decoded.datedFolders.first?.datePrefix == true)
+}
+
 @Test func `règle tirée d’un fichier : nombres généralisés, type et émetteur du nom proposé`() {
     let r = Rule.draft(from: "Invoice-DE84E1D9-0026 (1).pdf",
                        suggestedName: "2026-09-17 - Facture Replicate - Calcul GPU - 12.40 USD.pdf")
