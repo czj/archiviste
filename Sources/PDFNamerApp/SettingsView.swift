@@ -1,13 +1,18 @@
 import PDFNamerCore
 import SwiftUI
 
+enum SettingsTab: Hashable { case general, rules, folders, cleanup }
+
 struct SettingsView: View {
+    @Environment(AppModel.self) private var model
+
     var body: some View {
-        TabView {
-            GeneralTab().tabItem { Label("Général", systemImage: "gearshape") }
-            RulesTab().tabItem { Label("Règles", systemImage: "line.3.horizontal.decrease.circle") }
-            FoldersTab().tabItem { Label("Dossiers surveillés", systemImage: "folder") }
-            CleanupTab().tabItem { Label("Sauvegardes et ménage", systemImage: "archivebox") }
+        @Bindable var model = model
+        TabView(selection: $model.settingsTab) {
+            GeneralTab().tabItem { Label("Général", systemImage: "gearshape") }.tag(SettingsTab.general)
+            RulesTab().tabItem { Label("Règles", systemImage: "line.3.horizontal.decrease.circle") }.tag(SettingsTab.rules)
+            FoldersTab().tabItem { Label("Dossiers surveillés", systemImage: "folder") }.tag(SettingsTab.folders)
+            CleanupTab().tabItem { Label("Sauvegardes et ménage", systemImage: "archivebox") }.tag(SettingsTab.cleanup)
         }
         .frame(minWidth: 760, minHeight: 560)
     }

@@ -121,7 +121,7 @@ final class AppModel {
             }
         }
         // Any file may match a rule; only PDFs and images can be named by the model.
-        for url in files where Config.isSupported(url) || !rules.isEmpty {
+        for url in files where (Config.isSupported(url) || !rules.isEmpty) && Config.isFileForRules(url) {
             guard !items.contains(where: { $0.url == url && $0.phase.isPending }) else { continue }
             if Marker.isMarked(url) {  // renamed or filed by PDF Namer before, whatever its name now
                 if source == nil { items.append(Item(url: url, source: nil, phase: .skipped("déjà traité"))) }
@@ -129,7 +129,11 @@ final class AppModel {
             }
             items.append(Item(url: url, source: source))
         }
-        if worker == nil { worker = Task { await drain() } }
+        startWorker()
+    }
+
+    private func startWorker() {
+        if worker == nil && !paused { worker = Task { await drain() } }
     }
 
     /// Nothing to do for this file: say so for a drop, stay silent for a watched folder.
@@ -138,7 +142,7 @@ final class AppModel {
     }
 
     private func drain() async {
-        while let item = items.first(where: { $0.phase == .waiting }) {
+        while !paused, let item = items.first(where: { $0.phase == .waiting }) {
             await process(item)
         }
         worker = nil
@@ -157,7 +161,7 @@ final class AppModel {
         do {
             item.phase = .reading
             // 1. Filing rules, before any model call.
-            if let m = await Rules.firstMatch(rules, for: item.url) {
+            if let m = await Rules.firstMatch(rules, for: item.url, readDate: readDate) {
                 item.suggestion = Suggestion(m)
                 item.took = Date().timeIntervalSince(t0)
                 if settings.confirmBeforeRename && item.source == nil { item.phase = .proposed } else { apply(item, name: m.name) }
@@ -234,6 +238,46 @@ final class AppModel {
 
     func skip(_ item: Item) { item.phase = .skipped("ignoré") }
 
+    /// Rules that date a file ask the model for the issue date (the file's date without it).
+    var readDate: Rules.DateReader? {
+        engine.map { engine in { @Sendable url in await Namer.issueDate(url, engine: engine) } }
+    }
+
+    // MARK: Pause
+
+    /// Paused: dropped files and arrivals in watched folders wait, nothing is renamed or moved.
+    var paused = UserDefaults.standard.bool(forKey: "paused") {
+        didSet {
+            UserDefaults.standard.set(paused, forKey: "paused")
+            if !paused { startWorker() }
+        }
+    }
+
+    // MARK: Rules from a file
+
+    var settingsTab: SettingsTab = .general
+    /// The rule the Rules tab shows; set from outside to open one.
+    var selectedRuleID: Rule.ID?
+    /// A file the Rules tab tests as soon as it appears.
+    var pendingTest: URL?
+
+    /// A new rule drafted from a file ("files named like this go there, named so"), selected in the
+    /// Rules tab with the file under test, for the user to adjust.
+    func makeRule(from url: URL, suggestion: Suggestion? = nil, originalName: String? = nil) {
+        var rule = Rule.draft(from: originalName ?? Marker.originalName(url) ?? url.lastPathComponent,
+                              suggestedName: suggestion?.match == nil ? suggestion?.name : nil)
+        if let match = suggestion?.match {  // filed by a rule: start from it
+            rule = match.rule
+            rule.name = rule.label + " (variante)"
+        }
+        rule.id = UUID()
+        let at = suggestion?.match.map { $0.index + 1 } ?? rules.count
+        rules.insert(rule, at: min(at, rules.count))
+        selectedRuleID = rule.id
+        pendingTest = url
+        settingsTab = .rules
+    }
+
     func stop() {
         for item in items where item.phase == .waiting {
             item.extraction?.cancel()
@@ -273,7 +317,7 @@ final class AppModel {
         for path in wanted where watchers[path] == nil {
             let url = URL(fileURLWithPath: path)
             watchers[path] = FolderWatcher(url, accepts: { [weak self] file in
-                guard let self, !Marker.isMarked(file) else { return false }
+                guard let self, Config.isFileForRules(file), !Marker.isMarked(file) else { return false }
                 return Config.isSupported(file) || !self.rules.isEmpty  // any file may match a rule
             }) { [weak self] urls in self?.add(urls, source: url.lastPathComponent) }
         }

@@ -18,6 +18,16 @@ public enum Config {
 
     public static func isImage(_ url: URL) -> Bool { imageExts.contains(url.pathExtension.lowercased()) }
 
+    /// Downloads still being written by a browser or a sync client.
+    static let inProgressExts: Set<String> = ["download", "crdownload", "part", "partial", "opdownload", "tmp"]
+
+    /// A file the rules may look at: a regular file (no folder, no package), not a download in progress.
+    public static func isFileForRules(_ url: URL) -> Bool {
+        guard !inProgressExts.contains(url.pathExtension.lowercased()) else { return false }
+        let v = try? url.resourceValues(forKeys: [.isRegularFileKey, .isPackageKey])
+        return v?.isRegularFile == true && v?.isPackage != true
+    }
+
     static let intro = """
         Tu nommes des fichiers de documents (personnels et professionnels) à partir de leur \
         contenu. On te donne le texte du document et l'image de sa première page. \

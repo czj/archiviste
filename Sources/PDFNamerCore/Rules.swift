@@ -73,6 +73,8 @@ public struct Rule: Codable, Equatable, Hashable, Sendable, Identifiable {
     public var hasCondition: Bool { !namePattern.isEmpty || !phrases.isEmpty }
     /// Content conditions need the file's text.
     public var needsText: Bool { !phrases.isEmpty }
+    /// The new name or the subfolder depends on the document's date.
+    public var usesDate: Bool { datePrefix || subfolder != .none }
 
     /// Why the filename pattern can't be used, nil when it is fine (or empty).
     public var patternError: String? {
@@ -101,6 +103,25 @@ public struct Rule: Codable, Equatable, Hashable, Sendable, Identifiable {
         if !name.isEmpty { return name }
         if !rename.isEmpty { return rename }
         return ([namePattern] + phrases).filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    // MARK: Drafting
+
+    static let longDigits = Rx(#"\d{3,}"#)
+    static let copySuffix = Rx(#"(?: \(\d+\)| - \d+)$"#)
+
+    /// A rule for "files named like this one": its name up to the extension, with long numbers
+    /// (dates, invoice numbers) generalised, and as new name the type and issuer the model gave
+    /// ("2026-09-16 - Facture EDF - Électricité - 81.20 EUR.pdf" → "Facture EDF"). To be adjusted.
+    public static func draft(from filename: String, suggestedName: String? = nil) -> Rule {
+        let stem = copySuffix.sub(filename.precomposedStringWithCanonicalMapping.pySplitExt.0, "")
+        let pattern = "^" + longDigits.sub(NSRegularExpression.escapedPattern(for: stem), "\\d+")
+        var rename = ""
+        if let suggestedName {
+            let s = Naming.datePrefix.sub(suggestedName.pySplitExt.0, "")
+            rename = s.components(separatedBy: " - ").first ?? s
+        }
+        return Rule(name: rename.isEmpty ? stem : rename, filename: pattern, rename: rename)
     }
 
     // MARK: Action
@@ -148,19 +169,33 @@ public enum Rules {
         public let folder: URL
         public let name: String
         public let date: String
+        /// Where `date` comes from: the document (read by the model), the file, or unused by the rule.
+        public let dateSource: DateSource
     }
 
+    public enum DateSource: Sendable { case document, file, unused }
+
+    /// Reads a document's issue date (AAAA-MM-JJ), nil if it can't tell: see `Namer.issueDate`.
+    public typealias DateReader = @Sendable (URL) async -> String?
+
     /// The first enabled rule matching `url`, reading its text only if a content rule needs it.
-    public static func firstMatch(_ rules: [Rule], for url: URL) async -> Match? {
+    /// When the rule dates the file (prefix or dated subfolder), `readDate` picks the issue date
+    /// (the model, choosing among the dates written in the document); the file's creation date otherwise.
+    public static func firstMatch(_ rules: [Rule], for url: URL, readDate: DateReader? = nil) async -> Match? {
         let filename = url.lastPathComponent
         var text: String?? = .none  // read once, lazily
         for (i, rule) in rules.enumerated() where rule.enabled && rule.hasCondition && rule.matchesName(filename) {
             if rule.needsText && text == nil { text = .some(await RuleText.read(url)) }
             guard rule.matches(filename: filename, text: text ?? nil) else { continue }
-            if text == nil { text = .some(await RuleText.read(url)) }  // for the date
-            let date = documentDate(text ?? nil) ?? fileDate(url)
+            var date = fileDate(url), source = DateSource.file
+            if !rule.usesDate {
+                source = .unused
+            } else if let read = await readDate?(url) {
+                date = read
+                source = .document
+            }
             let (folder, name) = rule.destination(for: url, date: date)
-            return Match(rule: rule, index: i, folder: folder, name: name, date: date)
+            return Match(rule: rule, index: i, folder: folder, name: name, date: date, dateSource: source)
         }
         return nil
     }
@@ -178,9 +213,6 @@ public enum Rules {
         }
         return out
     }
-
-    /// The first plausible date in the text, nil if none.
-    static func documentDate(_ text: String?) -> String? { text.flatMap { Candidates.dates($0).first } }
 
     /// The file's creation date (what the Ruby script used), today if unknown.
     static func fileDate(_ url: URL) -> String {
@@ -210,17 +242,27 @@ public enum RuleText {
         }
     }
 
+    /// Enough for any real sheet; a crafted zip (a watched Downloads folder takes anything)
+    /// must not make us inflate gigabytes.
+    static let maxXLSXText = 10 << 20
+
     /// An .xlsx is a zip; its text lives in xl/sharedStrings.xml.
     static func xlsxStrings(_ url: URL) -> String? {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-        p.arguments = ["-p", url.path, "xl/sharedStrings.xml"]
+        // unzip treats the archive name as a wildcard only when no file has that exact name; we pass
+        // an existing absolute path, so "[a].xlsx" is opened as is (escaping it would break that).
+        p.arguments = ["-p", url.path, "xl/sharedStrings.xml"]  // absolute path: never read as an option
         let out = Pipe()
         p.standardOutput = out
         p.standardError = FileHandle.nullDevice
         do { try p.run() } catch { return nil }
-        let data = out.fileHandleForReading.readDataToEndOfFile()
+        var data = Data()
+        while let chunk = try? out.fileHandleForReading.read(upToCount: 1 << 16), !chunk.isEmpty {
+            data.append(chunk)
+            if data.count > maxXLSXText { p.terminate(); break }
+        }
         p.waitUntilExit()
-        return data.isEmpty ? nil : String(decoding: data, as: UTF8.self)
+        return data.isEmpty ? nil : String(decoding: data.prefix(maxXLSXText), as: UTF8.self)
     }
 }

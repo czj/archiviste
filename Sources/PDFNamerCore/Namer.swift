@@ -25,6 +25,16 @@ public struct Suggestion: Sendable {
 }
 
 public enum Namer {
+    /// The document's issue date as the model reads it (AAAA-MM-JJ, picked among the dates written
+    /// in it, never in the future); nil for other files, or when it finds none.
+    public static func issueDate(_ url: URL, engine: Engine) async -> String? {
+        guard Config.isSupported(url), let ex = try? await Extractor.extract(url), ex.text != nil,
+              let fields = try? await engine.ask(ex, isImage: Config.isImage(url)),
+              let raw = fields["date"]?.trimmingCharacters(in: .whitespaces),
+              let day = Day(iso: raw), day <= .today() else { return nil }
+        return day.iso
+    }
+
     /// nil when nothing in the file is readable.
     public static func suggest(_ url: URL, _ ex: Extracted, engine: Engine) async throws -> Suggestion? {
         guard !ex.isEmpty else { return nil }

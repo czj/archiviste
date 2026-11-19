@@ -60,7 +60,19 @@ for f in files {
     let url = URL(fileURLWithPath: (f as NSString).expandingTildeInPath)
     if !FileManager.default.fileExists(atPath: url.path) { say("⚠ Introuvable : \(f)") }
     else if !Config.isSupported(url) && !anyFile { say("⚠ Ni PDF ni image : \(f)") }
+    else if !Config.isFileForRules(url) { say("⚠ Dossier ou téléchargement en cours, ignoré : \(f)") }
     else { urls.append(url) }
+}
+
+/// Rules that date a file ask the model for the issue date (file date if the model is unavailable).
+let dateEngine = rules.isEmpty ? nil : try? Engine()
+let readDate: Rules.DateReader? = dateEngine.map { engine in { @Sendable url in await Namer.issueDate(url, engine: engine) } }
+func dateNote(_ m: Rules.Match) -> String {
+    switch m.dateSource {
+    case .document: " · date du document"
+    case .file: " · date du fichier"
+    case .unused: ""
+    }
 }
 
 if rulesTest {
@@ -71,8 +83,8 @@ if rulesTest {
         for (i, rule, missing) in await Rules.nearMisses(rules, for: url) {
             print("   · règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))")
         }
-        if let m = await Rules.firstMatch(rules, for: url) {
-            print("   ✓ règle \(m.index + 1) « \(m.rule.label) » → \(short(m.folder))/\(m.name)")
+        if let m = await Rules.firstMatch(rules, for: url, readDate: readDate) {
+            print("   ✓ règle \(m.index + 1) « \(m.rule.label) » → \(short(m.folder))/\(m.name)\(dateNote(m))")
         } else {
             print("   – aucune règle\(Config.isSupported(url) ? " : nommé par le modèle" : "")")
         }
@@ -112,8 +124,8 @@ if rename {
     // 1. Filing rules, before any model call.
     var left: [URL] = []
     for url in urls {
-        guard let m = await Rules.firstMatch(rules, for: url) else { left.append(url); continue }
-        print("règle     « \(m.rule.label) »\n  avant    \(url.lastPathComponent)")
+        guard let m = await Rules.firstMatch(rules, for: url, readDate: readDate) else { left.append(url); continue }
+        print("règle     « \(m.rule.label) »\(dateNote(m))\n  avant    \(url.lastPathComponent)")
         do {
             if dryRun {
                 print("  ○ irait  \(short(m.folder))/\(m.name)\n")
@@ -147,7 +159,7 @@ func summary() {
 if urls.isEmpty { summary(); exit(errors > 0 ? 2 : 0) }
 
 // One file, no renaming: a matching rule gives the name, as --rename would.
-if !batch, let m = await Rules.firstMatch(rules, for: urls[0]) {
+if !batch, let m = await Rules.firstMatch(rules, for: urls[0], readDate: readDate) {
     if json {
         let out: [String: String] = ["original": urls[0].lastPathComponent, "suggested": m.name, "path": urls[0].path,
                                      "folder": m.folder.path, "rule": m.rule.label]
@@ -166,7 +178,7 @@ func prefetch(_ i: Int) -> Task<Extracted, Error>? {
 var nextExtraction = prefetch(0)
 
 let engine: Engine
-do { engine = try Engine() } catch { say("✗ \(error.localizedDescription)"); exit(3) }
+do { engine = try dateEngine ?? Engine() } catch { say("✗ \(error.localizedDescription)"); exit(3) }
 say("✓ Modèle Apple prêt")
 
 if !batch {

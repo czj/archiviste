@@ -4,6 +4,7 @@ import SwiftUI
 /// One file in the batch: progress, then the new name with Modifier / Annuler.
 struct ItemCard: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.openSettings) private var openSettings
     let item: Item
     @State private var editing = false
     @State private var draft = ""
@@ -47,7 +48,7 @@ struct ItemCard: View {
 
     private var status: String {
         switch item.phase {
-        case .waiting: return "en attente"
+        case .waiting: return model.paused ? "en pause" : "en attente"
         case .reading: return "lecture…"
         case .analyzing: return "analyse…"
         case .proposed: return "à valider"
@@ -78,9 +79,26 @@ struct ItemCard: View {
                 Text(displayName).font(.callout.weight(.semibold)).textSelection(.enabled)
                 actions
             }
+        case .skipped, .unchanged, .cancelled:
+            HStack {
+                Spacer()
+                ruleButton
+            }
+            .buttonStyle(.link)
+            .font(.caption)
         default:
             EmptyView()
         }
+    }
+
+    /// "Files like this one: rename and file them so" — opens the Rules tab on a drafted rule.
+    private var ruleButton: some View {
+        Button("Créer une règle…") {
+            model.makeRule(from: item.url, suggestion: item.suggestion, originalName: item.originalName)
+            NSApp.activate()
+            openSettings()
+        }
+        .help("Une règle pour les fichiers nommés comme celui-ci : où les ranger et comment les nommer")
     }
 
     private var displayName: String {
@@ -105,6 +123,7 @@ struct ItemCard: View {
                 Button("Modifier", action: startEditing)
                 Button("Annuler") { model.undo(item) }
                 Button("Afficher") { model.reveal(item.url) }
+                ruleButton
             }
         }
         .buttonStyle(.link)

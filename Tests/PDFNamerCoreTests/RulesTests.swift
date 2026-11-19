@@ -111,7 +111,7 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(Rule(filename: "x", rename: "A/B").destination(for: file, date: "2026-11-05").name == "2026-11-05 - A-B.pdf")
 }
 
-@Test func `la première règle qui correspond gagne, date lue dans le PDF`() async throws {
+@Test func `la première règle qui correspond gagne, date lue par le lecteur de date`() async throws {
     let dir = try tempDir()
     defer { try? FileManager.default.removeItem(at: dir) }
     let pdf = dir.appendingPathComponent("document.pdf")
@@ -123,9 +123,11 @@ private func writePDF(_ lines: [String], to url: URL) throws {
              subfolder: .year, rename: "Facture Example Hosting"),
         Rule(name: "Trop tard", filename: "document"),
     ]
-    let m = try #require(await Rules.firstMatch(rules, for: pdf))
+    // The model picks the issue date in the app; here a stand-in.
+    let m = try #require(await Rules.firstMatch(rules, for: pdf, readDate: { _ in "2025-03-14" }))
     #expect(m.index == 2)
     #expect(m.date == "2025-03-14")
+    #expect(m.dateSource == .document)
     #expect(m.folder.path == dir.appendingPathComponent("B/2025").path)
     #expect(m.name == "2025-03-14 - Facture Example Hosting.pdf")
 
@@ -134,13 +136,54 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(Marker.originalName(final) == "document.pdf")
 }
 
-@Test func `sans date dans le texte, celle de création du fichier`() async throws {
+@Test func `sans date lue, celle de création du fichier ; sans date utile, pas de lecture`() async throws {
     let dir = try tempDir()
     defer { try? FileManager.default.removeItem(at: dir) }
     let file = dir.appendingPathComponent("DSN_123.pdf")
     try Data("pas un pdf".utf8).write(to: file)
-    let m = try #require(await Rules.firstMatch([Rule(filename: "^DSN_\\d+\\.pdf")], for: file))
-    #expect(m.date == Day.today().iso)
+    let created = Day(try #require(try file.resourceValues(forKeys: [.creationDateKey]).creationDate)).iso
+
+    let m = try #require(await Rules.firstMatch([Rule(filename: "^DSN_")], for: file, readDate: { _ in nil }))
+    #expect(m.date == created && m.dateSource == .file)
+    #expect(try #require(await Rules.firstMatch([Rule(filename: "^DSN_")], for: file)).dateSource == .file)
+
+    // Neither prefix nor dated subfolder: the model is not asked.
+    let plain = Rule(filename: "^DSN_", folder: "/F", datePrefix: false)
+    let p = try #require(await Rules.firstMatch([plain], for: file, readDate: { _ in Issue.record("lu"); return nil }))
+    #expect(p.dateSource == .unused && p.name == "DSN_123.pdf")
+}
+
+@Test func `règle tirée d’un fichier : nombres généralisés, type et émetteur du nom proposé`() {
+    let r = Rule.draft(from: "Invoice-DE84E1D9-0026 (1).pdf",
+                       suggestedName: "2026-09-17 - Facture Replicate - Calcul GPU - 12.40 USD.pdf")
+    #expect(r.filename == #"^Invoice-DE84E1D9-\d+"#)
+    #expect(r.rename == "Facture Replicate")
+    #expect(r.name == "Facture Replicate")
+    #expect(r.matches(filename: "Invoice-DE84E1D9-0031.pdf", text: nil))
+    #expect(!r.matches(filename: "Invoice-AB12CD34-0031.pdf", text: nil))
+
+    let bare = Rule.draft(from: "Facture_EDF_10260541684.pdf")
+    #expect(bare.filename == #"^Facture_EDF_\d+"#)
+    #expect(bare.rename.isEmpty && bare.name == "Facture_EDF_10260541684")
+    #expect(Rule.draft(from: "a+b (x).pdf").filename == #"^a\+b \(x\)"#)  // regex characters stay literal
+}
+
+@Test func `xlsx : texte lu, nom de fichier pris tel quel`() throws {
+    let dir = try tempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let xl = dir.appendingPathComponent("xl")
+    try FileManager.default.createDirectory(at: xl, withIntermediateDirectories: true)
+    try Data("<sst><si><t>Carte Corporate Example</t></si></sst>".utf8).write(to: xl.appendingPathComponent("sharedStrings.xml"))
+    let book = dir.appendingPathComponent("[releve].xlsx")  // brackets: a wildcard for unzip if not escaped
+    let zip = Process()
+    zip.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+    zip.currentDirectoryURL = dir
+    zip.arguments = ["-q", "-r", book.path, "xl"]
+    try zip.run()
+    zip.waitUntilExit()
+    try #require(zip.terminationStatus == 0)
+    #expect(RuleText.xlsxStrings(book)?.contains("Carte Corporate Example") == true)
+    #expect(RuleText.xlsxStrings(dir.appendingPathComponent("absent.xlsx")) == nil)
 }
 
 // MARK: rules.json

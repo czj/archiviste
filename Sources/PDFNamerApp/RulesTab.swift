@@ -6,8 +6,9 @@ import UniformTypeIdentifiers
 /// plus a tester that tells which rule takes a file, and what the others miss.
 struct RulesTab: View {
     @Environment(AppModel.self) private var model
-    @State private var selection: Rule.ID?
+    private var selection: Rule.ID? { model.selectedRuleID }
     @State private var test: RuleTest?
+    @State private var testedURL: URL?
     @State private var testing = false
     @State private var dropTargeted = false
 
@@ -32,11 +33,16 @@ struct RulesTab: View {
             Divider()
             tester
         }
+        .task(id: model.pendingTest) {
+            guard let url = model.pendingTest else { return }
+            model.pendingTest = nil
+            run(url)
+        }
     }
 
     private var list: some View {
         VStack(spacing: 0) {
-            List(selection: $selection) {
+            List(selection: Binding(get: { model.selectedRuleID }, set: { model.selectedRuleID = $0 })) {
                 ForEach(model.rules) { rule in
                     HStack(spacing: 6) {
                         Image(systemName: rule.needsText ? "doc.text.magnifyingglass" : "textformat")
@@ -68,7 +74,7 @@ struct RulesTab: View {
                     .help("Nouvelle règle")
                 Button {
                     model.rules.removeAll { $0.id == selection }
-                    selection = nil
+                    model.selectedRuleID = nil
                 } label: { Image(systemName: "minus").frame(width: 24, height: 20) }
                     .disabled(selection == nil)
                     .help("Supprimer la règle")
@@ -97,13 +103,25 @@ struct RulesTab: View {
                         Label("Règle \(match.index + 1) « \(match.rule.label) » → \(abbreviate(match.folder))/\(match.name)",
                               systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
-                            .onTapGesture { selection = model.rules.indices.contains(match.index) ? model.rules[match.index].id : nil }
+                            .onTapGesture { model.selectedRuleID = model.rules.indices.contains(match.index) ? model.rules[match.index].id : nil }
+                            .help("Afficher cette règle")
+                        if match.dateSource != .unused {
+                            Text(match.dateSource == .document ? "Date du document, lue par le modèle : \(match.date)"
+                                                               : "Pas de date lue dans le document : date du fichier, \(match.date)")
+                                .foregroundStyle(.secondary)
+                        }
                     } else {
                         Label(test.nameable ? "Aucune règle : le modèle le nommera" : "Aucune règle : le fichier ne sera pas touché",
                               systemImage: "minus.circle")
                             .foregroundStyle(.secondary)
                     }
                     ForEach(test.nearMisses, id: \.self) { Text("· \($0)").foregroundStyle(.secondary) }
+                    if let testedURL {
+                        Button(test.match == nil ? "Créer une règle depuis ce fichier" : "Créer une variante pour ce fichier") {
+                            model.makeRule(from: testedURL, suggestion: test.match.map(Suggestion.init))
+                        }
+                        .buttonStyle(.link)
+                    }
                 }
                 .font(.caption)
                 .textSelection(.enabled)
@@ -123,7 +141,7 @@ struct RulesTab: View {
         let rule = Rule(name: "Nouvelle règle")
         let at = model.rules.firstIndex { $0.id == selection }.map { $0 + 1 } ?? model.rules.count
         model.rules.insert(rule, at: at)
-        selection = rule.id
+        model.selectedRuleID = rule.id
     }
 
     private func duplicate(_ rule: Rule) {
@@ -132,7 +150,7 @@ struct RulesTab: View {
         copy.name = rule.label + " (copie)"
         let at = (model.rules.firstIndex { $0.id == rule.id } ?? model.rules.count - 1) + 1
         model.rules.insert(copy, at: at)
-        selection = copy.id
+        model.selectedRuleID = copy.id
     }
 
     private func chooseTestFile() {
@@ -144,8 +162,9 @@ struct RulesTab: View {
 
     private func run(_ url: URL) {
         testing = true
+        testedURL = url
         Task {
-            test = await RuleTest.run(model.rules, url)
+            test = await RuleTest.run(model.rules, url, readDate: model.readDate)
             testing = false
         }
     }
@@ -161,13 +180,13 @@ struct RuleTest {
     /// Earlier rules whose name pattern fits but whose text is missing phrases.
     var nearMisses: [String]
 
-    static func run(_ rules: [Rule], _ url: URL) async -> RuleTest {
+    static func run(_ rules: [Rule], _ url: URL, readDate: Rules.DateReader?) async -> RuleTest {
         let misses = await Rules.nearMisses(rules, for: url).map { i, rule, missing in
             "Règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))"
         }
         var note: [String] = []
         if let original = Marker.originalName(url) { note.append("Déjà traité par PDF Namer (avant : « \(original) ») : ignoré sauf dépôt forcé") }
-        return RuleTest(file: url.lastPathComponent, match: await Rules.firstMatch(rules, for: url),
+        return RuleTest(file: url.lastPathComponent, match: await Rules.firstMatch(rules, for: url, readDate: readDate),
                         nameable: Config.isSupported(url), nearMisses: note + misses)
     }
 }

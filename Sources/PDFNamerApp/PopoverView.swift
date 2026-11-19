@@ -47,6 +47,13 @@ struct PopoverView: View {
                 }
             }
             Spacer()
+            Button { model.paused.toggle() } label: {
+                Image(systemName: model.paused ? "play.fill" : "pause.fill")
+            }
+            .buttonStyle(.borderless)
+            .help(model.paused ? "Reprendre : renommer et ranger les fichiers en attente"
+                               : "Pause : les fichiers déposés ou arrivés attendent, rien n’est renommé")
+            .accessibilityLabel(model.paused ? "Reprendre" : "Pause")
             Button {
                 NSApp.activate()
                 openSettings()
@@ -70,7 +77,8 @@ struct PopoverView: View {
             } else {
                 Text("Surveille \(Text(active.map(\.name).formatted(.list(type: .and))).bold())")
                 Spacer()
-                Text("actif").font(.caption).foregroundStyle(.secondary)
+                Text(model.paused ? "en pause" : "actif").font(.caption)
+                    .foregroundStyle(model.paused ? Color.orange : .secondary)
             }
         }
         .font(.callout)
@@ -121,7 +129,8 @@ struct PopoverView: View {
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(model.isBusy ? "Renommage · \(min(done + 1, total)) sur \(total)" : "Terminé · \(total) fichier(s)")
+                    Text(model.paused && model.isBusy ? "En pause · \(total - done) fichier(s) en attente"
+                         : model.isBusy ? "Renommage · \(min(done + 1, total)) sur \(total)" : "Terminé · \(total) fichier(s)")
                         .font(.headline)
                     Spacer()
                 }
