@@ -32,13 +32,10 @@ struct DropZone: View {
         VStack(spacing: 8) {
             Image(systemName: "arrow.down.doc").font(.system(size: 30, weight: .light)).foregroundStyle(.tint)
             Text("Déposez des PDF ou des images").font(.callout.weight(.semibold))
-            HStack(spacing: 4) {
-                Text("ou")
-                Button("choisissez des fichiers…") { model.chooseFiles() }.buttonStyle(.link)
-                    .help("Choisir des fichiers (⌘O)")
-                Text("· ⌘V pour coller")
-            }
-            .font(.caption).foregroundStyle(.secondary)
+            Button("Choisir des fichiers…", systemImage: "folder") { model.chooseFiles() }
+                .buttonStyle(.bordered)
+                .help("Choisir des fichiers (⌘O)")
+            Text("ou collez-les avec ⌘V").font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 150)
         .background(Color.accentColor.opacity(targeted ? 0.15 : 0.06), in: RoundedRectangle(cornerRadius: 10))

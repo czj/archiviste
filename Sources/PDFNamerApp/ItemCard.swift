@@ -84,8 +84,8 @@ struct ItemCard: View {
                 Spacer()
                 ruleButton
             }
-            .buttonStyle(.link)
-            .font(.caption)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
         default:
             EmptyView()
         }
@@ -93,7 +93,7 @@ struct ItemCard: View {
 
     /// "Files like this one: rename and file them so" — opens the Rules window on a drafted rule.
     private var ruleButton: some View {
-        Button("Créer une règle…") {
+        Button("Créer une règle…", systemImage: "text.badge.plus") {
             model.makeRule(from: item.url, suggestion: item.suggestion, originalName: item.originalName,
                            dated: item.dating != nil)
             openWindow.main(model: model)  // makeRule already chose the Rules page
@@ -105,37 +105,48 @@ struct ItemCard: View {
         item.phase == .proposed ? item.suggestion?.name ?? "" : item.url.lastPathComponent
     }
 
+    /// Real buttons, icon and text; in a narrow window they shrink to icons (each keeps its tooltip).
     private var actions: some View {
+        ViewThatFits(in: .horizontal) {
+            actionRow.labelStyle(.titleAndIcon)
+            actionRow.labelStyle(.iconOnly)
+        }
+    }
+
+    private var actionRow: some View {
         HStack(spacing: 6) {
             ForEach(item.suggestion?.chips ?? [], id: \.self) { chip in
                 Text(chip)
                     .font(.caption2)
                     .padding(.horizontal, 7).padding(.vertical, 2)
                     .background(.quaternary, in: Capsule())
+                    .fixedSize()
             }
-            Spacer()
+            Spacer(minLength: 8)
             if item.phase == .proposed {
-                Button("Modifier", action: startEditing)
+                Button("Modifier", systemImage: "pencil", action: startEditing)
                     .help("Changer le nom proposé avant de renommer")
-                Button("Ignorer") { model.skip(item) }
+                Button("Ignorer", systemImage: "xmark") { model.skip(item) }
                     .help("Laisser ce fichier tel quel")
-                Button(item.suggestion?.match == nil ? String(localized: "Renommer") : String(localized: "Ranger")) { model.apply(item, name: displayName) }.buttonStyle(.borderedProminent)
-                    .controlSize(.small)
+                Button(item.suggestion?.match == nil ? String(localized: "Renommer") : String(localized: "Ranger"),
+                       systemImage: "checkmark") { model.apply(item, name: displayName) }
+                    .buttonStyle(.borderedProminent)
                     .help("Appliquer ce nom (l’original est sauvegardé)")
             } else {
-                Button("Modifier", action: startEditing)
+                Button("Modifier", systemImage: "pencil", action: startEditing)
                     .help("Changer le nom donné")
-                Button(String(localized: "undo-rename", defaultValue: "Annuler", comment: "Undo a rename (not Cancel)")) {
+                Button(String(localized: "undo-rename", defaultValue: "Annuler", comment: "Undo a rename (not Cancel)"),
+                       systemImage: "arrow.uturn.backward") {
                     model.undo(item)
                 }
                     .help("Remettre le nom et le dossier d’origine")
-                Button("Afficher") { model.reveal(item.url) }
+                Button("Afficher", systemImage: "folder") { model.reveal(item.url) }
                     .help("Afficher le fichier dans le Finder")
                 ruleButton
             }
         }
-        .buttonStyle(.link)
-        .font(.caption)
+        .buttonStyle(.bordered)
+        .controlSize(.small)
     }
 
     private func startEditing() {
