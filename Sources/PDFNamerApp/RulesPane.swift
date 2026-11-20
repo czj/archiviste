@@ -26,7 +26,7 @@ struct RulesPane: View {
             TesterPanel(tester: tester, run: run)
                 .inspectorColumnWidth(min: 260, ideal: 320, max: 460)
         }
-        .navigationSubtitle("\(model.rules.count) règles · la première qui correspond gagne")
+        .navigationSubtitle("\(model.rules.count) règles · sur le nom, puis sur le contenu : la première qui correspond gagne")
         .searchable(text: $query, placement: .toolbar, prompt: "Nom, dossier, expression…")
         .searchFocused($searching)
         .toolbar { toolbar }
