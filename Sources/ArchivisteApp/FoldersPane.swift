@@ -1,7 +1,7 @@
-import PDFNamerCore
+import ArchivisteCore
 import SwiftUI
 
-/// The Dossiers page: the two kinds of folders PDF Namer watches, kept apart.
+/// The Dossiers page: the two kinds of folders Archiviste watches, kept apart.
 ///
 /// - Inboxes (Downloads, Desktop, a scanner's folder): each file that arrives goes through the
 ///   rules (name, then content), else the model names it in place. Or a relay, moving it as is.

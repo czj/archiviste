@@ -1,6 +1,6 @@
 import CoreText
 import Foundation
-@testable import PDFNamerCore
+@testable import ArchivisteCore
 import Testing
 
 /// A one-page PDF whose text layer holds `text`.

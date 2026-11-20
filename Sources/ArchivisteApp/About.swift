@@ -3,9 +3,9 @@ import AppKit
 /// The standard About panel (name, icon, version, copyright from Info.plist), plus what it
 /// does, the source code and the licence.
 enum About {
-    static let repository = URL(string: "https://github.com/czj/pdf-namer")!
-    static let readme = URL(string: "https://github.com/czj/pdf-namer#readme")!
-    static let issues = URL(string: "https://github.com/czj/pdf-namer/issues")!
+    static let repository = URL(string: "https://github.com/czj/archiviste")!
+    static let readme = URL(string: "https://github.com/czj/archiviste#readme")!
+    static let issues = URL(string: "https://github.com/czj/archiviste/issues")!
 
     static func show() {
         let style = NSMutableParagraphStyle()

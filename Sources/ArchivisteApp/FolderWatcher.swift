@@ -1,10 +1,10 @@
 import Foundation
 import OSLog
-import PDFNamerCore
+import ArchivisteCore
 
 /// Reports files that newly arrive in a folder, once their size has settled (a scanner or
 /// a download may still be writing). Files present at start are left alone, and so are those
-/// `accepts` turns down (wrong type, already handled by PDF Namer).
+/// `accepts` turns down (wrong type, already handled by Archiviste).
 final class FolderWatcher {
     private let url: URL
     private let accepts: (URL) -> Bool
@@ -25,7 +25,7 @@ final class FolderWatcher {
         known = Set(present.map(\.path)).subtracting(missed.map(\.path))
         let fd = open(url.path, O_EVTONLY)
         guard fd >= 0 else {
-            Logger(subsystem: "com.github.czj.pdf-namer", category: "watch")
+            Logger(subsystem: "com.github.czj.archiviste", category: "watch")
                 .error("Impossible de surveiller \(url.path, privacy: .private)")
             return
         }

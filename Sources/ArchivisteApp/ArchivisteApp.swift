@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
-    /// Set by an explicit "Quitter PDF Namer" (menu bar icon): no question then.
+    /// Set by an explicit "Quitter Archiviste" (menu bar icon): no question then.
     static var quitting = false
 
     /// ⌘Q on a menu bar app usually means "close this", rarely "stop watching my folders": ask
@@ -30,7 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return .terminateCancel
         case .ask:
             let alert = NSAlert()
-            alert.messageText = String(localized: "Quitter PDF Namer ?")
+            alert.messageText = String(localized: "Quitter Archiviste ?")
             alert.informativeText = String(localized: """
                 En arrière-plan, il continue de surveiller vos dossiers, sans fenêtre. \
                 Quitté, il rattrapera au prochain lancement ce qui sera arrivé entre-temps.
@@ -58,13 +58,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct PDFNamerApp: App {
+struct ArchivisteApp: App {
     @NSApplicationDelegateAdaptor private var delegate: AppDelegate
     @State private var model: AppModel
     @State private var status: StatusItem
     @Environment(\.openWindow) private var openWindow
 
     init() {
+        Legacy.migrate()
         Presence.register()
         let model = AppModel()
         _model = State(initialValue: model)
@@ -76,7 +77,7 @@ struct PDFNamerApp: App {
         let _ = status.open = { [openWindow] in openWindow(id: MainWindow.id) }
         let _ = delegate.open = { [status] in status.show(nil) }
 
-        Window("PDF Namer", id: MainWindow.id) {
+        Window("Archiviste", id: MainWindow.id) {
             MainWindow().environment(model)
         }
         .defaultSize(width: 1180, height: 720)

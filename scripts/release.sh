@@ -4,8 +4,8 @@
 #   scripts/release.sh 1.0.0 notes.md
 #
 # Assets, with fixed names so that releases/latest/download/<name> always works (scripts/install.sh):
-#   PDF-Namer.zip         the app, signed ad hoc
-#   pdf-namer-cli.tar.gz  the command
+#   Archiviste.zip         the app, signed ad hoc
+#   archiviste-cli.tar.gz  the command
 #   SHA256SUMS
 set -euo pipefail
 ROOT="${0:A:h:h}"
@@ -31,9 +31,9 @@ BINDIR=$(swift build -c release --show-bin-path)
 OUT="$ROOT/build/release"
 rm -rf "$OUT"
 mkdir -p "$OUT"
-ditto -c -k --keepParent "$ROOT/build/PDF Namer.app" "$OUT/PDF-Namer.zip"
-tar -C "$BINDIR" -czf "$OUT/pdf-namer-cli.tar.gz" pdf-namer
-(cd "$OUT" && shasum -a 256 PDF-Namer.zip pdf-namer-cli.tar.gz > SHA256SUMS)
+ditto -c -k --keepParent "$ROOT/build/Archiviste.app" "$OUT/Archiviste.zip"
+tar -C "$BINDIR" -czf "$OUT/archiviste-cli.tar.gz" archiviste
+(cd "$OUT" && shasum -a 256 Archiviste.zip archiviste-cli.tar.gz > SHA256SUMS)
 
-gh release create "v$VERSION" "$OUT/PDF-Namer.zip" "$OUT/pdf-namer-cli.tar.gz" "$OUT/SHA256SUMS" \
-  --target main --title "PDF Namer $VERSION" --notes-file "$NOTES"
+gh release create "v$VERSION" "$OUT/Archiviste.zip" "$OUT/archiviste-cli.tar.gz" "$OUT/SHA256SUMS" \
+  --target main --title "Archiviste $VERSION" --notes-file "$NOTES"

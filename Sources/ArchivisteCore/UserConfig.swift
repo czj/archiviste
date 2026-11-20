@@ -1,7 +1,7 @@
 import Foundation
 
-/// Personal settings, shared by the app and the CLI, in `~/.config/pdf-namer/`
-/// (or `$XDG_CONFIG_HOME/pdf-namer/`), as two layers:
+/// Personal settings, shared by the app and the CLI, in `~/.config/archiviste/`
+/// (or `$XDG_CONFIG_HOME/archiviste/`), as two layers:
 ///
 /// - `config.json`: hand-written, can live in a dotfiles repo; the app never writes it.
 /// - `config.local.json`: this Mac only; the settings window writes there just the
@@ -44,7 +44,7 @@ public struct UserConfig: Codable, Equatable, Sendable {
     }
 
     /// Where originals are copied ("RENAME BACKUP <date> - …") before a rename.
-    public var backupDir = "~/Documents/PDF Namer/Originaux"
+    public var backupDir = "~/Documents/Archiviste/Originaux"
     /// Backups older than this are deleted (0 = never).
     public var backupMaxAgeDays = 180
     /// Other files in backupDir added longer ago go to the Trash (0 = never).
@@ -148,10 +148,41 @@ public struct UserConfig: Codable, Equatable, Sendable {
     public var expireMaxAge: Int? { expireMaxAgeDays > 0 ? expireMaxAgeDays : nil }
 
     public static var directory: URL {
+        _ = migrated
+        return configBase.appendingPathComponent("archiviste")
+    }
+
+    private static var configBase: URL {
         let env = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"].flatMap { $0.isEmpty ? nil : $0 }
-        let base = env.map { URL(fileURLWithPath: $0) }
+        return env.map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config")
-        return base.appendingPathComponent("pdf-namer")
+    }
+
+    /// Up to 1.0 the app was called PDF Namer: its folders move once, on first use by the app or the command.
+    private static let migrated: Void = migrateLegacyFolders(
+        configBase: configBase, documents: FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Documents"))
+
+    /// `<configBase>/pdf-namer` becomes `<configBase>/archiviste`, a link staying at the old place
+    /// (for dotfiles or another Mac still on PDF Namer). The default backup folder,
+    /// `~/Documents/PDF Namer`, follows when no config file names another one.
+    /// Nothing moves when the new folder already exists.
+    static func migrateLegacyFolders(configBase: URL, documents: URL) {
+        let fm = FileManager.default
+        let old = configBase.appendingPathComponent("pdf-namer"), new = configBase.appendingPathComponent("archiviste")
+        let oldIsFolder = (try? old.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false
+        if oldIsFolder, !fm.fileExists(atPath: new.path) {
+            if (try? fm.moveItem(at: old, to: new)) != nil {
+                try? fm.createSymbolicLink(at: old, withDestinationURL: new)
+            }
+        }
+        let names = [new.appendingPathComponent("config.json"), new.appendingPathComponent("config.local.json")]
+        let customBackup = names.contains { url in
+            (try? Data(contentsOf: url)).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }?["backupDir"] != nil
+        }
+        let oldBackups = documents.appendingPathComponent("PDF Namer"), newBackups = documents.appendingPathComponent("Archiviste")
+        if !customBackup, fm.fileExists(atPath: oldBackups.path), !fm.fileExists(atPath: newBackups.path) {
+            try? fm.moveItem(at: oldBackups, to: newBackups)
+        }
     }
 
     /// Shared settings (dotfiles).

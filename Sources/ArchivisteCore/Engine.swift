@@ -40,7 +40,7 @@ public struct Engine: Sendable {
     public func ask(_ ex: Extracted, isImage: Bool) async throws -> [String: String] {
         var imageURL: URL?
         if let png = ex.imagePNG {
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent("pdf-namer-\(UUID().uuidString).png")
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("archiviste-\(UUID().uuidString).png")
             try png.write(to: url)
             imageURL = url
         }

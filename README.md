@@ -1,4 +1,4 @@
-# PDF Namer
+# Archiviste
 
 Renomme vos PDF, scans, photos et captures d'écran d'après leur contenu, entièrement
 sur votre Mac : modèle Apple sur l'appareil (FoundationModels) et OCR Vision. Rien ne
@@ -16,17 +16,26 @@ prennent la date de prise de vue. Noms et prompts sont en français.
 
 ## Installation
 
-    curl -fsSL https://raw.githubusercontent.com/czj/pdf-namer/main/scripts/install.sh | zsh
+    curl -fsSL https://raw.githubusercontent.com/czj/archiviste/main/scripts/install.sh | zsh
 
-Installe la dernière [version publiée](https://github.com/czj/pdf-namer/releases/latest) :
-l'app dans `~/Applications`, la commande `pdf-namer` dans `~/.local/bin`, puis ouvre l'app.
-Relancer la même commande met à jour (`PDF_NAMER_VERSION=1.0.0` pour une version précise).
+Installe la dernière [version publiée](https://github.com/czj/archiviste/releases/latest) :
+l'app dans `~/Applications`, la commande `archiviste` dans `~/.local/bin`, puis ouvre l'app.
+Relancer la même commande met à jour (`ARCHIVISTE_VERSION=1.1.0` pour une version précise).
 
 L'app n'est pas notarisée par Apple (signature ad hoc). Ce script la télécharge avec `curl`,
 qui ne la met pas en quarantaine : elle s'ouvre directement. Si vous téléchargez plutôt
-`PDF-Namer.zip` depuis la page des versions avec un navigateur, macOS la bloque au premier
+`Archiviste.zip` depuis la page des versions avec un navigateur, macOS la bloque au premier
 lancement : ouvrez-la une fois, puis Réglages Système › Confidentialité et sécurité ›
 « Ouvrir quand même ».
+
+### Anciennement PDF Namer
+
+Jusqu'à la version 1.0, l'app s'appelait PDF Namer. La commande d'installation remplace
+l'ancienne app et l'ancienne commande `pdf-namer`. Au premier lancement, Archiviste reprend
+tout : `~/.config/pdf-namer/` devient `~/.config/archiviste/` (un lien reste à l'ancienne
+place), l'historique et les préférences sont recopiés, et Archiviste s'ouvre à la connexion
+si PDF Namer le faisait. Les fichiers déjà traités restent reconnus : leur marque cachée ne
+change pas. macOS redemandera seulement l'autorisation des notifications.
 
 Écrit en Swift 6.4 en mode de langage Swift 6 (concurrence vérifiée par le compilateur),
 avec Approachable Concurrency : l'app et la commande vivent sur l'acteur principal, le
@@ -37,7 +46,7 @@ rendu et l'OCR passent en `@concurrent`.
 L'app est en français et en anglais : elle suit la langue du système (choix par app dans
 Réglages Système › Général › Langue et région). Les noms de fichiers restent en français.
 
-- Un clic sur l'icône de la barre des menus ouvre la fenêtre PDF Namer : Activité
+- Un clic sur l'icône de la barre des menus ouvre la fenêtre Archiviste : Activité
   (dépôt de fichiers, historique des renommages avec recherche), Règles, Dossiers,
   Sauvegardes, Général (⌘1 à ⌘5). Un clic droit donne un menu court : ouvrir, ranger
   maintenant, pause, quitter. Fenêtre fermée, l'app reste dans la barre des menus.
@@ -76,9 +85,9 @@ Réglages Système › Général › Langue et région). Les noms de fichiers re
   pause : ⌥⌘P.
 - Chaque renommage peut être modifié ou annulé. L'option « Valider avant de renommer »
   attend votre accord pour les fichiers déposés.
-- Dans une boîte d'arrivée, un fichier renommé ou rangé par PDF Namer n'est plus jamais repris, même si son nom n'a
+- Dans une boîte d'arrivée, un fichier renommé ou rangé par Archiviste n'est plus jamais repris, même si son nom n'a
   pas de date ou a été retouché à la main : une marque cachée (attribut étendu
-  `com.github.czj.pdf-namer.renamed`, qui garde le nom d'origine) le signale. Le modèle ne
+  `com.github.czj.pdf-namer.renamed`, du nom d’avant de l’app, qui garde le nom d’origine) le signale. Le modèle ne
   renomme pas non plus les fichiers déjà nommés `AAAA-MM-JJ - …`. Un classeur, lui, range tout fichier posé à sa racine ; en direct, un nom déjà daté garde sa date (seul « Ranger maintenant », avec son aperçu, la corrige d'après le document).
 
 ## Les règles de rangement
@@ -94,10 +103,10 @@ création du fichier). Le sous-dossier d'année ou de mois n'est pas réglé dan
 c'est celui du dossier de destination quand c'est un classeur. L'éditeur de règle l'affiche
 et permet de le changer, pour toutes les règles qui y rangent.
 
-La page **Règles** de la fenêtre PDF Namer (⌘2) les liste, les cherche,
+La page **Règles** de la fenêtre Archiviste (⌘2) les liste, les cherche,
 les trie, les réordonne et les modifie (⌘N, ⌘D, ⌫, ⌥⌘↑/↓, Espace, ⌘Z). Le testeur (⌥⌘T, un fichier choisi par ⌥⌘O, ou
 un fichier déposé sur la page) montre quelle règle prend un fichier, et ce qui manque aux
-règles qui ont failli le prendre. Elles sont enregistrées dans `~/.config/pdf-namer/rules.json` :
+règles qui ont failli le prendre. Elles sont enregistrées dans `~/.config/archiviste/rules.json` :
 
 ```json
 {
@@ -126,23 +135,23 @@ transfère une fois pour toutes au classeur du dossier (`datedFolders` dans
 `config.local.json`), sans changer la destination d'aucun fichier. Contrairement à `config.json`, l'app écrit ce fichier : s'il
 est versionné avec chezmoi, lancez `chezmoi re-add` après l'avoir modifié dans l'app.
 
-## La commande `pdf-namer`
+## La commande `archiviste`
 
-    pdf-namer facture.pdf                  # affiche le nom proposé (par une règle ou le modèle)
-    pdf-namer facture.pdf --json
-    pdf-namer --rename *.pdf               # range par règle, sinon renomme (avec sauvegarde)
-    pdf-namer --rename --dry-run *        # simulation ; avec des règles, tout type de fichier
-    pdf-namer --rename --force *.pdf       # reprend aussi les fichiers déjà traités ou nommés
-    pdf-namer --rules *.pdf                # quelle règle prend chaque fichier, et pourquoi pas les autres
-    pdf-namer --text scan.pdf              # ce que lit le modèle : texte, dates et montants candidats
+    archiviste facture.pdf                  # affiche le nom proposé (par une règle ou le modèle)
+    archiviste facture.pdf --json
+    archiviste --rename *.pdf               # range par règle, sinon renomme (avec sauvegarde)
+    archiviste --rename --dry-run *        # simulation ; avec des règles, tout type de fichier
+    archiviste --rename --force *.pdf       # reprend aussi les fichiers déjà traités ou nommés
+    archiviste --rules *.pdf                # quelle règle prend chaque fichier, et pourquoi pas les autres
+    archiviste --text scan.pdf              # ce que lit le modèle : texte, dates et montants candidats
 
 ## Sauvegardes et configuration
 
 Avant chaque renommage, l'original est copié sous `RENAME BACKUP <date> - <nom>`
 dans le dossier de sauvegarde, puis supprimé au bout de 6 mois.
 
-L'app et la commande lisent deux fichiers dans `~/.config/pdf-namer/` (ou
-`$XDG_CONFIG_HOME/pdf-namer/`) :
+L'app et la commande lisent deux fichiers dans `~/.config/archiviste/` (ou
+`$XDG_CONFIG_HOME/archiviste/`) :
 
 - **`config.json`** : la configuration commune, écrite à la main, à versionner avec ses
   dotfiles (chezmoi, stow…). L'app ne la modifie jamais, donc un `chezmoi apply` n'écrase
@@ -168,7 +177,7 @@ recharge toute seule quand l'un des deux change. Toutes les clés sont facultati
 
 | Clé | Défaut | Rôle |
 |---|---|---|
-| `backupDir` | `~/Documents/PDF Namer/Originaux` | où sont copiés les originaux |
+| `backupDir` | `~/Documents/Archiviste/Originaux` | où sont copiés les originaux |
 | `backupMaxAgeDays` | `180` | âge au-delà duquel les sauvegardes sont supprimées (`0` = jamais) |
 | `expireMaxAgeDays` | `0` | met à la corbeille les **autres** fichiers du dossier de sauvegarde ajoutés depuis plus longtemps : pratique si ce dossier sert aussi de « à jeter plus tard » (`0` = jamais) |
 | `watchedFolders` | `[]` | boîtes d’arrivée : règles puis modèle, ou relais (`moveTo`) |
@@ -179,7 +188,7 @@ recharge toute seule quand l'un des deux change. Toutes les clés sont facultati
 
     scripts/build-app.sh               # build release, signe ad hoc, installe dans ~/Applications
                                        # et la commande dans ~/.local/bin
-    scripts/build-app.sh --no-install  # seulement build/PDF Namer.app
+    scripts/build-app.sh --no-install  # seulement build/Archiviste.app
     scripts/release.sh 1.1.0 notes.md  # depuis main propre : tests, build, release GitHub (tag v1.1.0)
     swift test
 
@@ -193,7 +202,7 @@ Liquid Glass, modifiable dans Icon Composer) avec `actool`. On peut aussi ouvrir
 Portage d'un script Python personnel. `swift test` vérifie que les règles de nommage
 (casse, nettoyage, montants, dates candidates, nom final) donnent exactement les mêmes
 résultats que le script sur ~2 500 cas, enregistrés dans
-`Tests/PDFNamerCoreTests/Fixtures/parity.json` par `tools/gen_parity.py`.
+`Tests/ArchivisteCoreTests/Fixtures/parity.json` par `tools/gen_parity.py`.
 Seul écart voulu : l'OCR Vision tourne en mode précis.
 
 ## Licence

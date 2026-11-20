@@ -1,7 +1,7 @@
 import AppKit
 import Observation
 import OSLog
-import PDFNamerCore
+import ArchivisteCore
 import ServiceManagement
 import SwiftUI
 import UserNotifications
@@ -66,7 +66,7 @@ final class AppModel {
     var engineState: EngineState = .loading
     var items: [Item] = []
     var recent: [RecentEntry] = [] { didSet { save(recent, "recent") } }
-    /// ~/.config/pdf-namer/config.json and config.local.json; changes from the settings window
+    /// ~/.config/archiviste/config.json and config.local.json; changes from the settings window
     /// are written back to config.local.json.
     var settings = UserConfig() {
         didSet {
@@ -98,7 +98,7 @@ final class AppModel {
     @ObservationIgnored private var worker: Task<Void, Never>?
     @ObservationIgnored private var watchers: [String: FolderWatcher] = [:]
     @ObservationIgnored private var housekeepingLoop: Task<Void, Never>?
-    @ObservationIgnored private let log = Logger(subsystem: "com.github.czj.pdf-namer", category: "app")
+    @ObservationIgnored private let log = Logger(subsystem: "com.github.czj.archiviste", category: "app")
 
     /// Dropped files and arrivals; "Ranger maintenant" keeps its own list (`tidyItems`).
     var batch: [Item] { items.filter { !$0.tidy } }
@@ -115,7 +115,7 @@ final class AppModel {
             engine = try Engine()
             engineState = .ready
         } catch EngineError.unavailable(let reason) {
-            // PDFNamerCore's message stays French (the CLI's); this one follows the app's language.
+            // ArchivisteCore's message stays French (the CLI's); this one follows the app's language.
             engineState = .unavailable(String(localized: "Modèle Apple indisponible (\(reason)). Activez Apple Intelligence dans Réglages Système › Apple Intelligence et Siri."))
         } catch {
             engineState = .unavailable(error.localizedDescription)
@@ -161,7 +161,7 @@ final class AppModel {
         // Any file may match a rule; only PDFs and images can be named by the model.
         for url in files where (Config.isSupported(url) || !rules.isEmpty) && Config.isFileForRules(url) {
             guard !isQueued(url) else { continue }
-            if Marker.isMarked(url) {  // renamed or filed by PDF Namer before, whatever its name now
+            if Marker.isMarked(url) {  // renamed or filed by Archiviste before, whatever its name now
                 if source == nil { items.append(Item(url: url, source: nil, phase: .skipped(String(localized: "déjà traité")))) }
                 continue
             }
@@ -644,7 +644,7 @@ final class AppModel {
     private func notify(_ entry: RecentEntry, source: String, filed: Bool) {
         guard hasBundle else { return }
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "PDF Namer · dossier \(source)")
+        content.title = String(localized: "Archiviste · dossier \(source)")
         content.body = filed
             ? String(localized: "Rangé dans \(entry.url.deletingLastPathComponent().lastPathComponent) : « \(entry.newName) »")
             : String(localized: "Nouveau fichier renommé : « \(entry.newName) »")
@@ -714,7 +714,7 @@ final class AppModel {
         guard rulesError == nil, configError == nil else { return }
         var newRules = rules, newSettings = settings
         guard newSettings.migrateSubfolders(&newRules) else { return }
-        // The old file, as it was, in case an older PDF Namer (or another Mac) still needs it.
+        // The old file, as it was, in case an older Archiviste (or another Mac) still needs it.
         let copy = Rules.fileURL.deletingLastPathComponent().appendingPathComponent("rules.before-classeurs.json")
         if !FileManager.default.fileExists(atPath: copy.path) { try? FileManager.default.copyItem(at: Rules.fileURL, to: copy) }
         log.info("Sous-dossiers des règles déplacés vers les classeurs")

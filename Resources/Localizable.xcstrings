@@ -535,12 +535,12 @@
         }
       }
     },
-    "Aide de PDF Namer" : {
+    "Aide d’Archiviste" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PDF Namer Help"
+            "value" : "Archiviste Help"
           }
         }
       }
@@ -631,6 +631,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apply this name (the original is backed up)"
+          }
+        }
+      }
+    },
+    "Archiviste" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archiviste"
+          }
+        }
+      }
+    },
+    "Archiviste · clic droit : menu · déposez des fichiers ici" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archiviste · right-click: menu · drop files here"
+          }
+        }
+      }
+    },
+    "Archiviste · dossier %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archiviste · %@ folder"
           }
         }
       }
@@ -1205,12 +1235,12 @@
         }
       }
     },
-    "Déjà traité par PDF Namer (avant : « %@ ») : l’app le laisse de côté, seule la commande pdf-namer --force le reprend" : {
+    "Déjà traité par Archiviste (avant : « %@ ») : l’app le laisse de côté, seule la commande archiviste --force le reprend" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Already handled by PDF Namer (was “%@”): the app leaves it alone, only the pdf-namer --force command takes it again"
+            "value" : "Already handled by Archiviste (was “%@”): the app leaves it alone, only the archiviste --force command takes it again"
           }
         }
       }
@@ -1941,12 +1971,12 @@
         }
       }
     },
-    "Ouvrir PDF Namer" : {
+    "Ouvrir Archiviste" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open PDF Namer"
+            "value" : "Open Archiviste"
           }
         }
       }
@@ -1997,36 +2027,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Where should files arriving in “%@” go?"
-          }
-        }
-      }
-    },
-    "PDF Namer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF Namer"
-          }
-        }
-      }
-    },
-    "PDF Namer · clic droit : menu · déposez des fichiers ici" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF Namer · right-click: menu · drop files here"
-          }
-        }
-      }
-    },
-    "PDF Namer · dossier %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF Namer · %@ folder"
           }
         }
       }
@@ -2213,22 +2213,22 @@
         }
       }
     },
-    "Quitter PDF Namer" : {
+    "Quitter Archiviste" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quit PDF Namer"
+            "value" : "Quit Archiviste"
           }
         }
       }
     },
-    "Quitter PDF Namer ?" : {
+    "Quitter Archiviste ?" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quit PDF Namer?"
+            "value" : "Quit Archiviste?"
           }
         }
       }
@@ -2531,12 +2531,12 @@
         }
       }
     },
-    "Sans icône, PDF Namer travaille en arrière-plan : rouvrez-le depuis le Finder, Spotlight ou Raycast pour retrouver cette fenêtre." : {
+    "Sans icône, Archiviste travaille en arrière-plan : rouvrez-le depuis le Finder, Spotlight ou Raycast pour retrouver cette fenêtre." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "With no icon, PDF Namer works in the background: open it again from the Finder, Spotlight or Raycast to get this window back."
+            "value" : "With no icon, Archiviste works in the background: open it again from the Finder, Spotlight or Raycast to get this window back."
           }
         }
       }
@@ -2911,12 +2911,12 @@
         }
       }
     },
-    "config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande pdf-namer lit les deux." : {
+    "config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "config.json is the shared configuration (to keep with your dotfiles); the app never changes it. What you change here goes to config.local.json, which only applies to this Mac. The pdf-namer command reads both."
+            "value" : "config.json is the shared configuration (to keep with your dotfiles); the app never changes it. What you change here goes to config.local.json, which only applies to this Mac. The archiviste command reads both."
           }
         }
       }
@@ -3188,12 +3188,12 @@
         }
       }
     },
-    "À propos de PDF Namer" : {
+    "À propos d’Archiviste" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "About PDF Namer"
+            "value" : "About Archiviste"
           }
         }
       }

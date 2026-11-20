@@ -1,4 +1,4 @@
-import PDFNamerCore
+import ArchivisteCore
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -395,7 +395,7 @@ struct RuleTest {
         }
         var note: [String] = []
         if let original = Marker.originalName(url) {
-            note.append(String(localized: "Déjà traité par PDF Namer (avant : « \(original) ») : l’app le laisse de côté, seule la commande pdf-namer --force le reprend"))
+            note.append(String(localized: "Déjà traité par Archiviste (avant : « \(original) ») : l’app le laisse de côté, seule la commande archiviste --force le reprend"))
         }
         return RuleTest(file: url.lastPathComponent, match: await Rules.firstMatch(rules, for: url, readDate: readDate, sorted: sorted),
                         nameable: Config.isSupported(url), nearMisses: note + misses)
