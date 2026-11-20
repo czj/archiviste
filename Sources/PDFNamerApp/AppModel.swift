@@ -68,7 +68,9 @@ final class AppModel {
     var settings = UserConfig() {
         didSet {
             guard settings != oldValue else { return }
-            if oldValue.watchedFolders != settings.watchedFolders { syncWatchers() }
+            if oldValue.watchedFolders != settings.watchedFolders || oldValue.datedFolders != settings.datedFolders {
+                syncWatchers()
+            }
             if loaded { saveConfig() }  // loading the file must not rewrite it
         }
     }
@@ -122,6 +124,16 @@ final class AppModel {
     }
 
     // MARK: Queue
+
+    /// Files arriving at the top of a classeur, by hand or from elsewhere: to their year or month
+    /// subfolder. No marker check: a file renamed earlier still has to be sorted (and a cloud drive
+    /// drops the marker anyway). Only loose files at the top get here; the subfolders are not watched.
+    private func sort(_ urls: [URL], into folder: UserConfig.DatedFolder) {
+        for url in urls where Config.isFileForRules(url) && !isQueued(url) {
+            items.append(Item(url: url, source: folder.name, dating: folder.rule))
+        }
+        startWorker()
+    }
 
     /// Files dropped, chosen or pasted (folders: their files), or arriving in a watched folder.
     func add(_ urls: [URL], source: String? = nil) {
@@ -269,7 +281,8 @@ final class AppModel {
         do {
             item.phase = .reading
             // 1. Filing rules, before any model call.
-            if let m = await Rules.firstMatch(item.dating.map { [$0] } ?? rules, for: item.url, readDate: readDate) {
+            if let m = await Rules.firstMatch(item.dating.map { [$0] } ?? rules, for: item.url, readDate: readDate,
+                                              sorted: settings.datedFolders) {
                 item.suggestion = Suggestion(m)
                 item.took = Date().timeIntervalSince(t0)
                 if m.folder.appendingPathComponent(m.name).standardizedFileURL == item.url.standardizedFileURL {
@@ -417,10 +430,9 @@ final class AppModel {
             rule.name = rule.label + " (variante)"
             at = match.index + 1
         } else if let match = suggestion?.match {
-            // Dated by "Classement par date", whose inner rule takes any name: keep only where it
-            // files (folder, subfolder, prefix), with a name pattern drafted from this file.
+            // Sorted by a classeur, whose inner rule takes any name: keep only where it files and
+            // its prefix, with a name pattern drafted from this file. The subfolder stays the folder's.
             rule.folder = match.rule.folder
-            rule.subfolder = match.rule.subfolder
             rule.datePrefix = match.rule.datePrefix
         }
         rule.id = UUID()
@@ -477,8 +489,29 @@ final class AppModel {
         UserDefaults.standard.set(dates, forKey: Self.watchedUntilKey)
     }
 
+    /// What a watched folder does with what arrives at its top.
+    private enum Role {
+        /// Rules (name, then content), else the model names it in place.
+        case inbox
+        /// Moved as is to another folder.
+        case relay(URL)
+        /// A classeur: to its year or month subfolder.
+        case classeur(UserConfig.DatedFolder)
+    }
+
+    /// Read at each arrival, so changing a folder's settings needs no new watcher. An inbox wins
+    /// over a classeur for the same folder (the Dossiers page doesn't let a folder be both).
+    private func role(for path: String) -> Role? {
+        if let inbox = settings.watchedFolders.first(where: { $0.enabled && $0.url.path == path }) {
+            return inbox.relay.map(Role.relay) ?? .inbox
+        }
+        return UserConfig.DatedFolder.find(URL(fileURLWithPath: path), in: settings.datedFolders).map(Role.classeur)
+    }
+
     private func syncWatchers() {
-        let wanted = Set(settings.watchedFolders.filter(\.enabled).map(\.url.path))
+        let inboxes = settings.watchedFolders.filter(\.enabled).map(\.url.path)
+        let classeurs = settings.datedFolders.filter(\.enabled).map(\.url.path)
+        let wanted = Set(inboxes + classeurs)
         let until = UserDefaults.standard.dictionary(forKey: Self.watchedUntilKey) as? [String: Date] ?? [:]
         // Only at launch: later, a new watcher is a folder just added or switched on.
         let launching = heartbeat == nil
@@ -487,12 +520,21 @@ final class AppModel {
             let url = URL(fileURLWithPath: path)
             watchers[path] = FolderWatcher(url, since: launching ? until[path] : nil, accepts: { [weak self] file in
                 guard let self, Config.isFileForRules(file) else { return false }
-                if self.relay(for: path) != nil { return true }  // a relay passes everything on
-                guard !Marker.isMarked(file) else { return false }
-                return Config.isSupported(file) || !self.rules.isEmpty  // any file may match a rule
+                switch self.role(for: path) {
+                case .relay, .classeur: return true  // passed on, or sorted, whoever renamed it before
+                case .inbox:
+                    guard !Marker.isMarked(file) else { return false }
+                    return Config.isSupported(file) || !self.rules.isEmpty  // any file may match a rule
+                case nil: return false
+                }
             }) { [weak self] urls in
                 guard let self else { return }
-                if let relay = self.relay(for: path) { self.pass(urls, to: relay) } else { self.add(urls, source: url.lastPathComponent) }
+                switch self.role(for: path) {
+                case .relay(let to): self.pass(urls, to: to)
+                case .classeur(let folder): self.sort(urls, into: folder)
+                case .inbox: self.add(urls, source: url.lastPathComponent)
+                case nil: break
+                }
             }
         }
         markWatched()
@@ -506,11 +548,6 @@ final class AppModel {
                 }
             }
         }
-    }
-
-    /// Read at each arrival, so changing "Déplacer vers" needs no new watcher.
-    private func relay(for path: String) -> URL? {
-        settings.watchedFolders.first { $0.enabled && $0.url.path == path }?.relay
     }
 
     /// Relay folder: move as is; the destination's own watcher (if any) takes it from there.
@@ -533,10 +570,25 @@ final class AppModel {
         watchers[url.deletingLastPathComponent().path]?.ignore(url)
     }
 
-    func addFolder() {
-        for url in chooseFolders(multiple: true) where !settings.watchedFolders.contains(where: { $0.url.path == url.path }) {
-            settings.watchedFolders.append(UserConfig.Folder(path: url.path))
+    /// Adds inboxes. A folder already listed (as an inbox or a classeur) stays as it is: the
+    /// names of those left out come back, for the page to say why.
+    @discardableResult
+    func addFolder() -> [String] {
+        addFolders { settings.watchedFolders.append(UserConfig.Folder(path: $0.path)) }
+    }
+
+    /// Adds classeurs, by year by default; same rule as `addFolder` for folders already listed.
+    @discardableResult
+    func addClasseur() -> [String] {
+        addFolders { settings.datedFolders.append(UserConfig.DatedFolder(path: $0.path)) }
+    }
+
+    private func addFolders(_ add: (URL) -> Void) -> [String] {
+        var already: [String] = []
+        for url in chooseFolders(multiple: true) {
+            if settings.isListed(url) { already.append(url.lastPathComponent) } else { add(url) }
         }
+        return already
     }
 
     private func notify(_ source: String, _ name: String, folder: URL?) {
@@ -580,7 +632,10 @@ final class AppModel {
     /// Reload both files (at launch, and whenever one changes, e.g. after `chezmoi apply`).
     func reloadConfig() {
         loaded = false
-        defer { loaded = true }
+        defer {
+            loaded = true
+            migrateSubfolders()
+        }
         do {
             let fresh = try Rules.load()
             rulesError = nil
@@ -596,6 +651,17 @@ final class AppModel {
         } catch {
             configError = "Configuration illisible : \(error.localizedDescription)"
         }
+    }
+
+    /// Old rules.json files give rules their own year or month subfolder: it moves to the
+    /// destination folders (classeurs), written to rules.json and config.local.json. Once.
+    private func migrateSubfolders() {
+        guard rulesError == nil, configError == nil else { return }
+        var newRules = rules, newSettings = settings
+        guard newSettings.migrateSubfolders(&newRules) else { return }
+        log.info("Sous-dossiers des règles déplacés vers les classeurs")
+        settings = newSettings  // config.local.json first: no rule loses its subfolder meanwhile
+        rules = newRules
     }
 
     /// Drop this Mac's overrides: back to config.json.

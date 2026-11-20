@@ -101,7 +101,7 @@ if rulesTest {
         for (i, rule, missing) in await Rules.nearMisses(rules, for: url) {
             print("   · règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))")
         }
-        if let m = await Rules.firstMatch(rules, for: url, readDate: readDate) {
+        if let m = await Rules.firstMatch(rules, for: url, readDate: readDate, sorted: config.datedFolders) {
             print("   ✓ règle \(m.index + 1) « \(m.rule.label) » → \(short(m.folder))/\(m.name)\(dateNote(m))")
         } else {
             print("   – aucune règle\(Config.isSupported(url) ? " : nommé par le modèle" : "")")
@@ -142,7 +142,7 @@ if rename {
     // 1. Filing rules, before any model call.
     var left: [URL] = []
     for url in urls {
-        guard let m = await Rules.firstMatch(rules, for: url, readDate: readDate) else { left.append(url); continue }
+        guard let m = await Rules.firstMatch(rules, for: url, readDate: readDate, sorted: config.datedFolders) else { left.append(url); continue }
         print("règle     « \(m.rule.label) »\(dateNote(m))\n  avant    \(url.lastPathComponent)")
         do {
             if dryRun {
@@ -188,7 +188,7 @@ func emit(_ name: String, _ extra: [String: String] = [:]) throws {
     }
 }
 
-if !batch, let m = await Rules.firstMatch(rules, for: urls[0], readDate: readDate) {
+if !batch, let m = await Rules.firstMatch(rules, for: urls[0], readDate: readDate, sorted: config.datedFolders) {
     try emit(m.name, ["folder": m.folder.path, "rule": m.rule.label])
     exit(0)
 }

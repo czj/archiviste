@@ -21,7 +21,7 @@ rendu et l'OCR passent en `@concurrent`.
 ## L'app de barre de menus
 
 - Un clic sur l'icône de la barre des menus ouvre la fenêtre PDF Namer : Activité
-  (dépôt de fichiers, historique des renommages avec recherche), Règles, Dossiers surveillés,
+  (dépôt de fichiers, historique des renommages avec recherche), Règles, Dossiers,
   Sauvegardes, Général (⌘1 à ⌘5). Un clic droit donne un menu court : ouvrir, ranger
   maintenant, pause, quitter. Fenêtre fermée, l'app reste dans la barre des menus.
 - Page Général : ouverture à l'ouverture de session (`SMAppService`), icône dans la barre
@@ -31,21 +31,26 @@ rendu et l'OCR passent en `@concurrent`.
   Finder, Spotlight ou Raycast affiche sa fenêtre.
 - Déposez des fichiers (ou un dossier) sur l'icône ou sur la page Activité, choisissez-les
   (⌘O), ou collez-les (⌘V).
-- Ajoutez des **dossiers surveillés** (Scans, Téléchargements…) : chaque nouveau PDF ou
-  image qui y arrive est renommé tout seul, avec une notification. Ce qui est arrivé pendant
-  que l'app était fermée est rattrapé à son lancement (date d'ajout du Finder) ; un dossier
-  qu'on vient d'ajouter part de zéro, sans reprendre les fichiers déjà là.
-- **Ranger maintenant** (⇧⌘R) passe les règles sur les fichiers déjà présents dans les
-  dossiers surveillés : un aperçu montre où chacun irait, « Tout ranger » (⌘↩) les range.
-  Le modèle ne renomme rien pendant ce passage ; les fichiers sans règle restent en place.
-  Il range aussi par date les fichiers laissés en vrac à la racine des dossiers listés sous
-  **Classement par date** (clé `datedFolders` : sous-dossier `2026` ou `2026-11`, préfixe
-  `AAAA-MM-JJ - `) : date du document, sinon celle d'un nom déjà daté, sinon celle du
-  fichier. Seuls ces dossiers sont touchés ;
-  l'app suggère les destinations de règles datées qui n'y figurent pas.
-- Un dossier surveillé peut être un **relais** (« Seulement déplacer vers… », clé `moveTo`) :
-  ce qui y arrive est déplacé tel quel vers un autre dossier, par exemple les scans d'une app
-  vers le Bureau, où les règles et le modèle le prennent.
+- La page **Dossiers** distingue deux sortes de dossiers surveillés ; un dossier est l'un
+  ou l'autre, jamais les deux :
+  - les **boîtes d'arrivée** (Téléchargements, Bureau, Scans…, clé `watchedFolders`) :
+    chaque fichier qui y arrive passe par les règles, d'abord celles sur le nom, puis celles
+    sur le contenu ; la première qui convient le renomme et le range. Sans règle, le modèle
+    nomme les PDF et images sur place. Une notification suit. Une boîte d'arrivée peut
+    aussi être un **relais** (« Seulement déplacer vers… », clé `moveTo`) : ce qui y arrive
+    est déplacé tel quel vers un autre dossier, par exemple les scans d'une app vers le Bureau ;
+  - les **classeurs** (Achats, Ventes…, clé `datedFolders`) : tout fichier posé à leur racine,
+    à la main ou par une règle, part dans son sous-dossier `2026` (par année) ou `2026-11`
+    (par mois). La date est celle du document, sinon celle d'un nom déjà daté, sinon celle du
+    fichier. Option « Dater les noms » : préfixe `AAAA-MM-JJ - ` pour les fichiers posés à
+    la main (une règle, elle, donne son propre nom). Une règle qui range dans un classeur y
+    dépose directement le fichier dans le bon sous-dossier, en un seul déplacement.
+- Ce qui est arrivé pendant que l'app était fermée est rattrapé à son lancement (date d'ajout
+  du Finder). Un dossier qu'on vient d'ajouter part de zéro, sans reprendre les fichiers déjà là.
+- **Ranger maintenant** (⇧⌘R) s'occupe des fichiers déjà là : les règles sur ceux des boîtes
+  d'arrivée, le classement par date sur ceux laissés en vrac à la racine des classeurs. Un
+  aperçu montre où chacun irait, « Tout ranger » (⌘↩) les range. Le modèle ne renomme rien
+  pendant ce passage ; les fichiers sans règle restent en place.
 - Chaque renommage peut être modifié ou annulé. L'option « Valider avant de renommer »
   attend votre accord pour les fichiers déposés.
 - Un fichier renommé ou rangé par PDF Namer n'est plus jamais repris, même si son nom n'a
@@ -55,13 +60,16 @@ rendu et l'OCR passent en `@concurrent`.
 
 ## Les règles de rangement
 
-Avant tout passage par le modèle, chaque fichier est confronté aux **règles**, dans
-l'ordre : la première qui correspond le renomme et le range, sans appel au modèle. Une
-règle porte sur le nom du fichier (expression régulière), sur son texte (toutes les
-expressions données, majuscules et accents ignorés : PDF, scans, images, fichiers Excel),
-ou les deux. Elle range le fichier dans un dossier, éventuellement dans un sous-dossier
-`2026` ou `2026-11`, sous un nouveau nom préfixé par la date du document (lue par le
-modèle, sinon la date de création du fichier).
+Avant tout passage par le modèle, chaque fichier est confronté aux **règles** : d'abord
+celles qui ne portent que sur le nom, puis celles qui lisent le texte, chaque groupe dans
+l'ordre de la liste. La première qui correspond le renomme et le range, sans appel au
+modèle. Une règle porte sur le nom du fichier (expression régulière), sur son texte (toutes
+les expressions données, majuscules et accents ignorés : PDF, scans, images, fichiers
+Excel), ou les deux. Elle range le fichier dans un dossier, sous un nouveau nom,
+éventuellement préfixé par la date du document (lue par le modèle, sinon la date de
+création du fichier). Le sous-dossier d'année ou de mois n'est pas réglé dans la règle :
+c'est celui du dossier de destination quand c'est un classeur. L'éditeur de règle l'affiche
+et permet de le changer, pour toutes les règles qui y rangent.
 
 La page **Règles** de la fenêtre PDF Namer (⌘2) les liste, les cherche,
 les trie, les réordonne et les modifie (⌘N, ⌘D, ⌫, ⌥⌘↑/↓, Espace, ⌘Z). Le testeur (⌘T, ou
@@ -76,7 +84,6 @@ règles qui ont failli le prendre. Elles sont enregistrées dans `~/.config/pdf-
       "filename": "^Facture_EDF_",
       "contains": [],
       "folder": "~/Documents/Factures",
-      "subfolder": "yearMonth",
       "rename": "Facture EDF",
       "datePrefix": true
     },
@@ -90,8 +97,10 @@ règles qui ont failli le prendre. Elles sont enregistrées dans `~/.config/pdf-
 }
 ```
 
-`subfolder` vaut `none`, `year` ou `yearMonth` ; `folder` vide laisse le fichier sur place,
-`rename` vide garde son nom. Contrairement à `config.json`, l'app écrit ce fichier : s'il
+`folder` vide laisse le fichier sur place, `rename` vide garde son nom. Un ancien fichier
+peut porter une clé `subfolder` (`year`, `yearMonth`) : elle est toujours lue, et l'app la
+transfère une fois pour toutes au classeur du dossier (`datedFolders` dans
+`config.local.json`), sans changer la destination d'aucun fichier. Contrairement à `config.json`, l'app écrit ce fichier : s'il
 est versionné avec chezmoi, lancez `chezmoi re-add` après l'avoir modifié dans l'app.
 
 ## La commande `pdf-namer`
@@ -139,7 +148,8 @@ recharge toute seule quand l'un des deux change. Toutes les clés sont facultati
 | `backupDir` | `~/Documents/PDF Namer/Originaux` | où sont copiés les originaux |
 | `backupMaxAgeDays` | `180` | âge au-delà duquel les sauvegardes sont supprimées (`0` = jamais) |
 | `expireMaxAgeDays` | `0` | met à la corbeille les **autres** fichiers du dossier de sauvegarde ajoutés depuis plus longtemps : pratique si ce dossier sert aussi de « à jeter plus tard » (`0` = jamais) |
-| `watchedFolders` | `[]` | dossiers surveillés par l'app |
+| `watchedFolders` | `[]` | boîtes d’arrivée : règles puis modèle, ou relais (`moveTo`) |
+| `datedFolders` | `[]` | classeurs : `path`, `subfolder` (`year`, `yearMonth`, `none`), `datePrefix`, `enabled` |
 | `confirmBeforeRename` | `false` | fichiers déposés : attendre « Renommer » |
 
 ## Compiler

@@ -3,17 +3,22 @@ import PDFKit
 import Synchronization
 
 /// A filing rule, tried before the model: when a file's name and/or text match, it is renamed
-/// and moved as the rule says, with no model call. Rules are tried in order; the first match wins.
+/// and moved as the rule says, with no model call. Rules on the name alone are tried first, then
+/// those that read the text, each group in its order; the first match wins.
 ///
 ///     {
 ///       "name": "OVH",
 ///       "filename": "",                           // ICU regex on the file name, "" = any name
 ///       "contains": ["OVH", "Roubaix"],           // all of them in the text (case and accents ignored)
 ///       "folder": "~/Documents/Factures",         // "" = stays where it is
-///       "subfolder": "yearMonth",                 // none | year | yearMonth, from the document's date
 ///       "rename": "Facture OVH cloud",            // "" = keeps its name
 ///       "datePrefix": true                        // "2026-11-05 - …"
 ///     }
+///
+/// The year or month subfolder is not the rule's: it belongs to the destination folder, when it
+/// is listed under `datedFolders` (a "classeur"), and applies to whatever lands there. Older files
+/// may still carry a `subfolder` key: it is read, used only for a folder that is not a classeur,
+/// and moved to `datedFolders` by the app (`UserConfig.migrateSubfolders`).
 public struct Rule: Codable, Equatable, Sendable, Identifiable {
     public enum Subfolder: String, Codable, CaseIterable, Sendable { case none, year, yearMonth }
 
@@ -60,6 +65,19 @@ public struct Rule: Codable, Equatable, Sendable, Identifiable {
         datePrefix = try c.decodeIfPresent(Bool.self, forKey: .datePrefix) ?? true
     }
 
+    /// `subfolder` is written only while a rule still has one (the old format).
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(name, forKey: .name)
+        try c.encode(enabled, forKey: .enabled)
+        try c.encode(filename, forKey: .filename)
+        try c.encode(contains, forKey: .contains)
+        try c.encode(folder, forKey: .folder)
+        if subfolder != .none { try c.encode(subfolder, forKey: .subfolder) }
+        try c.encode(rename, forKey: .rename)
+        try c.encode(datePrefix, forKey: .datePrefix)
+    }
+
     // MARK: Conditions
 
     var phrases: [String] { contains.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty } }
@@ -70,7 +88,20 @@ public struct Rule: Codable, Equatable, Sendable, Identifiable {
     /// Content conditions need the file's text.
     public var needsText: Bool { !phrases.isEmpty }
     /// The new name or the subfolder depends on the document's date.
-    public var usesDate: Bool { datePrefix || subfolder != .none }
+    public func usesDate(for url: URL, sorted: [UserConfig.DatedFolder] = []) -> Bool {
+        datePrefix || subfolder(for: url, sorted: sorted) != .none
+    }
+
+    /// Where a matching file goes, before any year or month subfolder.
+    public func targetFolder(for url: URL) -> URL {
+        folder.isEmpty ? url.deletingLastPathComponent() : UserConfig.expand(folder)
+    }
+
+    /// The subfolder of the destination: the classeur's setting when the destination is one
+    /// (enabled), else what an old rule still says.
+    public func subfolder(for url: URL, sorted: [UserConfig.DatedFolder] = []) -> Subfolder {
+        UserConfig.DatedFolder.find(targetFolder(for: url), in: sorted)?.subfolder ?? subfolder
+    }
 
     /// Compiled filename patterns (nil: invalid), shared: every file is tried against every rule,
     /// and the rule list checks them at each redraw.
@@ -140,10 +171,11 @@ public struct Rule: Codable, Equatable, Sendable, Identifiable {
 
     // MARK: Action
 
-    /// Where and under which name a matching file goes. `date` is the document's (AAAA-MM-JJ).
-    public func destination(for url: URL, date: String) -> (folder: URL, name: String) {
-        var dir = folder.isEmpty ? url.deletingLastPathComponent() : UserConfig.expand(folder)
-        switch subfolder {
+    /// Where and under which name a matching file goes. `date` is the document's (AAAA-MM-JJ);
+    /// `sorted`, the classeurs, which give the destination its year or month subfolder.
+    public func destination(for url: URL, date: String, sorted: [UserConfig.DatedFolder] = []) -> (folder: URL, name: String) {
+        var dir = targetFolder(for: url)
+        switch subfolder(for: url, sorted: sorted) {
         case .none: break
         case .year: dir.appendPathComponent(String(date.prefix(4)))
         case .yearMonth: dir.appendPathComponent(String(date.prefix(7)))
@@ -188,6 +220,15 @@ public enum Rules {
         public let date: String
         /// Where `date` comes from: the document (read by the model), the file, or unused by the rule.
         public let dateSource: DateSource
+        /// The year or month subfolder `folder` ends with (the classeur's), `.none` if none.
+        public let subfolder: Rule.Subfolder
+    }
+
+    /// The order rules are tried in: those on the name alone first (no text to read), then those
+    /// that look into the text, each group in the list's order. With their index in the list.
+    public static func tryOrder(_ rules: [Rule]) -> [(index: Int, rule: Rule)] {
+        let all = rules.enumerated().map { (index: $0.offset, rule: $0.element) }
+        return all.filter { !$0.rule.needsText } + all.filter { $0.rule.needsText }
     }
 
     public enum DateSource: Sendable { case document, name, file, unused }
@@ -205,15 +246,17 @@ public enum Rules {
     /// The first enabled rule matching `url`, reading its text only if a content rule needs it.
     /// When the rule dates the file (prefix or dated subfolder), `readDate` picks the issue date
     /// (the model, choosing among the dates written in the document); the file's creation date otherwise.
-    public static func firstMatch(_ rules: [Rule], for url: URL, readDate: DateReader? = nil) async -> Match? {
+    /// `sorted`: the classeurs (`UserConfig.datedFolders`); a rule filing into one gets its subfolder.
+    public static func firstMatch(_ rules: [Rule], for url: URL, readDate: DateReader? = nil,
+                                  sorted: [UserConfig.DatedFolder] = []) async -> Match? {
         let filename = url.lastPathComponent
         var text: String?? = .none  // read once, lazily
-        for (i, rule) in rules.enumerated() where rule.enabled && rule.hasCondition && rule.matchesName(filename) {
+        for (i, rule) in tryOrder(rules) where rule.enabled && rule.hasCondition && rule.matchesName(filename) {
             if rule.needsText && text == nil { text = .some(await RuleText.read(url)) }
             // Enabled, with a condition and a matching name (so a valid pattern): only the phrases are left.
             guard rule.missingPhrases(in: text ?? nil).isEmpty else { continue }
             var date = fileDate(url), source = DateSource.file
-            if !rule.usesDate {
+            if !rule.usesDate(for: url, sorted: sorted) {
                 source = .unused
             } else if let read = await readDate?(url) {  // the document first: a name's date may be wrong
                 date = read
@@ -222,8 +265,9 @@ public enum Rules {
                 date = named
                 source = .name
             }
-            let (folder, name) = rule.destination(for: url, date: date)
-            return Match(rule: rule, index: i, folder: folder, name: name, date: date, dateSource: source)
+            let (folder, name) = rule.destination(for: url, date: date, sorted: sorted)
+            return Match(rule: rule, index: i, folder: folder, name: name, date: date, dateSource: source,
+                         subfolder: rule.subfolder(for: url, sorted: sorted))
         }
         return nil
     }
@@ -233,7 +277,7 @@ public enum Rules {
     public static func nearMisses(_ rules: [Rule], for url: URL) async -> [(index: Int, rule: Rule, missing: [String])] {
         var out: [(Int, Rule, [String])] = []
         var text: String??
-        for (i, rule) in rules.enumerated() where rule.enabled && rule.hasCondition && rule.matchesName(url.lastPathComponent) {
+        for (i, rule) in tryOrder(rules) where rule.enabled && rule.hasCondition && rule.matchesName(url.lastPathComponent) {
             if rule.needsText && text == nil { text = .some(await RuleText.read(url)) }
             let missing = rule.missingPhrases(in: text ?? nil)
             if missing.isEmpty { break }

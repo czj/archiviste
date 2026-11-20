@@ -10,7 +10,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         switch self {
         case .activity: "Activité"
         case .rules: "Règles"
-        case .folders: "Dossiers surveillés"
+        case .folders: "Dossiers"
         case .cleanup: "Sauvegardes et ménage"
         case .general: "Général"
         }
