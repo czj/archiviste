@@ -517,7 +517,8 @@ private struct RuleEditor: View {
                             .labelsHidden()
                             .textFieldStyle(.plain)
                             .font(.title2.weight(.semibold))
-                        Text("Priorité \(position) sur \(count)").font(.caption).foregroundStyle(.secondary)
+                        Text("Priorité \(position) sur \(count) · \(rule.needsText ? "lit le contenu : essayée après les règles sur le nom" : "sur le nom : essayée avant les règles sur le contenu")")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     ControlGroup {

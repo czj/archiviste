@@ -260,7 +260,7 @@ struct ClasseurPicker: View {
     }
 
     private func current(_ url: URL) -> Choice {
-        guard let i = index(url), model.settings.datedFolders[i].enabled else { return .off }
+        guard let i = index(url) else { return .off }
         return switch model.settings.datedFolders[i].subfolder {
         case .none: .flat
         case .year: .year
@@ -280,7 +280,6 @@ struct ClasseurPicker: View {
         }
         if let i = index(url) {
             model.settings.datedFolders[i].subfolder = subfolder
-            model.settings.datedFolders[i].enabled = true
         } else {
             model.settings.datedFolders.append(UserConfig.DatedFolder(path: folder, subfolder: subfolder))
         }

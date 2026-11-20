@@ -32,6 +32,9 @@ public struct Rule: Codable, Equatable, Sendable, Identifiable {
     public var subfolder = Subfolder.none
     public var rename = ""
     public var datePrefix = true
+    /// A name already dated ("2025-03-14 - …") keeps its date, the document's is not read: for
+    /// files sorted live, with no preview, in a folder others may fill too. Session only, not stored.
+    public var keepsNameDate = false
 
     public init(name: String = "", filename: String = "", contains: [String] = [], folder: String = "",
                 subfolder: Subfolder = .none, rename: String = "", datePrefix: Bool = true, enabled: Bool = true) {
@@ -258,6 +261,9 @@ public enum Rules {
             var date = fileDate(url), source = DateSource.file
             if !rule.usesDate(for: url, sorted: sorted) {
                 source = .unused
+            } else if rule.keepsNameDate, let named = nameDate(filename) {  // trusted as is: no model, no new name
+                date = named
+                source = .name
             } else if let read = await readDate?(url) {  // the document first: a name's date may be wrong
                 date = read
                 source = .document

@@ -180,6 +180,13 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     // Unreadable document: the name's date stands, the name is unchanged.
     let kept = try #require(await Rules.firstMatch([dating], for: file, readDate: { _ in nil }))
     #expect(kept.dateSource == .name && kept.date == "2026-01-10" && kept.name == file.lastPathComponent)
+
+    // Sorted live (a classeur, no preview): the name's date is kept, the document not even read.
+    var live = dating
+    live.keepsNameDate = true
+    let moved = try #require(await Rules.firstMatch([live], for: file, readDate: { _ in Issue.record("lu"); return "2026-10-31" }))
+    #expect(moved.dateSource == .name && moved.name == file.lastPathComponent)
+    #expect(moved.folder.path == dir.appendingPathComponent("2026-01").path)
     #expect(Rules.nameDate("2025-13-40 - x.pdf") == nil)  // not a real date
 }
 
@@ -231,8 +238,8 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     // A classeur: its setting, whatever an old rule said; the same path written differently too.
     #expect(Rule(filename: "x", folder: "/F/Achats/").destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Achats/2026-11")
     #expect(Rule(filename: "x", folder: "/F/Achats", subfolder: .year).destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Achats/2026-11")
-    // A disabled classeur sorts nothing; an old rule's own subfolder still holds.
-    #expect(Rule(filename: "x", folder: "/F/Off").destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Off")
+    // A classeur switched off is only not watched: rules filing there still use it. Elsewhere, an old rule's own subfolder holds.
+    #expect(Rule(filename: "x", folder: "/F/Off").destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Off/2026")
     #expect(Rule(filename: "x", folder: "/F/Ventes", subfolder: .year).destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Ventes/2026")
     // The date is needed for the classeur's subfolder, even without prefix.
     #expect(Rule(filename: "x", folder: "/F/Achats", datePrefix: false).usesDate(for: file, sorted: sorted))
@@ -247,7 +254,7 @@ private func writePDF(_ lines: [String], to url: URL) throws {
         Rule(name: "Achats", filename: "a", folder: "/F/Achats", subfolder: .yearMonth),  // a classeur already
         Rule(name: "Ventes", filename: "v", folder: "/F/Ventes", subfolder: .year, datePrefix: false),
         Rule(name: "Ventes 2", filename: "w", folder: "/F/Ventes/", subfolder: .year),  // same folder: once
-        Rule(name: "Off", filename: "o", folder: "/F/Off", subfolder: .year),  // disabled classeur: kept
+        Rule(name: "Off", filename: "o", folder: "/F/Off", subfolder: .year),  // classeur switched off: still its own
         Rule(name: "Sur place", filename: "p", subfolder: .year),  // no folder: kept
         Rule(name: "Réunions", filename: "r", folder: "/F/Meetings", datePrefix: false),
     ]
@@ -257,7 +264,7 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(migrated)
     #expect(config.datedFolders.map(\.path) == ["/F/Achats", "/F/Off", "/F/Ventes"])
     #expect(config.datedFolders[2].subfolder == .year && !config.datedFolders[2].datePrefix)
-    #expect(rules.map(\.subfolder) == [.none, .none, .none, .year, .year, .none])
+    #expect(rules.map(\.subfolder) == [.none, .none, .none, .none, .year, .none])
     // Lossless: every file goes where it went.
     #expect(rules.map { $0.destination(for: file, date: "2026-11-05", sorted: config.datedFolders).folder.path } == before)
     let again = config.migrateSubfolders(&rules)

@@ -88,10 +88,11 @@ public struct UserConfig: Codable, Equatable, Sendable {
             Rule(name: "Classement par date", filename: ".", folder: path, subfolder: subfolder, datePrefix: datePrefix)
         }
 
-        /// The enabled classeur for `folder`, if it is one.
+        /// The classeur for `folder`, if it is one. Switched off or not: `enabled` only stops
+        /// watching it, the rules filing there still use its subfolder.
         public static func find(_ folder: URL, in list: [DatedFolder]) -> DatedFolder? {
             let path = folder.standardizedFileURL.path
-            return list.first { $0.enabled && $0.url.standardizedFileURL.path == path }
+            return list.first { $0.url.standardizedFileURL.path == path }
         }
     }
 

@@ -128,9 +128,13 @@ final class AppModel {
     /// Files arriving at the top of a classeur, by hand or from elsewhere: to their year or month
     /// subfolder. No marker check: a file renamed earlier still has to be sorted (and a cloud drive
     /// drops the marker anyway). Only loose files at the top get here; the subfolders are not watched.
+    /// A name already dated is left as it is (only moved): no preview here, and others may drop
+    /// files in a shared folder. "Ranger maintenant", with its preview, may still correct it.
     private func sort(_ urls: [URL], into folder: UserConfig.DatedFolder) {
+        var rule = folder.rule
+        rule.keepsNameDate = true
         for url in urls where Config.isFileForRules(url) && !isQueued(url) {
-            items.append(Item(url: url, source: folder.name, dating: folder.rule))
+            items.append(Item(url: url, source: folder.name, dating: rule))
         }
         startWorker()
     }
@@ -505,7 +509,8 @@ final class AppModel {
         if let inbox = settings.watchedFolders.first(where: { $0.enabled && $0.url.path == path }) {
             return inbox.relay.map(Role.relay) ?? .inbox
         }
-        return UserConfig.DatedFolder.find(URL(fileURLWithPath: path), in: settings.datedFolders).map(Role.classeur)
+        return UserConfig.DatedFolder.find(URL(fileURLWithPath: path), in: settings.datedFolders.filter(\.enabled))
+            .map(Role.classeur)
     }
 
     private func syncWatchers() {
@@ -659,6 +664,9 @@ final class AppModel {
         guard rulesError == nil, configError == nil else { return }
         var newRules = rules, newSettings = settings
         guard newSettings.migrateSubfolders(&newRules) else { return }
+        // The old file, as it was, in case an older PDF Namer (or another Mac) still needs it.
+        let copy = Rules.fileURL.deletingLastPathComponent().appendingPathComponent("rules.before-classeurs.json")
+        if !FileManager.default.fileExists(atPath: copy.path) { try? FileManager.default.copyItem(at: Rules.fileURL, to: copy) }
         log.info("Sous-dossiers des règles déplacés vers les classeurs")
         settings = newSettings  // config.local.json first: no rule loses its subfolder meanwhile
         rules = newRules
