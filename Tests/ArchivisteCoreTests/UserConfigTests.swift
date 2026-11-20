@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PDFNamerCore
+@testable import ArchivisteCore
 
 private func write(_ json: String, _ url: URL) throws { try Data(json.utf8).write(to: url) }
 
@@ -59,4 +59,40 @@ private func write(_ json: String, _ url: URL) throws { try Data(json.utf8).writ
     let bad = dir.appendingPathComponent("config.json")
     try write("{ oops", bad)
     #expect(throws: (any Error).self) { try UserConfig.load(shared: bad, local: dir.appendingPathComponent("x.json")) }
+}
+
+@Test func `migration PDF Namer : config déplacée, lien laissé, sauvegardes suivies`() throws {
+    let root = try tempDir()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let fm = FileManager.default
+    let config = root.appendingPathComponent("config"), docs = root.appendingPathComponent("Documents")
+    let old = config.appendingPathComponent("pdf-namer")
+    try fm.createDirectory(at: old, withIntermediateDirectories: true)
+    try write(#"{"rules": []}"#, old.appendingPathComponent("rules.json"))
+    try fm.createDirectory(at: docs.appendingPathComponent("PDF Namer/Originaux"), withIntermediateDirectories: true)
+
+    UserConfig.migrateLegacyFolders(configBase: config, documents: docs)
+    let new = config.appendingPathComponent("archiviste")
+    #expect(fm.fileExists(atPath: new.appendingPathComponent("rules.json").path))
+    #expect(try fm.destinationOfSymbolicLink(atPath: old.path) == new.path)
+    #expect(fm.fileExists(atPath: old.appendingPathComponent("rules.json").path))  // through the link
+    #expect(fm.fileExists(atPath: docs.appendingPathComponent("Archiviste/Originaux").path))
+
+    UserConfig.migrateLegacyFolders(configBase: config, documents: docs)  // twice: nothing more happens
+    #expect(fm.fileExists(atPath: new.appendingPathComponent("rules.json").path))
+}
+
+@Test func `migration PDF Namer : un dossier de sauvegarde choisi ne bouge pas`() throws {
+    let root = try tempDir()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let fm = FileManager.default
+    let config = root.appendingPathComponent("config"), docs = root.appendingPathComponent("Documents")
+    let old = config.appendingPathComponent("pdf-namer")
+    try fm.createDirectory(at: old, withIntermediateDirectories: true)
+    try write(#"{"backupDir": "~/Documents/PDF Namer/Mes originaux"}"#, old.appendingPathComponent("config.local.json"))
+    try fm.createDirectory(at: docs.appendingPathComponent("PDF Namer"), withIntermediateDirectories: true)
+
+    UserConfig.migrateLegacyFolders(configBase: config, documents: docs)
+    #expect(fm.fileExists(atPath: docs.appendingPathComponent("PDF Namer").path))
+    #expect(!fm.fileExists(atPath: docs.appendingPathComponent("Archiviste").path))
 }

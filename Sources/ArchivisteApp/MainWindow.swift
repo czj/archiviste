@@ -1,4 +1,4 @@
-import PDFNamerCore
+import ArchivisteCore
 import QuickLook
 import SwiftUI
 
@@ -66,7 +66,7 @@ struct MainWindow: View {
         // merely hidden or changes space, which would leave a visible window that can't be activated.
         .onAppear { Presence.applyDock(windowOpen: true) }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { note in
-            guard (note.object as? NSWindow)?.isPDFNamerWindow == true else { return }
+            guard (note.object as? NSWindow)?.isMainWindow == true else { return }
             Presence.applyDock(windowOpen: false)
         }
         .frame(minWidth: 940, minHeight: 540)

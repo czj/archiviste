@@ -28,11 +28,11 @@ struct AppCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
-            Button("À propos de PDF Namer") { About.show() }
+            Button("À propos d’Archiviste") { About.show() }
         }
 
         CommandGroup(replacing: .help) {
-            Button("Aide de PDF Namer") { NSWorkspace.shared.open(About.readme) }
+            Button("Aide d’Archiviste") { NSWorkspace.shared.open(About.readme) }
                 .keyboardShortcut("?")
             Button("Signaler un problème…") { NSWorkspace.shared.open(About.issues) }
             Divider()

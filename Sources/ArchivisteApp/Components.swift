@@ -1,4 +1,4 @@
-import PDFNamerCore
+import ArchivisteCore
 import SwiftUI
 
 /// State and switch in one: "⏸ Actif" (click to pause) or "▶︎ En pause" (click to resume).
@@ -86,5 +86,5 @@ extension NSPasteboard {
 
 extension NSWindow {
     /// The main window (SwiftUI names it after the scene's id).
-    var isPDFNamerWindow: Bool { identifier?.rawValue.hasPrefix(MainWindow.id) == true }
+    var isMainWindow: Bool { identifier?.rawValue.hasPrefix(MainWindow.id) == true }
 }

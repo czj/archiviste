@@ -1,4 +1,4 @@
-import PDFNamerCore
+import ArchivisteCore
 import SwiftUI
 
 /// One file in the batch: progress, then the new name with Modifier / Annuler.

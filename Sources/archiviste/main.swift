@@ -1,14 +1,14 @@
 import Foundation
-import PDFNamerCore
+import ArchivisteCore
 
-// pdf-namer — same flags as ~/bin/pdf_namer.py, plus filing rules (rules.json):
-//   pdf-namer <file> [--json]
-//   pdf-namer --rename [--dry-run] [--force] [--backup-dir <dir>] <files...>
-//   pdf-namer --rules <files...>        which rule each file matches, and why the others don't
+// archiviste — same flags as ~/bin/pdf_namer.py, plus filing rules (rules.json):
+//   archiviste <file> [--json]
+//   archiviste --rename [--dry-run] [--force] [--backup-dir <dir>] <files...>
+//   archiviste --rules <files...>        which rule each file matches, and why the others don't
 
 func err(_ s: String) { FileHandle.standardError.write(Data((s + "\n").utf8)) }
 
-let usage = "usage: pdf-namer <fichier> [--json] | --rename [--dry-run] [--force] [--backup-dir <dir>] <fichiers…> | --rules <fichiers…>"
+let usage = "usage: archiviste <fichier> [--json] | --rename [--dry-run] [--force] [--backup-dir <dir>] <fichiers…> | --rules <fichiers…>"
 
 let config: UserConfig
 do { config = try UserConfig.load() } catch {
@@ -97,7 +97,7 @@ if rulesTest {
     if rules.isEmpty { say("Aucune règle dans \(short(Rules.fileURL))"); exit(0) }
     for url in urls {
         print("── \(url.lastPathComponent)")
-        if let original = Marker.originalName(url) { print("   déjà traité par PDF Namer (avant : « \(original) »)") }
+        if let original = Marker.originalName(url) { print("   déjà traité par Archiviste (avant : « \(original) »)") }
         for (i, rule, missing) in await Rules.nearMisses(rules, for: url) {
             print("   · règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))")
         }
@@ -111,17 +111,17 @@ if rulesTest {
 }
 
 if rename && !force {
-    // Marked by PDF Namer: never touched again, whatever its name.
+    // Marked by Archiviste: never touched again, whatever its name.
     let marked = urls.filter(Marker.isMarked)
     urls.removeAll(where: Marker.isMarked)
     if !marked.isEmpty {
-        say("\(marked.count) fichier(s) déjà traité(s) par PDF Namer laissé(s) tel(s) quel(s) · --force pour les reprendre")
+        say("\(marked.count) fichier(s) déjà traité(s) par Archiviste laissé(s) tel(s) quel(s) · --force pour les reprendre")
     }
     if urls.isEmpty { say("✓ Rien à renommer"); exit(0) }
 }
 guard !urls.isEmpty else { say("✗ Aucun PDF ni image valide"); exit(2) }
 
-if batch { say("── PDF Namer · \(urls.count) fichier(s)\(dryRun ? " · simulation" : "") ──") }
+if batch { say("── Archiviste · \(urls.count) fichier(s)\(dryRun ? " · simulation" : "") ──") }
 
 var renamed = 0, filed = 0, unchanged = 0, skipped = 0, errors = 0
 let start = Date()

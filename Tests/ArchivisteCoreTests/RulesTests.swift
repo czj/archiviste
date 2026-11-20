@@ -1,7 +1,7 @@
 import CoreText
 import Foundation
 import Testing
-@testable import PDFNamerCore
+@testable import ArchivisteCore
 
 /// A one-page PDF with real (selectable) text, one line per string.
 private func writePDF(_ lines: [String], to url: URL) throws {

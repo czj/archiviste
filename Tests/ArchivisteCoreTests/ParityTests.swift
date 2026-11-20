@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PDFNamerCore
+@testable import ArchivisteCore
 
 /// The Swift naming rules must give exactly what the original Python script gives
 /// (fixture made by tools/gen_parity.py). One test case per fixture entry.

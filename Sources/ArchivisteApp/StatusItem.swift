@@ -19,7 +19,7 @@ final class StatusItem: NSObject, NSMenuDelegate {
         button.target = self
         button.action = #selector(clicked)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        button.toolTip = String(localized: "PDF Namer · clic droit : menu · déposez des fichiers ici")
+        button.toolTip = String(localized: "Archiviste · clic droit : menu · déposez des fichiers ici")
         // Files dropped on the icon: the status item's window forwards drags to its delegate. A
         // view laid over the button would break ⌘-dragging the icon along the menu bar.
         button.window?.registerForDraggedTypes([.fileURL])
@@ -49,7 +49,7 @@ final class StatusItem: NSObject, NSMenuDelegate {
                     : model.paused ? "pause.circle" : "doc.text.magnifyingglass"
             }
             for await symbol in symbols {
-                self?.item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "PDF Namer")
+                self?.item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "Archiviste")
             }
         }
     }
@@ -61,7 +61,7 @@ final class StatusItem: NSObject, NSMenuDelegate {
             // Cooperative activation alone is refused when another app is active; the click on
             // our icon is the user asking for us, so take the focus.
             NSApp.activate(ignoringOtherApps: true)
-            if let window = NSApp.windows.first(where: \.isPDFNamerWindow) {
+            if let window = NSApp.windows.first(where: \.isMainWindow) {
                 // Already open (behind other apps, on another desktop, minimized): bring it here.
                 window.collectionBehavior.insert(.moveToActiveSpace)
                 if window.isMiniaturized { window.deminiaturize(nil) }
@@ -86,7 +86,7 @@ final class StatusItem: NSObject, NSMenuDelegate {
 
     private func menu() -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(entry(String(localized: "Ouvrir PDF Namer"), "0") { [weak self] in self?.show(nil) })
+        menu.addItem(entry(String(localized: "Ouvrir Archiviste"), "0") { [weak self] in self?.show(nil) })
         menu.addItem(entry(String(localized: "Ranger maintenant"), "") { [weak self] in
             self?.model.tidyNow()
             self?.show(.activity)
@@ -97,9 +97,9 @@ final class StatusItem: NSObject, NSMenuDelegate {
         menu.addItem(entry(String(localized: "Règles…"), "") { [weak self] in self?.show(.rules) })
         menu.addItem(entry(String(localized: "Réglages…"), ",") { [weak self] in self?.show(.general) })
         menu.addItem(.separator())
-        menu.addItem(entry(String(localized: "À propos de PDF Namer"), "") { About.show() })
-        menu.addItem(entry(String(localized: "Aide de PDF Namer"), "") { NSWorkspace.shared.open(About.readme) })
-        menu.addItem(entry(String(localized: "Quitter PDF Namer"), "q") {
+        menu.addItem(entry(String(localized: "À propos d’Archiviste"), "") { About.show() })
+        menu.addItem(entry(String(localized: "Aide d’Archiviste"), "") { NSWorkspace.shared.open(About.readme) })
+        menu.addItem(entry(String(localized: "Quitter Archiviste"), "q") {
             AppDelegate.quitting = true
             NSApp.terminate(nil)
         })

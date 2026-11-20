@@ -1,4 +1,4 @@
-"""Generate Tests/PDFNamerCoreTests/Fixtures/parity.json from the Python reference.
+"""Generate Tests/ArchivisteCoreTests/Fixtures/parity.json from the Python reference.
 
 Imports ~/bin/pdf_namer.py and records what its naming rules return on a large,
 seeded set of inputs; ParityTests.swift checks the Swift port returns the same.
@@ -107,7 +107,7 @@ out = {
     "date_candidates": date_candidates,
     "amount_candidates": amount_candidates,
 }
-dest = os.path.join(os.path.dirname(__file__), "..", "Tests", "PDFNamerCoreTests", "Fixtures", "parity.json")
+dest = os.path.join(os.path.dirname(__file__), "..", "Tests", "ArchivisteCoreTests", "Fixtures", "parity.json")
 with open(dest, "w") as f:
     json.dump(out, f, ensure_ascii=False, indent=1)
 print(f"{len(cases)} build_filename, {len(fix_case)} fix_case, {len(texts)} texts → {os.path.normpath(dest)}")

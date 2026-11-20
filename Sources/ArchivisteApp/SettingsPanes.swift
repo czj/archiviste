@@ -1,4 +1,4 @@
-import PDFNamerCore
+import ArchivisteCore
 import ServiceManagement
 import SwiftUI
 
@@ -43,7 +43,7 @@ struct GeneralPane: View {
                 Text("Démarrage et affichage")
             } footer: {
                 if !showInMenuBar && dock != .always {
-                    Text("Sans icône, PDF Namer travaille en arrière-plan : rouvrez-le depuis le Finder, Spotlight ou Raycast pour retrouver cette fenêtre.")
+                    Text("Sans icône, Archiviste travaille en arrière-plan : rouvrez-le depuis le Finder, Spotlight ou Raycast pour retrouver cette fenêtre.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -92,7 +92,7 @@ struct GeneralPane: View {
                     Text(configError).font(.caption).foregroundStyle(.red)
                 }
             } footer: {
-                Text("config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande pdf-namer lit les deux.")
+                Text("config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

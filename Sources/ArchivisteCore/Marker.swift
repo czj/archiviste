@@ -1,10 +1,12 @@
 import Darwin
 import Foundation
 
-/// A hidden mark (extended attribute) on every file PDF Namer renamed or filed, holding its
+/// A hidden mark (extended attribute) on every file Archiviste renamed or filed, holding its
 /// previous name. Unlike the "AAAA-MM-JJ - …" prefix, it survives an undated name, a name
 /// edited by hand, and moves; copies through a cloud drive or a mail may drop it.
 public enum Marker {
+    /// Named after the app's first name, PDF Namer, and kept so: thousands of files already carry
+    /// it, and a new name would make them look untouched.
     public static let attribute = "com.github.czj.pdf-namer.renamed"
 
     public static func set(_ url: URL, originalName: String) {
@@ -18,7 +20,7 @@ public enum Marker {
         _ = url.withUnsafeFileSystemRepresentation { path in path.map { removexattr($0, attribute, XATTR_NOFOLLOW) } }
     }
 
-    /// The name the file had before PDF Namer touched it, nil if unmarked.
+    /// The name the file had before Archiviste touched it, nil if unmarked.
     public static func originalName(_ url: URL) -> String? {
         url.withUnsafeFileSystemRepresentation { path -> String? in
             guard let path else { return nil }

@@ -11,17 +11,17 @@ let approachable: [SwiftSetting] = [
 let mainActorByDefault = approachable + [.defaultIsolation(MainActor.self)]
 
 let package = Package(
-    name: "pdf-namer",
+    name: "archiviste",
     platforms: [.macOS("27.0")],
     products: [
-        .executable(name: "pdf-namer", targets: ["pdf-namer"]),
-        .executable(name: "PDFNamerApp", targets: ["PDFNamerApp"]),
+        .executable(name: "archiviste", targets: ["archiviste"]),
+        .executable(name: "ArchivisteApp", targets: ["ArchivisteApp"]),
     ],
     targets: [
-        .target(name: "PDFNamerCore", swiftSettings: approachable),
-        .executableTarget(name: "pdf-namer", dependencies: ["PDFNamerCore"], swiftSettings: mainActorByDefault),
-        .executableTarget(name: "PDFNamerApp", dependencies: ["PDFNamerCore"], swiftSettings: mainActorByDefault),
-        .testTarget(name: "PDFNamerCoreTests", dependencies: ["PDFNamerCore"],
+        .target(name: "ArchivisteCore", swiftSettings: approachable),
+        .executableTarget(name: "archiviste", dependencies: ["ArchivisteCore"], swiftSettings: mainActorByDefault),
+        .executableTarget(name: "ArchivisteApp", dependencies: ["ArchivisteCore"], swiftSettings: mainActorByDefault),
+        .testTarget(name: "ArchivisteCoreTests", dependencies: ["ArchivisteCore"],
                     resources: [.copy("Fixtures")], swiftSettings: approachable),
     ]
 )

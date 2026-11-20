@@ -10,23 +10,23 @@
 		<string>en</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>PDF Namer</string>
+	<string>Archiviste</string>
 	<key>CFBundleExecutable</key>
-	<string>PDFNamerApp</string>
+	<string>ArchivisteApp</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.github.czj.pdf-namer</string>
+	<string>com.github.czj.archiviste</string>
 	<key>CFBundleName</key>
-	<string>PDF Namer</string>
+	<string>Archiviste</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>1.1.0</string>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>3</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>27.0</string>
 	<key>LSUIElement</key>
