@@ -11,8 +11,22 @@ Format : `DATE - Type Émetteur - Détail - MONTANT`. Le montant n'apparaît que
 factures, reçus, devis, avoirs, quittances et notes de frais. Photos et captures d'écran
 prennent la date de prise de vue. Noms et prompts sont en français.
 
-**Prérequis :** macOS 27 ou plus récent, Apple Intelligence activé
-(Réglages → Apple Intelligence et Siri), Xcode 27 (Swift 6.4) pour compiler.
+**Prérequis :** Mac Apple silicon sous macOS 27 ou plus récent, Apple Intelligence activé
+(Réglages → Apple Intelligence et Siri) ; Xcode 27 (Swift 6.4) seulement pour compiler.
+
+## Installation
+
+    curl -fsSL https://raw.githubusercontent.com/czj/pdf-namer/main/scripts/install.sh | zsh
+
+Installe la dernière [version publiée](https://github.com/czj/pdf-namer/releases/latest) :
+l'app dans `~/Applications`, la commande `pdf-namer` dans `~/.local/bin`, puis ouvre l'app.
+Relancer la même commande met à jour (`PDF_NAMER_VERSION=1.0.0` pour une version précise).
+
+L'app n'est pas notarisée par Apple (signature ad hoc). Ce script la télécharge avec `curl`,
+qui ne la met pas en quarantaine : elle s'ouvre directement. Si vous téléchargez plutôt
+`PDF-Namer.zip` depuis la page des versions avec un navigateur, macOS la bloque au premier
+lancement : ouvrez-la une fois, puis Réglages Système › Confidentialité et sécurité ›
+« Ouvrir quand même ».
 
 Écrit en Swift 6.4 en mode de langage Swift 6 (concurrence vérifiée par le compilateur),
 avec Approachable Concurrency : l'app et la commande vivent sur l'acteur principal, le
@@ -166,6 +180,7 @@ recharge toute seule quand l'un des deux change. Toutes les clés sont facultati
     scripts/build-app.sh               # build release, signe ad hoc, installe dans ~/Applications
                                        # et la commande dans ~/.local/bin
     scripts/build-app.sh --no-install  # seulement build/PDF Namer.app
+    scripts/release.sh 1.1.0 notes.md  # depuis main propre : tests, build, release GitHub (tag v1.1.0)
     swift test
 
 Xcode doit être sélectionné (`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`) :
