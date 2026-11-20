@@ -128,11 +128,14 @@ private func writePDF(_ lines: [String], to url: URL) throws {
         Rule(name: "Autre", contains: ["Example Hosting", "Introuvable"], folder: dir.appendingPathComponent("A").path),
         Rule(name: "Pas actif", contains: ["Example Hosting"], enabled: false),
         Rule(name: "Hébergement", contains: ["example hosting"], folder: dir.appendingPathComponent("B").path,
-             subfolder: .year, rename: "Facture Example Hosting"),
-        Rule(name: "Trop tard", filename: "document"),
+             rename: "Facture Example Hosting"),
+        Rule(name: "Trop tard", contains: ["Example Hosting"]),
     ]
+    // B is a classeur by year: the rule files straight into its subfolder.
+    let sorted = [UserConfig.DatedFolder(path: dir.appendingPathComponent("B").path, subfolder: .year)]
     // The model picks the issue date in the app; here a stand-in.
-    let m = try #require(await Rules.firstMatch(rules, for: pdf, readDate: { _ in "2025-03-14" }))
+    let m = try #require(await Rules.firstMatch(rules, for: pdf, readDate: { _ in "2025-03-14" }, sorted: sorted))
+    #expect(m.subfolder == .year)
     #expect(m.index == 2)
     #expect(m.date == "2025-03-14")
     #expect(m.dateSource == .document)
@@ -177,6 +180,13 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     // Unreadable document: the name's date stands, the name is unchanged.
     let kept = try #require(await Rules.firstMatch([dating], for: file, readDate: { _ in nil }))
     #expect(kept.dateSource == .name && kept.date == "2026-01-10" && kept.name == file.lastPathComponent)
+
+    // Sorted live (a classeur, no preview): the name's date is kept, the document not even read.
+    var live = dating
+    live.keepsNameDate = true
+    let moved = try #require(await Rules.firstMatch([live], for: file, readDate: { _ in Issue.record("lu"); return "2026-10-31" }))
+    #expect(moved.dateSource == .name && moved.name == file.lastPathComponent)
+    #expect(moved.folder.path == dir.appendingPathComponent("2026-01").path)
     #expect(Rules.nameDate("2025-13-40 - x.pdf") == nil)  // not a real date
 }
 
@@ -201,22 +211,76 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(!String(decoding: try JSONEncoder().encode(plain), as: UTF8.self).contains("moveTo"))
 }
 
-@Test func `classement par date : liste explicite, suggestions tirées des règles datées`() throws {
-    var config = UserConfig()
-    config.datedFolders = [UserConfig.DatedFolder(path: "/F/Achats", subfolder: .yearMonth)]
+@Test func `les règles sur le nom passent avant celles sur le contenu`() async throws {
+    let dir = try tempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let pdf = dir.appendingPathComponent("Facture_EDF_2026.pdf")
+    try writePDF(["EDF", "Facture"], to: pdf)
     let rules = [
-        Rule(name: "Achats", filename: "a", folder: "/F/Achats", subfolder: .year),   // listed already
-        Rule(name: "Ventes", filename: "v", folder: "/F/Ventes", subfolder: .year, datePrefix: false),
-        Rule(name: "Ventes 2", filename: "w", folder: "/F/Ventes/", subfolder: .yearMonth),  // same folder: once
-        Rule(name: "Réunions", filename: "r", folder: "/F/Meetings", datePrefix: false),  // no date: no
-        Rule(name: "Off", filename: "o", folder: "/F/Off", enabled: false),
+        Rule(name: "Contenu", contains: ["EDF"], folder: "/Contenu"),
+        Rule(name: "Nom", filename: "^Facture_EDF_", folder: "/Nom"),
     ]
-    let s = config.datedSuggestions(rules)
-    #expect(s.map(\.folder.path) == ["/F/Ventes"])
-    #expect(s[0].rule == "Ventes" && s[0].folder.subfolder == .year && !s[0].folder.datePrefix)
+    #expect(Rules.tryOrder(rules).map(\.index) == [1, 0])
+    let m = try #require(await Rules.firstMatch(rules, for: pdf))
+    #expect(m.rule.name == "Nom" && m.index == 1)  // its place in the list, for the UI
+    // No name rule fits: the text decides.
+    let other = dir.appendingPathComponent("scan.pdf")
+    try writePDF(["EDF"], to: other)
+    #expect(try #require(await Rules.firstMatch(rules, for: other)).rule.name == "Contenu")
+}
+
+@Test func `le sous-dossier est celui du classeur de destination`() {
+    let file = URL(fileURLWithPath: "/tmp/Downloads/x.pdf")
+    let sorted = [UserConfig.DatedFolder(path: "/F/Achats", subfolder: .yearMonth),
+                  UserConfig.DatedFolder(path: "/F/Off", subfolder: .year, enabled: false)]
+    // Not a classeur: as is.
+    #expect(Rule(filename: "x", folder: "/F/Ventes").destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Ventes")
+    // A classeur: its setting, whatever an old rule said; the same path written differently too.
+    #expect(Rule(filename: "x", folder: "/F/Achats/").destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Achats/2026-11")
+    #expect(Rule(filename: "x", folder: "/F/Achats", subfolder: .year).destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Achats/2026-11")
+    // A classeur switched off is only not watched: rules filing there still use it. Elsewhere, an old rule's own subfolder holds.
+    #expect(Rule(filename: "x", folder: "/F/Off").destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Off/2026")
+    #expect(Rule(filename: "x", folder: "/F/Ventes", subfolder: .year).destination(for: file, date: "2026-11-05", sorted: sorted).folder.path == "/F/Ventes/2026")
+    // The date is needed for the classeur's subfolder, even without prefix.
+    #expect(Rule(filename: "x", folder: "/F/Achats", datePrefix: false).usesDate(for: file, sorted: sorted))
+    #expect(!Rule(filename: "x", folder: "/F/Ventes", datePrefix: false).usesDate(for: file, sorted: sorted))
+}
+
+@Test func `migration : le sous-dossier des règles passe à leur dossier`() throws {
+    var config = UserConfig()
+    config.datedFolders = [UserConfig.DatedFolder(path: "/F/Achats", subfolder: .yearMonth, datePrefix: true),
+                           UserConfig.DatedFolder(path: "/F/Off", subfolder: .year, enabled: false)]
+    var rules = [
+        Rule(name: "Achats", filename: "a", folder: "/F/Achats", subfolder: .yearMonth),  // a classeur already
+        Rule(name: "Ventes", filename: "v", folder: "/F/Ventes", subfolder: .year, datePrefix: false),
+        Rule(name: "Ventes 2", filename: "w", folder: "/F/Ventes/", subfolder: .year),  // same folder: once
+        Rule(name: "Off", filename: "o", folder: "/F/Off", subfolder: .year),  // classeur switched off: still its own
+        Rule(name: "Sur place", filename: "p", subfolder: .year),  // no folder: kept
+        Rule(name: "Réunions", filename: "r", folder: "/F/Meetings", datePrefix: false),
+    ]
+    let file = URL(fileURLWithPath: "/tmp/x.pdf")
+    let before = rules.map { $0.destination(for: file, date: "2026-11-05", sorted: config.datedFolders).folder.path }
+    let migrated = config.migrateSubfolders(&rules)
+    #expect(migrated)
+    #expect(config.datedFolders.map(\.path) == ["/F/Achats", "/F/Off", "/F/Ventes"])
+    #expect(config.datedFolders[2].subfolder == .year && !config.datedFolders[2].datePrefix)
+    #expect(rules.map(\.subfolder) == [.none, .none, .none, .none, .year, .none])
+    // Lossless: every file goes where it went.
+    #expect(rules.map { $0.destination(for: file, date: "2026-11-05", sorted: config.datedFolders).folder.path } == before)
+    let again = config.migrateSubfolders(&rules)
+    #expect(!again)  // once
 
     let decoded = try JSONDecoder().decode(UserConfig.self, from: Data(#"{"datedFolders": [{"path": "~/X"}]}"#.utf8))
     #expect(decoded.datedFolders.first?.subfolder == .year && decoded.datedFolders.first?.datePrefix == true)
+}
+
+@Test func `un dossier est une boîte d’arrivée ou un classeur`() {
+    var config = UserConfig()
+    config.watchedFolders = [UserConfig.Folder(path: "/Users/x/Downloads", enabled: false)]
+    config.datedFolders = [UserConfig.DatedFolder(path: "/F/Achats")]
+    #expect(config.isInbox(URL(fileURLWithPath: "/Users/x/Downloads/")))
+    #expect(config.isListed(URL(fileURLWithPath: "/F/Achats")) && !config.isInbox(URL(fileURLWithPath: "/F/Achats")))
+    #expect(!config.isListed(URL(fileURLWithPath: "/F/Ventes")))
 }
 
 @Test func `règle tirée d’un fichier : nombres généralisés, type et émetteur du nom proposé`() {
@@ -267,6 +331,8 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(!text.contains("\"id\""))
     #expect(text.contains("\"~/Factures\""))  // paths stay readable: no \/
     #expect(try Rules.load(from: url) == rules)  // == ignores the session ids
+    // `subfolder` is written only while a rule still has one (old format).
+    #expect(text.components(separatedBy: "\"subfolder\"").count == 2)
 
     try Data(#"{"rules": [{"filename": "x"}]}"#.utf8).write(to: url)
     let r = try #require(try Rules.load(from: url).first)

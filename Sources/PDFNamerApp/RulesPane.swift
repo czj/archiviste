@@ -26,7 +26,7 @@ struct RulesPane: View {
             TesterPanel(tester: tester, run: run)
                 .inspectorColumnWidth(min: 260, ideal: 320, max: 460)
         }
-        .navigationSubtitle("\(model.rules.count) règles · la première qui correspond gagne")
+        .navigationSubtitle("\(model.rules.count) règles · sur le nom, puis sur le contenu : la première qui correspond gagne")
         .searchable(text: $query, placement: .toolbar, prompt: "Nom, dossier, expression…")
         .searchFocused($searching)
         .toolbar { toolbar }
@@ -295,7 +295,7 @@ struct RulesPane: View {
         tester.url = url
         tester.running = true
         Task {
-            let result = await RuleTest.run(model.rules, url, readDate: model.readDate)
+            let result = await RuleTest.run(model.rules, url, readDate: model.readDate, sorted: model.settings.datedFolders)
             if tester.url == url {
                 tester.result = result
                 tester.running = false
@@ -385,13 +385,13 @@ struct RuleTest {
     /// Earlier rules whose name pattern fits but whose text is missing phrases.
     var nearMisses: [String]
 
-    static func run(_ rules: [Rule], _ url: URL, readDate: Rules.DateReader?) async -> RuleTest {
+    static func run(_ rules: [Rule], _ url: URL, readDate: Rules.DateReader?, sorted: [UserConfig.DatedFolder]) async -> RuleTest {
         let misses = await Rules.nearMisses(rules, for: url).map { i, rule, missing in
             "Règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))"
         }
         var note: [String] = []
         if let original = Marker.originalName(url) { note.append("Déjà traité par PDF Namer (avant : « \(original) ») : l’app le laisse de côté, seule la commande pdf-namer --force le reprend") }
-        return RuleTest(file: url.lastPathComponent, match: await Rules.firstMatch(rules, for: url, readDate: readDate),
+        return RuleTest(file: url.lastPathComponent, match: await Rules.firstMatch(rules, for: url, readDate: readDate, sorted: sorted),
                         nameable: Config.isSupported(url), nearMisses: note + misses)
     }
 }
@@ -497,8 +497,10 @@ struct FileRow: View {
 
 // MARK: Editor
 
-/// One rule: when (name pattern, phrases in the text), then (folder, subfolder, name).
+/// One rule: when (name pattern, phrases in the text), then (folder, name). The destination's
+/// year or month subfolder is the folder's setting, shown and changeable here.
 private struct RuleEditor: View {
+    @Environment(AppModel.self) private var model
     @Binding var rule: Rule
     let position: Int
     let count: Int
@@ -515,7 +517,8 @@ private struct RuleEditor: View {
                             .labelsHidden()
                             .textFieldStyle(.plain)
                             .font(.title2.weight(.semibold))
-                        Text("Priorité \(position) sur \(count)").font(.caption).foregroundStyle(.secondary)
+                        Text("Priorité \(position) sur \(count) · \(rule.needsText ? "lit le contenu : essayée après les règles sur le nom" : "sur le nom : essayée avant les règles sur le contenu")")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     ControlGroup {
@@ -581,17 +584,17 @@ private struct RuleEditor: View {
                         }
                     }
                 }
-                Picker("Sous-dossier", selection: $rule.subfolder) {
-                    Text("Aucun").tag(Rule.Subfolder.none)
-                    Text("Année (2026)").tag(Rule.Subfolder.year)
-                    Text("Année-mois (2026-11)").tag(Rule.Subfolder.yearMonth)
+                if !rule.folder.isEmpty {
+                    ClasseurPicker(folder: rule.folder)
                 }
                 TextField("Renommer en", text: $rule.rename, prompt: Text("garder le nom du fichier"))
                 Toggle("Préfixer par la date du document (AAAA-MM-JJ - …)", isOn: $rule.datePrefix)
             } header: {
                 Label("Alors", systemImage: "arrow.turn.down.right")
             } footer: {
-                Text("La date est celle du document, lue par le modèle ; à défaut, celle de création du fichier. L’original est sauvegardé comme pour un renommage.")
+                Text(rule.subfolder != .none && !rule.folder.isEmpty && UserConfig.DatedFolder.find(UserConfig.expand(rule.folder), in: model.settings.datedFolders) == nil
+                     ? "Cette règle range encore elle-même dans un sous-dossier \(rule.subfolder == .year ? "d’année" : "de mois") (ancien format). Choisissez un classement du dossier pour le remplacer."
+                     : "Le classement par année ou par mois est celui du dossier : il vaut pour toutes les règles qui y rangent et pour les fichiers posés là à la main (page Dossiers). La date est celle du document, lue par le modèle ; à défaut, celle de création du fichier. L’original est sauvegardé comme pour un renommage.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Exemple") {
@@ -605,7 +608,7 @@ private struct RuleEditor: View {
 
     private var example: (name: String, folder: String) {
         let sample = UserConfig.expand("~/Downloads/facture_2026_1185.pdf")
-        let d = rule.destination(for: sample, date: Day.today().iso)
+        let d = rule.destination(for: sample, date: Day.today().iso, sorted: model.settings.datedFolders)
         return (d.name, UserConfig.abbreviate(d.folder.path))
     }
 

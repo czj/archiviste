@@ -16,7 +16,7 @@ public struct Suggestion: Sendable {
         self.match = match
         if let match {
             let f = match.folder
-            let place = match.rule.subfolder == .none ? f.lastPathComponent
+            let place = match.subfolder == .none ? f.lastPathComponent
                 : f.deletingLastPathComponent().lastPathComponent + "/" + f.lastPathComponent
             chips = ["Règle « \(match.rule.label) »", "→ " + place]
         } else {

@@ -49,12 +49,14 @@ public struct UserConfig: Codable, Equatable, Sendable {
     public var backupMaxAgeDays = 180
     /// Other files in backupDir added longer ago go to the Trash (0 = never).
     public var expireMaxAgeDays = 0
-    /// New PDFs and images arriving here are renamed automatically.
+    /// Inboxes (Downloads, Desktop, a scanner's folder): each file arriving here goes through the
+    /// rules (name, then content), else the model names it in place. Or a relay (`moveTo`).
     public var watchedFolders: [Folder] = []
     /// Dropped files: show the name and wait for "Renommer".
     public var confirmBeforeRename = false
-    /// Folders "Ranger maintenant" keeps sorted by date: loose files at the top go to their
-    /// year (or month) subfolder, dated. Only these: never a folder that is not listed.
+    /// Classeurs, sorted by date: a file landing at the top, put there by hand or by a rule, goes
+    /// to its year (or month) subfolder, dated. Watched like the inboxes; "Ranger maintenant" sorts
+    /// the files already there. Only these: never a folder that is not listed.
     public var datedFolders: [DatedFolder] = []
 
     public struct DatedFolder: Codable, Equatable, Hashable, Sendable, Identifiable {
@@ -85,19 +87,47 @@ public struct UserConfig: Codable, Equatable, Sendable {
         public var rule: Rule {
             Rule(name: "Classement par date", filename: ".", folder: path, subfolder: subfolder, datePrefix: datePrefix)
         }
+
+        /// The classeur for `folder`, if it is one. Switched off or not: `enabled` only stops
+        /// watching it, the rules filing there still use its subfolder.
+        public static func find(_ folder: URL, in list: [DatedFolder]) -> DatedFolder? {
+            let path = folder.standardizedFileURL.path
+            return list.first { $0.url.standardizedFileURL.path == path }
+        }
     }
 
-    /// Destinations of rules that date files but are not in `datedFolders`: worth suggesting.
-    /// Settings come from the first such rule; each folder once.
-    public func datedSuggestions(_ rules: [Rule]) -> [(folder: DatedFolder, rule: String)] {
-        var seen = Set(datedFolders.map { $0.url.standardizedFileURL.path })
-        var found: [(DatedFolder, String)] = []
-        for rule in rules where rule.enabled && !rule.folder.isEmpty && rule.usesDate {
-            let folder = DatedFolder(path: rule.folder, subfolder: rule.subfolder, datePrefix: rule.datePrefix)
-            guard seen.insert(folder.url.standardizedFileURL.path).inserted else { continue }
-            found.append((folder, rule.label))
+    /// Rules used to carry the year or month subfolder themselves; it now belongs to the
+    /// destination folder. Each rule's subfolder moves to a classeur for its folder (added with the
+    /// rule's settings when there is none; an existing one keeps its own), then leaves the rule.
+    /// A rule whose folder ends up with no enabled classeur keeps it, still honored. Lossless:
+    /// every file goes where it went before. Returns whether anything changed.
+    @discardableResult
+    public mutating func migrateSubfolders(_ rules: inout [Rule]) -> Bool {
+        var changed = false
+        for i in rules.indices where rules[i].subfolder != .none && !rules[i].folder.isEmpty {
+            let url = UserConfig.expand(rules[i].folder)
+            if !datedFolders.contains(where: { UserConfig.same($0.url, url) }) {
+                datedFolders.append(DatedFolder(path: rules[i].folder, subfolder: rules[i].subfolder,
+                                                datePrefix: rules[i].datePrefix))
+                changed = true
+            }
+            if DatedFolder.find(url, in: datedFolders) != nil {
+                rules[i].subfolder = .none
+                changed = true
+            }
         }
-        return found
+        return changed
+    }
+
+    /// The folder's role, for the UI and the watchers: an inbox (or relay) wins over a classeur,
+    /// as a folder can't be both. Disabled entries count: they still say what the folder is.
+    public func isInbox(_ url: URL) -> Bool {
+        watchedFolders.contains { UserConfig.same($0.url, url) }
+    }
+
+    /// Listed already, as an inbox or as a classeur (enabled or not).
+    public func isListed(_ url: URL) -> Bool {
+        isInbox(url) || datedFolders.contains { UserConfig.same($0.url, url) }
     }
 
     public init() {}
@@ -183,6 +213,11 @@ public struct UserConfig: Codable, Equatable, Sendable {
 
     public static func expand(_ path: String) -> URL {
         URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+    }
+
+    /// Same folder, however written ("/F/A/" and "/F/A": URLs differ, paths don't).
+    public static func same(_ a: URL, _ b: URL) -> Bool {
+        a.standardizedFileURL.path == b.standardizedFileURL.path
     }
 
     public static func abbreviate(_ path: String) -> String {
