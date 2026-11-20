@@ -2911,16 +2911,6 @@
         }
       }
     },
-    "choisissez des fichiers…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "choose files…"
-          }
-        }
-      }
-    },
     "config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande pdf-namer lit les deux." : {
       "localizations" : {
         "en" : {
@@ -3091,12 +3081,12 @@
         }
       }
     },
-    "ou" : {
+    "ou collez-les avec ⌘V" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "or"
+            "value" : "or paste them with ⌘V"
           }
         }
       }
@@ -3184,16 +3174,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "“%@”"
-          }
-        }
-      }
-    },
-    "· ⌘V pour coller" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· ⌘V to paste"
           }
         }
       }

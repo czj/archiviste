@@ -134,12 +134,13 @@ struct ActivityPane: View {
                                   : String(localized: "Dernier lot"))
                         Spacer()
                         if busy {
-                            Button("Arrêter") { model.stop() }
+                            Button("Arrêter", systemImage: "stop.fill") { model.stop() }
                         } else {
-                            Button("Effacer") { model.clear() }
+                            Button("Effacer", systemImage: "xmark.circle") { model.clear() }
                         }
                     }
-                    .buttonStyle(.link)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
             }
             Section {
