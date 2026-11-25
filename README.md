@@ -214,7 +214,10 @@ passe de 43 à 60 %, la date de 93 à 100 % et le montant de 73 à 80 % (88 à 9
 publiques). Ne pas joindre l'image de la page quand le texte existe (`textOnly`) gagne 15 % de
 temps mais fait chuter le montant des factures publiques à 51 % : écarté. Ces corpus ont donc
 servi à deux choix (la stratégie, puis l'image) : leurs scores sont un peu flatteurs, et une
-prochaine mesure honnête demande des documents neufs, jamais vus.
+prochaine mesure honnête demande des documents neufs, jamais vus. C'est `corpus/controle`
+(24 documents fictifs, autre destinataire, cas difficiles : émetteur en pied de page, vendeur
+d'une plateforme, sous-totaux, rapport, guide, étiquette…) : il n'a encore jamais été lancé.
+Il ne sert qu'à la mesure finale d'un changement, jamais à choisir entre deux variantes.
 Demander directement le nom de fichier au modèle a été essayé : nettement
 moins bon (émetteur 30 % au lieu de 62 % sur `corpus/dev`).
 
