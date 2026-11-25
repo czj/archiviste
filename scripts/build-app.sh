@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Build "Archiviste.app" (release), sign it ad hoc and install it in ~/Applications.
+# Build "Archiviste.app" (release), sign it ad hoc and install it in /Applications.
 # Also installs the CLI as ~/.local/bin/archiviste.
 #   scripts/build-app.sh [--no-install]
 set -euo pipefail
@@ -30,11 +30,13 @@ codesign --force --sign - --timestamp=none "$APP"
 echo "✓ $APP"
 
 if [[ "${1:-}" != "--no-install" ]]; then
-  mkdir -p ~/Applications ~/.local/bin
+  mkdir -p ~/.local/bin
   pkill -x ArchivisteApp 2>/dev/null || true
   pkill -x PDFNamerApp 2>/dev/null || true  # the app's name up to 1.0
-  rm -rf ~/Applications/"Archiviste.app" ~/Applications/"PDF Namer.app" ~/.local/bin/pdf-namer
-  cp -R "$APP" ~/Applications/
+  # /Applications only: an older copy in ~/Applications would be the one opening at login.
+  rm -rf /Applications/"Archiviste.app" ~/Applications/"Archiviste.app" /Applications/"PDF Namer.app" \
+         ~/Applications/"PDF Namer.app" ~/.local/bin/pdf-namer
+  cp -R "$APP" /Applications/
   cp "$BIN/archiviste" ~/.local/bin/archiviste
-  echo "✓ installé : ~/Applications/Archiviste.app et ~/.local/bin/archiviste"
+  echo "✓ installé : /Applications/Archiviste.app et ~/.local/bin/archiviste"
 fi

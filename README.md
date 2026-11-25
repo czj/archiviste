@@ -19,7 +19,7 @@ prennent la date de prise de vue. Noms et prompts sont en français.
     curl -fsSL https://raw.githubusercontent.com/czj/archiviste/main/scripts/install.sh | zsh
 
 Installe la dernière [version publiée](https://github.com/czj/archiviste/releases/latest) :
-l'app dans `~/Applications`, la commande `archiviste` dans `~/.local/bin`, puis ouvre l'app.
+l'app dans `/Applications`, la commande `archiviste` dans `~/.local/bin`, puis ouvre l'app.
 Relancer la même commande met à jour (`ARCHIVISTE_VERSION=1.1.0` pour une version précise).
 
 L'app n'est pas notarisée par Apple (signature ad hoc). Ce script la télécharge avec `curl`,
@@ -189,7 +189,7 @@ recharge toute seule quand l'un des deux change. Toutes les clés sont facultati
 
 ## Compiler
 
-    scripts/build-app.sh               # build release, signe ad hoc, installe dans ~/Applications
+    scripts/build-app.sh               # build release, signe ad hoc, installe dans /Applications
                                        # et la commande dans ~/.local/bin
     scripts/build-app.sh --no-install  # seulement build/Archiviste.app
     scripts/release.sh 1.1.0 notes.md  # depuis main propre : tests, build, release GitHub (tag v1.1.0)
