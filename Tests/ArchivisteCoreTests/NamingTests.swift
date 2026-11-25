@@ -86,6 +86,7 @@ func `administrations sous leur nom usuel`(issuer: String, expected: String) {
     #expect(Strategy("baseline") == .baseline)
     #expect(Strategy("reasoning+twoPass")?.description == "reasoning+twoPass")
     #expect(Strategy("nimportequoi") == nil)
+    #expect(Strategy("blend+textOnly")?.description == "blend+textOnly")
     #expect(Strategy.app.description == "reasoning+twoPass+headTail+guards+blend")
 }
 

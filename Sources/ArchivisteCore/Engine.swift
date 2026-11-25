@@ -47,6 +47,25 @@ public struct Engine: Sendable {
     /// `strategy`: how to ask (see Strategy); the app uses `.baseline`.
     public func ask(_ ex: Extracted, isImage: Bool, myNames: [String] = [],
                     strategy: Strategy = .baseline) async throws -> [String: String] {
+        try await ask(ex, isImage: isImage, myNames: myNames, strategy: strategy, only: nil)
+    }
+
+    /// `only`: the baseline fields to ask for (the type always comes first, it guides the rest).
+    func ask(_ ex: Extracted, isImage: Bool, myNames: [String], strategy: Strategy,
+             only: Set<String>?) async throws -> [String: String] {
+        // textOnly: the image is dropped here, once, so every path below works without it.
+        let ex = strategy.textOnly && ex.text != nil ? Extracted(text: ex.text, captureDate: ex.captureDate) : ex
+        var strategy = strategy
+        strategy.textOnly = false
+        if strategy.blend {
+            var own = strategy
+            own.blend = false
+            // Both at once: the model serves concurrent sessions, so the amount comes almost free.
+            async let base = try? ask(ex, isImage: isImage, myNames: myNames, strategy: .baseline, only: ["amount"])
+            var fields = try await ask(ex, isImage: isImage, myNames: myNames, strategy: own)
+            if let base = await base { fields["amount"] = base["amount"] }
+            return fields
+        }
         var imageURL: URL?
         if let png = ex.imagePNG {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("archiviste-\(UUID().uuidString).png")
@@ -55,15 +74,6 @@ public struct Engine: Sendable {
         }
         defer { if let imageURL { try? FileManager.default.removeItem(at: imageURL) } }
 
-        if strategy.blend {
-            var own = strategy
-            own.blend = false
-            var fields = try await ask(ex, isImage: isImage, myNames: myNames, strategy: own)
-            if let base = try? await ask(ex, isImage: isImage, myNames: myNames, strategy: .baseline) {
-                fields["amount"] = base["amount"]
-            }
-            return fields
-        }
         if strategy != .baseline {
             // Same fallback as below: without the page image if the model refuses it or overflows.
             do {
@@ -86,7 +96,7 @@ public struct Engine: Sendable {
             Field(name: "detail", description: "2 à 6 mots sur l'objet précis", choices: nil),
             Field(name: "amount", description: "Montant total TTC (factures, reçus, devis...), ou aucun",
                   choices: amounts + ["aucun"]),
-        ]
+        ].filter { $0.name == "type" || only?.contains($0.name) != false }
         var instructions = isImage ? Config.imageInstructions : Config.instructions
         if !myNames.isEmpty {
             instructions += "\n\nLe destinataire de ces documents est \(myNames.joined(separator: ", ")) : "

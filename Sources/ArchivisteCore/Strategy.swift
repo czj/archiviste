@@ -18,15 +18,20 @@ public struct Strategy: Sendable, Hashable, CustomStringConvertible {
     public var headTail = false
     public var filename = false
     public var guards = false
-    /// Both the baseline and this strategy, each field from the one that does it best: type, issuer
-    /// and date from this one, the amount from the baseline (which picks the total TTC, not a subtotal).
+    /// The amount from the baseline (which picks the total TTC, not a subtotal), asked at the same
+    /// time with the type alone before it: everything else from this strategy.
     public var blend = false
+    /// No page image when the file has a text: about 15 % faster, but the type, the issuer and above
+    /// all the amount of invoices drop on the held-out corpora. Only for the issue date alone.
+    public var textOnly = false
 
     public static let baseline = Strategy()
-    /// What the app and the command use: on the corpora it finds the issuer and the date far more
-    /// often than the baseline, at an equal amount, for about twice the time (two to three calls).
+    /// The issue date for dated rules: the type then the date, read in the text (its dates are the choices).
+    static let dateOnly = Strategy("textOnly")!
+    /// What the app and the command use: on the corpora it finds the issuer, the date and the amount
+    /// more often than the baseline, for less than twice the time (three calls, two at once).
     public static let app = Strategy("twoPass+reasoning+guards+headTail+blend")!
-    static let names = ["reasoning", "other", "twoPass", "headTail", "filename", "guards", "blend"]
+    static let names = ["reasoning", "other", "twoPass", "headTail", "filename", "guards", "blend", "textOnly"]
 
     public init() {}
 
@@ -41,13 +46,14 @@ public struct Strategy: Sendable, Hashable, CustomStringConvertible {
             case "filename": filename = true
             case "guards": guards = true
             case "blend": blend = true
+            case "textonly": textOnly = true
             default: return nil
             }
         }
     }
 
     public var description: String {
-        let on = [reasoning, other, twoPass, headTail, filename, guards, blend]
+        let on = [reasoning, other, twoPass, headTail, filename, guards, blend, textOnly]
         let parts = zip(Self.names, on).filter(\.1).map(\.0)
         return parts.isEmpty ? "baseline" : parts.joined(separator: "+")
     }

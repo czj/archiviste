@@ -147,6 +147,7 @@ final class AppModel {
         for url in urls where Config.isFileForRules(url) && !isQueued(url) {
             items.append(Item(url: url, source: folder.name, dating: rule))
         }
+        trimFinished()
         startWorker()
     }
 
@@ -171,6 +172,7 @@ final class AppModel {
             }
             items.append(Item(url: url, source: source, rulesOnly: rulesOnly))
         }
+        trimFinished()
         startWorker()
     }
 
@@ -179,6 +181,20 @@ final class AppModel {
 
     private func startWorker() {
         if worker == nil, nextItem() != nil { worker = Task { await drain() } }
+    }
+
+    /// A watched folder adds cards for as long as the app runs (days, weeks): the oldest finished
+    /// ones go past this many (they stay in the history). Files still to read or to confirm stay.
+    static let keptCards = 100
+
+    private func trimFinished() {
+        var extra = items.count { !$0.tidy && !$0.phase.isPending && $0.phase != .proposed } - Self.keptCards
+        guard extra > 0 else { return }
+        items.removeAll { item in
+            guard extra > 0, !item.tidy, !item.phase.isPending, item.phase != .proposed else { return false }
+            extra -= 1
+            return true
+        }
     }
 
     // MARK: Ranger maintenant

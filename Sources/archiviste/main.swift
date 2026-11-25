@@ -54,7 +54,7 @@ while let a = args.popFirst() {
         exit(0)
     case "--strategy":
         guard let spec = args.popFirst(), let s = Strategy(spec) else {
-            err("--strategy : baseline, ou une combinaison de reasoning, other, twoPass, headTail, filename, guards (a+b)"); exit(1)
+            err("--strategy : baseline, ou une combinaison de reasoning, other, twoPass, headTail, filename, guards, blend, textOnly (a+b)"); exit(1)
         }
         strategy = s
     case "--eval":  // score the model on labelled corpora (corpus.json): see Evaluation
