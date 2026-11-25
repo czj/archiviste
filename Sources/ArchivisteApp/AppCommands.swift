@@ -23,6 +23,7 @@ extension FocusedValues {
 struct AppCommands: Commands {
     let model: AppModel
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
     @FocusedValue(\.rules) private var rules
     @FocusedValue(\.search) private var search
 
@@ -39,9 +40,13 @@ struct AppCommands: Commands {
             Button("Ouvrir le dossier de configuration") { model.openConfigFolder() }
         }
 
-        // Réglages… opens the main window's General page: there is no separate settings window.
+        // Réglages… (⌘,) opens the Settings window, in front even when another app is active.
         CommandGroup(replacing: .appSettings) {
-            Button("Réglages…") { show(.general) }.keyboardShortcut(",")
+            Button("Réglages…") {
+                NSApp.activate()
+                openSettings()
+            }
+            .keyboardShortcut(",")
         }
 
         CommandGroup(replacing: .newItem) {

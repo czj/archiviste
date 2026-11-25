@@ -109,4 +109,6 @@ extension NSPasteboard {
 extension NSWindow {
     /// The main window (SwiftUI names it after the scene's id).
     var isMainWindow: Bool { identifier?.rawValue.hasPrefix(MainWindow.id) == true }
+    /// SwiftUI's Settings window (its identifier names it so).
+    var isSettingsWindow: Bool { identifier?.rawValue.localizedCaseInsensitiveContains("settings") == true }
 }

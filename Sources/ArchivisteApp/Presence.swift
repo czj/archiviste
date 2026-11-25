@@ -53,6 +53,7 @@ enum Presence {
     static var dock: Dock { Dock(rawValue: UserDefaults.standard.string(forKey: dockKey) ?? "") ?? .withWindow }
 
     static var windowIsOpen: Bool { NSApp.windows.contains { $0.isMainWindow && $0.isVisible } }
+    static var settingsIsOpen: Bool { NSApp.windows.contains { $0.isSettingsWindow && $0.isVisible } }
 
     /// Dock icon (and with it the app menu and ⌘Tab) according to the setting.
     static func applyDock(windowOpen: Bool? = nil) {

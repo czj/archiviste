@@ -2,7 +2,24 @@ import ArchivisteCore
 import ServiceManagement
 import SwiftUI
 
-// The main window's settings pages.
+/// Réglages (⌘,): what is set once, in its own window with tabs, as on any Mac app. The work
+/// (activity, rules, folders) stays in the main window.
+struct SettingsWindow: View {
+    var body: some View {
+        TabView {
+            Tab("Général", systemImage: "gearshape") { GeneralPane() }
+            Tab("Sauvegardes et ménage", systemImage: "archivebox") { CleanupPane() }
+        }
+        .scenePadding(.minimum, edges: .top)
+        .frame(width: 620, height: 600)
+        // Like the main window: a Dock icon (and ⌘Tab) while it is open, if so set.
+        .onAppear { Presence.applyDock(windowOpen: true) }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { note in
+            guard (note.object as? NSWindow)?.isSettingsWindow == true else { return }
+            Presence.applyDock(windowOpen: Presence.windowIsOpen)
+        }
+    }
+}
 
 struct GeneralPane: View {
     @Environment(AppModel.self) private var model

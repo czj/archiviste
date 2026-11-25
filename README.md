@@ -47,10 +47,11 @@ L'app est en français et en anglais : elle suit la langue du système (choix pa
 Réglages Système › Général › Langue et région). Les noms de fichiers restent en français.
 
 - Un clic sur l'icône de la barre des menus ouvre la fenêtre Archiviste : Activité
-  (dépôt de fichiers, historique des renommages avec recherche), Règles, Dossiers,
-  Sauvegardes, Général (⌘1 à ⌘5). Un clic droit donne un menu court : ouvrir, ranger
+  (dépôt de fichiers, historique des renommages avec recherche, à effacer au besoin), Règles,
+  Dossiers (⌘1 à ⌘3). Les préférences ont leur fenêtre Réglages (⌘,) : Général, Sauvegardes
+  et ménage. Un clic droit donne un menu court : ouvrir, ranger
   maintenant, pause, quitter. Fenêtre fermée, l'app reste dans la barre des menus.
-- Page Général : ouverture à l'ouverture de session (`SMAppService`), icône dans la barre
+- Réglages › Général : ouverture à l'ouverture de session (`SMAppService`), icône dans la barre
   des menus (oui/non), icône dans le Dock (toujours, quand la fenêtre est ouverte, jamais).
   Tout s'applique tout de suite, sans relancer. ⌘Q demande s'il faut quitter ou laisser
   tourner en arrière-plan (sans fenêtre), sauf si on a choisi une fois pour toutes. Sans aucune icône, rouvrir l'app depuis le

@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The main window's pages, in sidebar order.
 enum AppSection: String, CaseIterable, Identifiable {
-    case activity, rules, folders, cleanup, general
+    case activity, rules, folders
     var id: Self { self }
 
     var title: String {
@@ -12,8 +12,6 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .activity: String(localized: "Activité")
         case .rules: String(localized: "Règles")
         case .folders: String(localized: "Dossiers")
-        case .cleanup: String(localized: "Sauvegardes et ménage")
-        case .general: String(localized: "Général")
         }
     }
 
@@ -22,16 +20,15 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .activity: "clock.arrow.circlepath"
         case .rules: "line.3.horizontal.decrease.circle"
         case .folders: "folder"
-        case .cleanup: "archivebox"
-        case .general: "gearshape"
         }
     }
 
-    /// ⌘1 … ⌘5
+    /// ⌘1 … ⌘3
     var key: KeyEquivalent { KeyEquivalent(Character(String((Self.allCases.firstIndex(of: self) ?? 0) + 1))) }
 }
 
-/// Everything in one window: a sidebar of pages, the page on the right.
+/// The work in one window: a sidebar of pages, the page on the right. Preferences are in
+/// their own Settings window (⌘,).
 /// The menu bar icon opens it, takes dropped files and has a short menu.
 struct MainWindow: View {
     @Environment(AppModel.self) private var model
@@ -53,13 +50,11 @@ struct MainWindow: View {
                 case .activity: ActivityPane()
                 case .rules: RulesPane()
                 case .folders: FoldersPane()
-                case .cleanup: CleanupPane()
-                case .general: GeneralPane()
                 }
             }
             .navigationTitle(model.section.title)
         }
-        // Shortcuts (⌘1…⌘5, ⇧⌘R…) live in the menus: AppCommands.
+        // Shortcuts (⌘1…⌘3, ⇧⌘R…) live in the menus: AppCommands.
         // By default a menu bar app has no Dock icon nor menu bar; while this window is open it
         // gets both, so ⌘Tab finds it and Édition › Annuler shows (Réglages › Général changes that).
         // Back to menu bar only when the window really closes: onDisappear also fires when it is
@@ -67,7 +62,7 @@ struct MainWindow: View {
         .onAppear { Presence.applyDock(windowOpen: true) }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { note in
             guard (note.object as? NSWindow)?.isMainWindow == true else { return }
-            Presence.applyDock(windowOpen: false)
+            Presence.applyDock(windowOpen: Presence.settingsIsOpen)
         }
         .frame(minWidth: 940, minHeight: 540)
     }
@@ -107,6 +102,7 @@ struct ActivityPane: View {
     /// History rows picked (click, ⇧/⌘-click): Espace previews them, the context menu acts on them.
     @State private var selection: Set<RecentEntry.ID> = []
     @State private var preview: URL?
+    @State private var confirmClear = false
 
     var body: some View {
         // Each read below filters the items: once per redraw.
@@ -154,8 +150,24 @@ struct ActivityPane: View {
                     HistoryRow(entry: entry).tag(entry.id)
                 }
             } header: {
-                Text("Historique · \(model.recent.count) fichier(s)")
+                HStack {
+                    Text("Historique · \(model.recent.count) fichier(s)")
+                    Spacer()
+                    if !model.recent.isEmpty {
+                        Button("Effacer l’historique…", systemImage: "trash") { confirmClear = true }
+                            .buttonStyle(.bordered)
+                            .help("Vider cette liste : les fichiers restent où ils sont")
+                    }
+                }
             }
+        }
+        .confirmationDialog("Effacer l’historique ?", isPresented: $confirmClear) {
+            Button("Effacer l’historique", role: .destructive) {
+                model.recent = []
+                selection = []
+            }
+        } message: {
+            Text("Les fichiers restent où ils sont, sous leur nouveau nom, et leurs originaux dans les sauvegardes. Seule la possibilité de les annuler d’ici disparaît.")
         }
         .listStyle(.inset)
         .contextMenu(forSelectionType: RecentEntry.ID.self) { ids in

@@ -1365,6 +1365,36 @@
         }
       }
     },
+    "Effacer l’historique" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear History"
+          }
+        }
+      }
+    },
+    "Effacer l’historique ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear the history?"
+          }
+        }
+      }
+    },
+    "Effacer l’historique…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear History…"
+          }
+        }
+      }
+    },
     "En « Règles seulement », ce qu’aucune règle ne prend garde son nom : pour Téléchargements ou le Bureau, pleins de fichiers à laisser tels quels." : {
       "localizations" : {
         "en" : {
@@ -1717,6 +1747,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reading files… %lld left"
+          }
+        }
+      }
+    },
+    "Les fichiers restent où ils sont, sous leur nouveau nom, et leurs originaux dans les sauvegardes. Seule la possibilité de les annuler d’ici disparaît." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The files stay where they are, under their new name, and their originals in the backups. Only the option to undo them from here goes away."
           }
         }
       }
@@ -2857,6 +2897,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A rule files and renames a file based on its name or content, before the model sees it."
+          }
+        }
+      }
+    },
+    "Vider cette liste : les fichiers restent où ils sont" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty this list: the files stay where they are"
           }
         }
       }
