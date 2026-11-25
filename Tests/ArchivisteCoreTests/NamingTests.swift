@@ -45,6 +45,50 @@ func `formes juridiques retirées de l’émetteur`(issuer: String, expected: St
             == "Conseil juridique")
 }
 
+@Test(arguments: [
+    ("Direction Générale des Finances Publiques", "Finances publiques"),
+    ("SIP de Lyon 3e", "Finances publiques"),
+    ("Caisse primaire d'assurance maladie du Rhône", "CPAM du Rhône"),
+    ("Caisse d'allocations familiales du Rhône", "CAF du Rhône"),
+    ("Sipelia Conseil", "Sipelia Conseil"),  // "Sip…" in a word is not the tax office
+])
+func `administrations sous leur nom usuel`(issuer: String, expected: String) {
+    #expect(Naming.cleanFields(["issuer": issuer])["issuer"] == expected)
+}
+
+@Test func `fiche de paie et relevé : le mois comme détail`() {
+    let pay = Naming.cleanFields(["type": "Bulletin de paie", "issuer": "Alpine", "date": "2026-09-30",
+                                  "detail": "Salaire de base"], text: "Période du 01/09/2026 au 30/09/2026")
+    #expect(pay["detail"] == "Septembre 2026")
+    let bank = Naming.cleanFields(["type": "Relevé de compte", "issuer": "Banque", "date": "2026-11-02",
+                                   "detail": "Solde précédent"], text: "Relevé du 01/10/26 au 31/10/26")
+    #expect(bank["detail"] == "Octobre 2026")
+    let noPeriod = Naming.cleanFields(["type": "Bulletin de paie", "issuer": "Alpine", "date": "2026-08-31",
+                                       "detail": "Salaire"], text: "Net à payer")
+    #expect(noPeriod["detail"] == "Août 2026")
+    let invoice = Naming.cleanFields(["type": "Facture", "issuer": "Nuage", "date": "2026-08-31", "detail": "Fibre"])
+    #expect(invoice["detail"] == "Fibre")
+}
+
+@Test func `un nom de fichier relu en champs (stratégie filename)`() {
+    let f = Naming.parseName("2025-03-14 - Relevé de compte Banque Rhodanienne - Octobre 2025", types: Config.types)
+    #expect(f["date"] == "2025-03-14")
+    #expect(f["type"] == "Relevé de compte")
+    #expect(f["issuer"] == "Banque Rhodanienne")
+    #expect(f["detail"] == "Octobre 2025")
+    #expect(f["amount"] == "aucun")
+    let g = Naming.parseName("2026-11-18 - Facture Amazon - Stream Deck - 88.00 EUR", types: Config.types)
+    #expect(g["amount"] == "88.00 EUR")
+    #expect(g["detail"] == "Stream Deck")
+}
+
+@Test func `stratégies : lues depuis la ligne de commande`() {
+    #expect(Strategy("baseline") == .baseline)
+    #expect(Strategy("reasoning+twoPass")?.description == "reasoning+twoPass")
+    #expect(Strategy("nimportequoi") == nil)
+    #expect(Strategy.app.description == "reasoning+twoPass+headTail+guards+blend")
+}
+
 @Test func `nom complet : émetteur nettoyé, le reste intact`() {
     let fields = Naming.cleanFields(["type": "Facture", "issuer": "Amazon EU S.à r.l.", "date": "2026-11-18",
                                      "detail": "Elgato Stream Deck Neo", "amount": "88.00 EUR"])

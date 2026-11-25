@@ -47,8 +47,8 @@ public enum Namer {
     /// `myNames`: the user's own names (`UserConfig.myNames`), never the issuer.
     public static func suggest(_ url: URL, _ ex: Extracted, engine: Engine, myNames: [String] = []) async throws -> Suggestion? {
         guard !ex.isEmpty else { return nil }
-        let raw = try await engine.ask(ex, isImage: Config.isImage(url), myNames: myNames)
-        let fields = Naming.cleanFields(raw, myNames: myNames)
+        let raw = try await engine.ask(ex, isImage: Config.isImage(url), myNames: myNames, strategy: .app)
+        let fields = Naming.cleanFields(raw, myNames: myNames, text: ex.text)
         let ext = url.lastPathComponent.pySplitExt.1.lowercased()
         let name = Naming.buildFilename(fields, original: url.lastPathComponent, captureDate: ex.captureDate) + ext
         return Suggestion(fields: fields, name: name)

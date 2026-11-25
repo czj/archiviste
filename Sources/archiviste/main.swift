@@ -21,6 +21,7 @@ do { rules = try Rules.load() } catch {
 }
 var files: [String] = [], json = false, rename = false, dryRun = false, force = false, rulesTest = false
 var backupDir = config.backupURL
+var strategy = Strategy.app  // --strategy a+b (or baseline), before --eval: see Strategy
 var customBackupDir = false  // trashing expired files only ever runs on the configured folder
 var args = CommandLine.arguments.dropFirst()
 while let a = args.popFirst() {
@@ -51,10 +52,16 @@ while let a = args.popFirst() {
         }
         print("\(found) nom(s) mal daté(s) sur \(seen) PDF datés lus")
         exit(0)
+    case "--strategy":
+        guard let spec = args.popFirst(), let s = Strategy(spec) else {
+            err("--strategy : baseline, ou une combinaison de reasoning, other, twoPass, headTail, filename, guards (a+b)"); exit(1)
+        }
+        strategy = s
     case "--eval":  // score the model on labelled corpora (corpus.json): see Evaluation
         let engine: Engine
         do { engine = try Engine() } catch { err("✗ \(error.localizedDescription)"); exit(1) }
         var totals: [String: (ok: Int, all: Int)] = [:]
+        var seconds = 0.0, timed = 0
         for dir in args {
             let folder = UserConfig.expand(dir)
             let corpus: Evaluation.Corpus
@@ -66,9 +73,11 @@ while let a = args.popFirst() {
                 let url = folder.appendingPathComponent(doc.file)
                 print("── \(doc.file)")
                 do {
+                    let t0 = Date()
                     let ex = try await Extractor.extract(url)
-                    let raw = try await engine.ask(ex, isImage: Config.isImage(url), myNames: names)
-                    let fields = Naming.cleanFields(raw, myNames: names)
+                    let raw = try await engine.ask(ex, isImage: Config.isImage(url), myNames: names, strategy: strategy)
+                    let fields = Naming.cleanFields(raw, myNames: names, text: ex.text)
+                    seconds += Date().timeIntervalSince(t0); timed += 1
                     let name = Naming.buildFilename(fields, original: doc.file, captureDate: ex.captureDate)
                     print("   \(name)")
                     for s in Evaluation.score(doc, fields) {
@@ -81,11 +90,12 @@ while let a = args.popFirst() {
                 }
             }
         }
-        print("── score")
+        print("── score · \(strategy)")
         for field in ["type", "issuer", "date", "amount", "detail"] {
             guard let t = totals[field] else { continue }
             print("   \(field.padding(toLength: 7, withPad: " ", startingAt: 0)) \(t.ok)/\(t.all)  \(t.ok * 100 / max(t.all, 1)) %")
         }
+        print(String(format: "   durée   %.1f s par document", seconds / Double(max(timed, 1))))
         exit(0)
     case "--rules": rulesTest = true
     case "--rename": rename = true

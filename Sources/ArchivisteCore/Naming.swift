@@ -194,16 +194,58 @@ public enum Naming {
     /// A registration number taken for a name: "SIRET 247 428 493 19087".
     static let registration = Rx(#"^\s*(?:siret|siren|tva|n°|rcs)\b"#, [.caseInsensitive])
 
-    /// The model's fields with a cleaner issuer: no legal form, and never one of the user's own
-    /// names (on their documents they are the recipient). The rest is untouched.
-    public static func cleanFields(_ raw: [String: String], myNames: [String] = []) -> [String: String] {
-        guard var issuer = raw["issuer"]?.trimmingCharacters(in: .whitespacesAndNewlines), !issuer.isEmpty else { return raw }
+    /// Administrations by their usual short name: "Direction générale des finances publiques" is
+    /// "Finances publiques", "Caisse primaire d'assurance maladie du Rhône" is "CPAM du Rhône".
+    static let administrations: [(Rx, String)] = [
+        (Rx(#"^(?:direction g[ée]n[ée]rale des finances publiques|dgfip|centre des finances publiques|service des imp[ôo]ts des (?:particuliers|entreprises)|sip|sie)\b.*"#, [.caseInsensitive]), "Finances publiques"),
+        (Rx(#"^caisse primaire d.assurance maladie"#, [.caseInsensitive]), "CPAM"),
+        (Rx(#"^caisse d.allocations familiales"#, [.caseInsensitive]), "CAF"),
+        (Rx(#"^union de recouvrement des cotisations.*"#, [.caseInsensitive]), "URSSAF"),
+        (Rx(#"^caisse d.assurance retraite et de la sant[ée] au travail"#, [.caseInsensitive]), "CARSAT"),
+    ]
+
+    /// Monthly documents (payslip, statement) named by their month: the model tends to pick a
+    /// line ("Salaire de base", "Solde précédent"). The month of the period's end ("du 01/09/2026
+    /// au 30/09/2026"), else of the date.
+    static let monthly = ["Bulletin de paie", "Relevé de compte", "Relevé de prestations"]
+    static let period = Rx(#"\bdu\s+\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\s+au\s+(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})"#, [.caseInsensitive])
+    static let months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août",
+                         "Septembre", "Octobre", "Novembre", "Décembre"]
+
+    static func monthDetail(date: String?, text: String?) -> String? {
+        if let text, let m = period.first(text), let mo = Int(m.group(2, in: text) ?? ""), (1...12).contains(mo),
+           var y = Int(m.group(3, in: text) ?? "") {
+            if y < 100 { y += 2000 }
+            return "\(months[mo - 1]) \(y)"
+        }
+        guard let date, let day = Day(iso: date) else { return nil }
+        let parts = day.iso.split(separator: "-")
+        guard let mo = Int(parts[1]) else { return nil }
+        return "\(months[mo - 1]) \(parts[0])"
+    }
+
+    /// The model's fields with a cleaner issuer: no legal form, an administration's usual name,
+    /// and never one of the user's own names (on their documents they are the recipient). A
+    /// monthly document's detail is its month (`text`: the document's, to read the period).
+    public static func cleanFields(_ raw: [String: String], myNames: [String] = [], text: String? = nil) -> [String: String] {
         var fields = raw
+        if let type = raw["type"], monthly.contains(type),
+           let month = monthDetail(date: raw["date"].flatMap { dateISO.test($0) ? $0 : nil }, text: text) {
+            fields["detail"] = month
+        }
+        guard var issuer = raw["issuer"]?.trimmingCharacters(in: .whitespacesAndNewlines), !issuer.isEmpty else { return fields }
         issuer = leadingForm.sub(trailingForm.sub(issuer, ""), "").trimmingCharacters(in: .whitespaces)
+        for (re, short) in administrations {
+            if let m = re.first(issuer) {
+                let rest = (issuer as NSString).substring(from: m.range.location + m.range.length)
+                issuer = short == "Finances publiques" ? short : short + rest
+                break
+            }
+        }
         if isOneOf(issuer, myNames) { issuer = "aucun" }
         if registration.test(issuer) { issuer = "aucun" }
         fields["issuer"] = issuer.isEmpty ? "aucun" : issuer
-        if let detail = raw["detail"] { fields["detail"] = without(myNames, in: detail) }
+        if let detail = fields["detail"] { fields["detail"] = without(myNames, in: detail) }
         return fields
     }
 

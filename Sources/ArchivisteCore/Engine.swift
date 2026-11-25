@@ -44,7 +44,9 @@ public struct Engine: Sendable {
 
     /// The model's fields (type, issuer, date, detail, amount) for one extracted file.
     /// `myNames`: the user's own names, the recipient on their documents, never the issuer.
-    public func ask(_ ex: Extracted, isImage: Bool, myNames: [String] = []) async throws -> [String: String] {
+    /// `strategy`: how to ask (see Strategy); the app uses `.baseline`.
+    public func ask(_ ex: Extracted, isImage: Bool, myNames: [String] = [],
+                    strategy: Strategy = .baseline) async throws -> [String: String] {
         var imageURL: URL?
         if let png = ex.imagePNG {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("archiviste-\(UUID().uuidString).png")
@@ -52,6 +54,26 @@ public struct Engine: Sendable {
             imageURL = url
         }
         defer { if let imageURL { try? FileManager.default.removeItem(at: imageURL) } }
+
+        if strategy.blend {
+            var own = strategy
+            own.blend = false
+            var fields = try await ask(ex, isImage: isImage, myNames: myNames, strategy: own)
+            if let base = try? await ask(ex, isImage: isImage, myNames: myNames, strategy: .baseline) {
+                fields["amount"] = base["amount"]
+            }
+            return fields
+        }
+        if strategy != .baseline {
+            // Same fallback as below: without the page image if the model refuses it or overflows.
+            do {
+                return try await ask(ex, isImage: isImage, myNames: myNames, strategy: strategy, imageURL: imageURL)
+            } catch let failure as Failure where failure.isRetryable && imageURL != nil {
+                return try await ask(ex, isImage: isImage, myNames: myNames, strategy: strategy, imageURL: nil)
+            } catch let failure as Failure {
+                throw EngineError.model(failure.message)
+            }
+        }
 
         let text = ex.text ?? ""
         let dates = Candidates.dates(text), amounts = Candidates.amounts(text)

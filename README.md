@@ -203,6 +203,16 @@ Un corpus privé se monte de la même façon hors du dépôt (un dossier, ses fi
 le prompt sur `corpus/synthetique` et on le **mesure** sur les autres, sans les relire pour
 corriger : sinon ils deviennent aussi flatteurs que lui.
 
+Plusieurs façons d'interroger le modèle se comparent avec `--strategy` (voir
+`Sources/ArchivisteCore/Strategy.swift`) et `tools/compare_strategies.sh <corpus> <dossier>`.
+Réglées sur `corpus/dev` (40 documents fictifs), puis mesurées une fois sur les autres, l'app
+retient `twoPass+reasoning+guards+headTail+blend` : le type seul d'abord, puis les autres champs
+après avoir fait recopier le titre et la ligne de l'auteur, le début et la fin des longs textes,
+et le montant de l'interrogation simple, qui choisit mieux le TTC. Environ 5 s par document au
+lieu de 2,5 ; l'émetteur passe de 43 à 60 % sur le corpus privé et la date de 93 à 100 %, le
+montant ne bouge pas. Demander directement le nom de fichier au modèle a été essayé : nettement
+moins bon (émetteur 30 % au lieu de 62 % sur `corpus/dev`).
+
 Un corpus public complète : 100 factures françaises fictives étiquetées
 ([N-Mehdi/french-invoices-synth](https://huggingface.co/datasets/N-Mehdi/french-invoices-synth),
 Apache-2.0), téléchargées dans `corpus/public/` (non versionné) :
