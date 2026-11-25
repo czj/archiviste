@@ -14,7 +14,8 @@ import Foundation
 ///       "backupMaxAgeDays": 180,
 ///       "expireMaxAgeDays": 548,
 ///       "watchedFolders": [{ "path": "~/Downloads", "enabled": true },
-///                          { "path": "~/Scans inbox", "moveTo": "~/Desktop" }],
+///                          { "path": "~/Scans inbox", "moveTo": "~/Desktop" },
+///                          { "path": "~/Desktop", "rulesOnly": true }],
 ///       "confirmBeforeRename": false
 ///     }
 public struct UserConfig: Codable, Equatable, Sendable {
@@ -24,10 +25,15 @@ public struct UserConfig: Codable, Equatable, Sendable {
         /// A relay folder (a scanner app's inbox, say): what lands here is only moved there,
         /// where the rules and the model take it if that folder is watched too.
         public var moveTo: String?
+        /// Rules only: what no rule takes stays as it is, the model names nothing here (Downloads,
+        /// the Desktop: full of files to keep under their name). Written only when set.
+        public var rulesOnly: Bool?
         public var id: String { path }
         public var url: URL { UserConfig.expand(path) }
         public var name: String { url.lastPathComponent }
         public var relay: URL? { moveTo.flatMap { $0.isEmpty ? nil : UserConfig.expand($0) } }
+        /// Files no rule takes are named by the model (PDFs and images), unless rules only.
+        public var usesModel: Bool { rulesOnly != true }
 
         public init(path: String, enabled: Bool = true, moveTo: String? = nil) {
             self.path = UserConfig.abbreviate(path)
@@ -40,6 +46,7 @@ public struct UserConfig: Codable, Equatable, Sendable {
             path = try c.decode(String.self, forKey: .path)
             enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
             moveTo = try c.decodeIfPresent(String.self, forKey: .moveTo)
+            rulesOnly = try c.decodeIfPresent(Bool.self, forKey: .rulesOnly)
         }
     }
 

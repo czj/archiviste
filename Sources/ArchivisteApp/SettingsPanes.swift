@@ -51,12 +51,10 @@ struct GeneralPane: View {
                 login = SMAppService.mainApp.status  // approved meanwhile in System Settings
             }
             Section("Format du nom") {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     ForEach([String(localized: "Date"), String(localized: "Type"), String(localized: "Émetteur"),
                              String(localized: "Détail"), String(localized: "Montant")], id: \.self) { part in
-                        Text(part).font(.subheadline)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                        Chip(part, tint: .accentColor)
                     }
                 }
                 Text("Exemple : 2026-03-14 - Facture Kiné Durand - Séances de rééducation genou - 180.00 EUR.pdf")
@@ -67,14 +65,21 @@ struct GeneralPane: View {
             Section("Modèle") {
                 switch model.engineState {
                 case .loading: Text("Chargement…")
-                case .ready: Label("Modèle Apple sur l’appareil, prêt", systemImage: "checkmark.circle").foregroundStyle(.green)
-                case .unavailable(let why): Label(why, systemImage: "exclamationmark.triangle").foregroundStyle(.red)
+                case .ready:
+                    Label { Text("Modèle Apple sur l’appareil, prêt") } icon: {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
+                case .unavailable(let why):
+                    Label { Text(why) } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                    }
                 }
             }
             Section {
                 LabeledContent("Configuration") {
                     HStack {
                         Text(UserConfig.abbreviate(UserConfig.directory.path)).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.head)
                         Button("Afficher") { model.openConfigFolder() }
                     }
                 }
@@ -92,7 +97,7 @@ struct GeneralPane: View {
                     Text(configError).font(.subheadline).foregroundStyle(.red)
                 }
             } footer: {
-                Text("config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux.")
+                Text("config.json est la configuration commune (à versionner avec vos dotfiles) ; l’app ne la modifie jamais. Ce que vous changez ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux.")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
         }
@@ -111,6 +116,7 @@ struct CleanupPane: View {
                 LabeledContent("Dossier des originaux") {
                     HStack {
                         Text(model.settings.backupDir).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.head).help(model.settings.backupDir)
                         Button("Changer…", action: chooseBackupDir)
                     }
                 }

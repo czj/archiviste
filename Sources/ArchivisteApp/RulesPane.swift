@@ -160,7 +160,7 @@ struct RulesPane: View {
                     .help("Rang : les règles s’appliquent dans l’ordre de priorité")
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 3)
         .opacity(rule.enabled ? 1 : 0.45)
         .tag(rule.id)
         .contextMenu {
@@ -193,8 +193,8 @@ struct RulesPane: View {
             } description: {
                 Text("Une règle range et renomme un fichier d’après son nom ou son contenu, avant tout passage par le modèle.")
             } actions: {
-                Button("Nouvelle règle", action: add).buttonStyle(.glassProminent)
-                Button("Tester un fichier…") { model.chooseTestFile() }.buttonStyle(.glass)
+                Button("Nouvelle règle", action: add).buttonStyle(.borderedProminent)
+                Button("Tester un fichier…") { model.chooseTestFile() }.buttonStyle(.bordered)
             }
         }
     }
@@ -369,6 +369,8 @@ struct RuleIcon: View {
             .frame(width: size, height: size)
             .saturation(rule.enabled ? 1 : 0)
             .help(rule.needsText ? String(localized: "D’après le contenu") : String(localized: "D’après le nom"))
+            .accessibilityElement()
+            .accessibilityLabel(rule.needsText ? String(localized: "D’après le contenu") : String(localized: "D’après le nom"))
     }
 }
 
@@ -474,14 +476,14 @@ private struct TesterPanel: View {
             }
             if !result.nearMisses.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Presque").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    Text("Presque").font(.headline)
                     ForEach(result.nearMisses, id: \.self) { Text($0).font(.subheadline).foregroundStyle(.secondary) }
                 }
             }
             Button(result.match == nil ? String(localized: "Créer une règle depuis ce fichier") : String(localized: "Créer une variante pour ce fichier")) {
                 model.makeRule(from: url, suggestion: result.match.map(Suggestion.init), undo: undo)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(.bordered)
         }
         .textSelection(.enabled)
     }
@@ -568,8 +570,10 @@ private struct RuleEditor: View {
                         .font(.body.monospaced())
                         .frame(minHeight: 54, maxHeight: 110)
                         .scrollContentBackground(.hidden)
-                        .padding(4)
-                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
+                        .padding(.horizontal, 2).padding(.vertical, 4)
+                        .background(.background, in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.separator))
+                        .accessibilityLabel("Le texte contient")
                         .onChange(of: phrasesText) { _, text in
                             let phrases = text.components(separatedBy: .newlines).filter { !$0.isEmpty }
                             if phrases != rule.contains { rule.contains = phrases }

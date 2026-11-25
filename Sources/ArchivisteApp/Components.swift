@@ -47,6 +47,33 @@ struct DropZone: View {
     }
 }
 
+/// A short label in a capsule: the chips of a proposal, the parts of a name, the steps of a flow.
+struct Chip: View {
+    let text: Text
+    let icon: String?
+    var tint: Color?
+
+    init(_ text: String, systemImage: String? = nil, tint: Color? = nil) {
+        self.text = Text(text); self.icon = systemImage; self.tint = tint
+    }
+
+    init(_ key: LocalizedStringKey, systemImage: String? = nil, tint: Color? = nil) {
+        self.text = Text(key); self.icon = systemImage; self.tint = tint
+    }
+
+    var body: some View {
+        Group {
+            if let icon { Label { text } icon: { Image(systemName: icon) } } else { text }
+        }
+        .font(.subheadline)
+        .foregroundStyle(tint == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+        .lineLimit(1)
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .background(tint.map { AnyShapeStyle($0.opacity(0.14)) } ?? AnyShapeStyle(.quaternary), in: Capsule())
+        .fixedSize()
+    }
+}
+
 /// The Finder's icon for a file type, as in a Finder list.
 struct FileBadge: View {
     var ext: String

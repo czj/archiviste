@@ -232,11 +232,12 @@ private struct TidyBanner: View {
                     .help("Oublier ces propositions : les fichiers restent où ils sont")
                 if ready > 0 {
                     Button("Tout ranger (\(ready))") { model.tidyAll() }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.borderedProminent)
                         .help("Ranger chaque fichier comme proposé ci-dessous (⌘↩). Chacun reste annulable.")
                 }
             }
         }
+        .buttonStyle(.bordered)
         .padding(12)
         .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
     }

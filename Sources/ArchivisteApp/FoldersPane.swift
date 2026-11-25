@@ -33,6 +33,8 @@ struct FoldersPane: View {
             } footer: {
                 Text("Chaque fichier qui arrive passe par les règles : d’abord celles sur le nom, puis celles sur le contenu. La première qui convient le renomme et le range. Sans règle, le modèle nomme les PDF et les images sur place (« Date - Type Émetteur - Détail »). Un relais déplace ses fichiers tels quels vers un autre dossier, par exemple les scans d’une app vers le Bureau.")
                     .font(.subheadline).foregroundStyle(.secondary)
+                Text("En « Règles seulement », ce qu’aucune règle ne prend garde son nom : pour Téléchargements ou le Bureau, pleins de fichiers à laisser tels quels.")
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             Section {
                 if model.settings.datedFolders.isEmpty {
@@ -136,11 +138,7 @@ private struct FlowDiagram: View {
     private struct Step: View {
         let icon: String, text: LocalizedStringKey
         var body: some View {
-            Label(text, systemImage: icon)
-                .font(.subheadline)
-                .lineLimit(1)
-                .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Color.accentColor.opacity(0.12), in: Capsule())
+            Chip(text, systemImage: icon, tint: .accentColor)
         }
     }
 
@@ -174,14 +172,18 @@ private struct InboxRow: View {
             FolderLabel(name: folder.name, path: folder.path)
             Spacer()
             Menu {
-                Button("Règles, puis le modèle") { folder.moveTo = nil }
+                Toggle("Règles, puis le modèle", isOn: mode(usesModel: true))
+                Toggle("Règles seulement", isOn: mode(usesModel: false))
+                Divider()
                 Button("Seulement déplacer vers…", action: chooseRelay)
             } label: {
-                Text(folder.relay.map { String(localized: "Déplacer vers \($0.lastPathComponent)") } ?? String(localized: "Règles, puis le modèle"))
+                Text(folder.relay.map { String(localized: "Déplacer vers \($0.lastPathComponent)") }
+                     ?? (folder.usesModel ? String(localized: "Règles, puis le modèle") : String(localized: "Règles seulement")))
             }
             .fixedSize()
             .help(folder.relay.map { String(localized: "Relais : chaque fichier qui arrive est déplacé vers \(UserConfig.abbreviate($0.path)), sans autre traitement") }
-                  ?? String(localized: "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive"))
+                  ?? (folder.usesModel ? String(localized: "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive")
+                                       : String(localized: "Les règles (nom, puis contenu) sur chaque fichier qui arrive ; ce qu’aucune règle ne prend garde son nom")))
             Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
                 .help(folder.enabled ? String(localized: "Surveillé : décocher pour suspendre ce dossier seulement") : String(localized: "Suspendu : rien n’y est renommé"))
             Button {
@@ -191,6 +193,15 @@ private struct InboxRow: View {
             .help("Ne plus surveiller ce dossier (ses fichiers ne bougent pas)")
             .accessibilityLabel("Retirer \(folder.name)")
         }
+    }
+
+    /// Checked when the folder is in this mode (not a relay); choosing it ends the relay.
+    private func mode(usesModel: Bool) -> Binding<Bool> {
+        Binding(get: { folder.relay == nil && folder.usesModel == usesModel }, set: { on in
+            guard on else { return }
+            folder.moveTo = nil
+            folder.rulesOnly = usesModel ? nil : true
+        })
     }
 
     private func chooseRelay() {

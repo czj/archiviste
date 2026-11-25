@@ -132,12 +132,7 @@ struct ItemCard: View {
     private var actionRow: some View {
         HStack(spacing: 8) {
             ForEach(item.suggestion?.chips ?? [], id: \.self) { chip in
-                Text(chip)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(.quaternary, in: Capsule())
-                    .fixedSize()
+                Chip(chip)
             }
             Spacer(minLength: 8)
             if item.phase == .proposed {

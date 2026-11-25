@@ -62,7 +62,9 @@ Réglages Système › Général › Langue et région). Les noms de fichiers re
   - les **boîtes d'arrivée** (Téléchargements, Bureau, Scans…, clé `watchedFolders`) :
     chaque fichier qui y arrive passe par les règles, d'abord celles sur le nom, puis celles
     sur le contenu ; la première qui convient le renomme et le range. Sans règle, le modèle
-    nomme les PDF et images sur place. Une notification suit : un clic montre le fichier
+    nomme les PDF et images sur place, sauf en **« Règles seulement »** (clé `rulesOnly`) :
+    ce qu'aucune règle ne prend garde alors son nom, pratique pour Téléchargements ou le
+    Bureau. Une notification suit : un clic montre le fichier
     dans le Finder, « Annuler » remet son nom d'origine. Une boîte d'arrivée peut
     aussi être un **relais** (« Seulement déplacer vers… », clé `moveTo`) : ce qui y arrive
     est déplacé tel quel vers un autre dossier, par exemple les scans d'une app vers le Bureau ;
@@ -180,7 +182,7 @@ recharge toute seule quand l'un des deux change. Toutes les clés sont facultati
 | `backupDir` | `~/Documents/Archiviste/Originaux` | où sont copiés les originaux |
 | `backupMaxAgeDays` | `180` | âge au-delà duquel les sauvegardes sont supprimées (`0` = jamais) |
 | `expireMaxAgeDays` | `0` | met à la corbeille les **autres** fichiers du dossier de sauvegarde ajoutés depuis plus longtemps : pratique si ce dossier sert aussi de « à jeter plus tard » (`0` = jamais) |
-| `watchedFolders` | `[]` | boîtes d’arrivée : règles puis modèle, ou relais (`moveTo`) |
+| `watchedFolders` | `[]` | boîtes d’arrivée : règles puis modèle, règles seulement (`rulesOnly`), ou relais (`moveTo`) |
 | `datedFolders` | `[]` | classeurs : `path`, `subfolder` (`year`, `yearMonth`, `none`), `datePrefix`, `enabled` |
 | `confirmBeforeRename` | `false` | fichiers déposés : attendre « Renommer » |
 

@@ -254,6 +254,14 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(Candidates.dates("Invoice date: October 31, 2026. Paid 1st Nov 2026", today: today) == ["2026-11-01", "2026-10-31"])
 }
 
+@Test func `boîte « règles seulement » : rulesOnly lu, écrit seulement s’il est posé`() throws {
+    let downloads = try JSONDecoder().decode(UserConfig.Folder.self, from: Data(#"{"path": "~/Downloads", "rulesOnly": true}"#.utf8))
+    #expect(!downloads.usesModel)
+    let plain = UserConfig.Folder(path: "~/Desktop")
+    #expect(plain.usesModel)
+    #expect(!String(decoding: try JSONEncoder().encode(plain), as: UTF8.self).contains("rulesOnly"))
+}
+
 @Test func `dossier relais : moveTo lu, écrit seulement s’il existe`() throws {
     let relay = try JSONDecoder().decode(UserConfig.Folder.self, from: Data(#"{"path": "~/Scans", "moveTo": "~/Desktop"}"#.utf8))
     #expect(relay.relay?.path == UserConfig.expand("~/Desktop").path)
