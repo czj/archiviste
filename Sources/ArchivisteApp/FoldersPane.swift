@@ -32,7 +32,7 @@ struct FoldersPane: View {
                 Label("Boîtes d’arrivée", systemImage: "tray.and.arrow.down")
             } footer: {
                 Text("Chaque fichier qui arrive passe par les règles : d’abord celles sur le nom, puis celles sur le contenu. La première qui convient le renomme et le range. Sans règle, le modèle nomme les PDF et les images sur place (« Date - Type Émetteur - Détail »). Un relais déplace ses fichiers tels quels vers un autre dossier, par exemple les scans d’une app vers le Bureau.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             Section {
                 if model.settings.datedFolders.isEmpty {
@@ -46,7 +46,7 @@ struct FoldersPane: View {
                 Label("Classeurs", systemImage: "calendar")
             } footer: {
                 Text("Tout fichier posé à la racine d’un classeur, à la main ou par une règle, part dans son sous-dossier d’année ou de mois : date du document, sinon celle du nom, sinon celle du fichier. Une règle qui range ici y dépose directement le fichier, au bon endroit. Pour les fichiers déjà en vrac, utilisez « Ranger maintenant » (⇧⌘R) : un aperçu s’affiche avant de déplacer quoi que ce soit.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             if let notice {
                 Section { Label(notice, systemImage: "info.circle").foregroundStyle(.secondary) }
@@ -69,7 +69,7 @@ struct FoldersPane: View {
                     Text("Autres destinations des règles")
                 } footer: {
                     Text("Ces dossiers reçoivent des fichiers par les règles, tels quels, sans sous-dossier. Un classeur les rangerait par année.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
         }
@@ -116,17 +116,17 @@ private struct FlowDiagram: View {
                 Step(icon: "tray.and.arrow.down", text: "Boîte d’arrivée")
                 Arrow()
                 Step(icon: "textformat", text: "Règle sur le nom")
-                Text("sinon").font(.caption2).foregroundStyle(.secondary)
+                Text("sinon").font(.subheadline).foregroundStyle(.secondary)
                 Step(icon: "doc.text.magnifyingglass", text: "sur le contenu")
                 Arrow()
                 Step(icon: "calendar", text: "Classeur › 2026")
             }
             HStack(spacing: 6) {
-                Text("Aucune règle :").font(.caption).foregroundStyle(.secondary)
+                Text("Aucune règle :").font(.subheadline).foregroundStyle(.secondary)
                 Step(icon: "sparkles", text: "le modèle nomme le fichier sur place")
             }
             HStack(spacing: 6) {
-                Text("Posé à la main dans un classeur :").font(.caption).foregroundStyle(.secondary)
+                Text("Posé à la main dans un classeur :").font(.subheadline).foregroundStyle(.secondary)
                 Step(icon: "calendar", text: "rangé dans 2026 ou 2026-11")
             }
         }
@@ -137,7 +137,7 @@ private struct FlowDiagram: View {
         let icon: String, text: LocalizedStringKey
         var body: some View {
             Label(text, systemImage: icon)
-                .font(.caption)
+                .font(.subheadline)
                 .lineLimit(1)
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background(Color.accentColor.opacity(0.12), in: Capsule())
@@ -145,7 +145,7 @@ private struct FlowDiagram: View {
     }
 
     private struct Arrow: View {
-        var body: some View { Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary) }
+        var body: some View { Image(systemName: "arrow.right").font(.subheadline).foregroundStyle(.secondary) }
     }
 }
 
@@ -156,8 +156,8 @@ private struct FolderLabel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(name)
-            Text(path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
-            if let detail { Text(detail).font(.caption2).foregroundStyle(.tertiary) }
+            Text(path).font(.subheadline).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
+            if let detail { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
         }
         .help(path)
     }

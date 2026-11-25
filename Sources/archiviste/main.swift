@@ -97,7 +97,7 @@ if rulesTest {
     if rules.isEmpty { say("Aucune règle dans \(short(Rules.fileURL))"); exit(0) }
     for url in urls {
         print("── \(url.lastPathComponent)")
-        if let original = Marker.originalName(url) { print("   déjà traité par Archiviste (avant : « \(original) »)") }
+        if Marker.isMarked(url), let original = Marker.originalName(url) { print("   déjà traité par Archiviste (avant : « \(original) »)") }
         for (i, rule, missing) in await Rules.nearMisses(rules, for: url) {
             print("   · règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))")
         }

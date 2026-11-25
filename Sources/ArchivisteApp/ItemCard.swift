@@ -1,7 +1,9 @@
 import ArchivisteCore
 import SwiftUI
 
-/// One file in the batch: progress, then the new name with Modifier / Annuler.
+/// One file in the batch: its name, where it stands, then what can be done with it.
+/// The name is the main line whatever the phase; what it was before, the status and the chips
+/// are secondary. Not selectable: a click on it must not turn it into a blank highlight.
 struct ItemCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openWindow) private var openWindow
@@ -10,39 +12,62 @@ struct ItemCard: View {
     @State private var draft = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            statusLine
-            content
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            icon
+                .frame(width: 18)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(title)
+                        .fontWeight(item.phase == .proposed || item.phase == .done ? .semibold : .regular)
+                        .foregroundStyle(item.phase == .waiting ? .secondary : .primary)
+                        .lineLimit(2).truncationMode(.middle)
+                        .textSelection(.enabled)
+                    Spacer(minLength: 8)
+                    Text(status)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                }
+                if let before {
+                    Text("était « \(before) »")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle)
+                }
+                content
+            }
         }
-        .padding(10)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.opacity(item.phase == .waiting ? 0.5 : 1), in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.quaternary))
+        .background(.background.opacity(item.phase == .waiting ? 0.5 : 1), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.separator))
+        .accessibilityElement(children: .contain)
     }
 
-    private var statusLine: some View {
-        HStack(spacing: 6) {
-            icon.frame(width: 12, height: 12)
-            Text(item.originalName)
-                .strikethrough(item.phase == .done)
-                .lineLimit(1).truncationMode(.middle)
-            Spacer()
-            Text(status)
+    /// The file as it is called now, or as it will be once the proposal is applied.
+    private var title: String {
+        switch item.phase {
+        case .proposed: item.suggestion?.name ?? item.originalName
+        case .done, .cancelled: item.url.lastPathComponent
+        default: item.originalName
         }
-        .font(.caption)
-        .foregroundStyle(.secondary)
+    }
+
+    /// Its first name, when the title shows another one.
+    private var before: String? {
+        title == item.originalName ? nil : item.originalName
     }
 
     @ViewBuilder private var icon: some View {
         switch item.phase {
-        case .waiting: Image(systemName: "clock")
-        case .reading, .analyzing: ProgressView().controlSize(.mini)
-        case .done: Image(systemName: "checkmark").foregroundStyle(.green)
-        case .proposed: Image(systemName: "questionmark.circle").foregroundStyle(.orange)
-        case .unchanged: Image(systemName: "equal")
-        case .cancelled: Image(systemName: "arrow.uturn.backward")
-        case .skipped: Image(systemName: "minus").foregroundStyle(.orange)
-        case .failed: Image(systemName: "xmark").foregroundStyle(.red)
+        case .waiting: Image(systemName: "clock").foregroundStyle(.secondary)
+        case .reading, .analyzing: ProgressView().controlSize(.small)
+        case .done: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+        case .proposed: Image(systemName: "questionmark.circle.fill").foregroundStyle(.orange)
+        case .unchanged: Image(systemName: "equal.circle").foregroundStyle(.secondary)
+        case .cancelled: Image(systemName: "arrow.uturn.backward.circle").foregroundStyle(.secondary)
+        case .skipped: Image(systemName: "minus.circle").foregroundStyle(.orange)
+        case .failed: Image(systemName: "xmark.octagon.fill").foregroundStyle(.red)
         }
     }
 
@@ -62,10 +87,8 @@ struct ItemCard: View {
 
     @ViewBuilder private var content: some View {
         switch item.phase {
-        case .reading, .analyzing:
-            RoundedRectangle(cornerRadius: 4).fill(.quaternary).frame(width: 220, height: 12)
         case .failed(let msg):
-            Text(msg).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+            Text(msg).font(.subheadline).foregroundStyle(.red).textSelection(.enabled)
         case .proposed, .done:
             if editing {
                 HStack {
@@ -74,9 +97,7 @@ struct ItemCard: View {
                     Button("OK", action: commit).keyboardShortcut(.defaultAction)
                     Button("Annuler") { editing = false }
                 }
-                .font(.callout)
             } else {
-                Text(displayName).font(.callout.weight(.semibold)).textSelection(.enabled)
                 actions
             }
         case .skipped, .unchanged, .cancelled:
@@ -85,7 +106,6 @@ struct ItemCard: View {
                 ruleButton
             }
             .buttonStyle(.bordered)
-            .controlSize(.small)
         default:
             EmptyView()
         }
@@ -101,10 +121,6 @@ struct ItemCard: View {
         .help("Une règle pour les fichiers nommés comme celui-ci : où les ranger et comment les nommer")
     }
 
-    private var displayName: String {
-        item.phase == .proposed ? item.suggestion?.name ?? "" : item.url.lastPathComponent
-    }
-
     /// Real buttons, icon and text; in a narrow window they shrink to icons (each keeps its tooltip).
     private var actions: some View {
         ViewThatFits(in: .horizontal) {
@@ -114,11 +130,12 @@ struct ItemCard: View {
     }
 
     private var actionRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             ForEach(item.suggestion?.chips ?? [], id: \.self) { chip in
                 Text(chip)
-                    .font(.caption2)
-                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(.quaternary, in: Capsule())
                     .fixedSize()
             }
@@ -129,7 +146,7 @@ struct ItemCard: View {
                 Button("Ignorer", systemImage: "xmark") { model.skip(item) }
                     .help("Laisser ce fichier tel quel")
                 Button(item.suggestion?.match == nil ? String(localized: "Renommer") : String(localized: "Ranger"),
-                       systemImage: "checkmark") { model.apply(item, name: displayName) }
+                       systemImage: "checkmark") { model.apply(item, name: title) }
                     .buttonStyle(.borderedProminent)
                     .help("Appliquer ce nom (l’original est sauvegardé)")
             } else {
@@ -146,11 +163,10 @@ struct ItemCard: View {
             }
         }
         .buttonStyle(.bordered)
-        .controlSize(.small)
     }
 
     private func startEditing() {
-        draft = (displayName as NSString).deletingPathExtension
+        draft = (title as NSString).deletingPathExtension
         editing = true
     }
 

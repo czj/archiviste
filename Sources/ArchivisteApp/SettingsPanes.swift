@@ -27,7 +27,7 @@ struct GeneralPane: View {
                 if login == .requiresApproval {
                     HStack {
                         Text("À autoriser dans Réglages Système › Général › Ouverture.")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.subheadline).foregroundStyle(.secondary)
                         Spacer()
                         Button("Ouvrir les Réglages") { SMAppService.openSystemSettingsLoginItems() }
                     }
@@ -44,7 +44,7 @@ struct GeneralPane: View {
             } footer: {
                 if !showInMenuBar && dock != .always {
                     Text("Sans icône, Archiviste travaille en arrière-plan : rouvrez-le depuis le Finder, Spotlight ou Raycast pour retrouver cette fenêtre.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
@@ -54,15 +54,15 @@ struct GeneralPane: View {
                 HStack(spacing: 4) {
                     ForEach([String(localized: "Date"), String(localized: "Type"), String(localized: "Émetteur"),
                              String(localized: "Détail"), String(localized: "Montant")], id: \.self) { part in
-                        Text(part).font(.caption)
+                        Text(part).font(.subheadline)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
                     }
                 }
                 Text("Exemple : 2026-03-14 - Facture Kiné Durand - Séances de rééducation genou - 180.00 EUR.pdf")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
                 Text("Le montant n’apparaît que pour les factures, reçus, devis, avoirs, quittances et notes de frais. Les photos et captures d’écran prennent la date de prise de vue.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             Section("Modèle") {
                 switch model.engineState {
@@ -79,21 +79,21 @@ struct GeneralPane: View {
                     }
                 }
                 if model.localKeys.isEmpty {
-                    Text("Ce Mac suit config.json.").font(.caption).foregroundStyle(.secondary)
+                    Text("Ce Mac suit config.json.").font(.subheadline).foregroundStyle(.secondary)
                 } else {
                     HStack {
                         Text("Propre à ce Mac : \(model.localKeys.joined(separator: ", "))")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.subheadline).foregroundStyle(.secondary)
                         Spacer()
                         Button("Revenir à config.json") { model.resetLocalConfig() }
                     }
                 }
                 if let configError = model.configError {
-                    Text(configError).font(.caption).foregroundStyle(.red)
+                    Text(configError).font(.subheadline).foregroundStyle(.red)
                 }
             } footer: {
                 Text("config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -128,13 +128,13 @@ struct CleanupPane: View {
                 }
             } footer: {
                 Text("Chaque original est copié sous le nom « RENAME BACKUP <date> - … » avant d’être renommé. Les autres fichiers de ce dossier (rangés là à la main) peuvent aussi être mis à la corbeille après un temps, d’après leur date d’ajout.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             Section {
                 HStack {
                     Button("Faire le ménage maintenant") { Task { await model.runHousekeeping() } }
                     Spacer()
-                    if let last = model.lastHousekeeping { Text(last).font(.caption).foregroundStyle(.secondary) }
+                    if let last = model.lastHousekeeping { Text(last).font(.subheadline).foregroundStyle(.secondary) }
                 }
             }
         }

@@ -86,12 +86,12 @@ struct MainWindow: View {
             Divider()
             HStack(spacing: 6) {
                 switch model.engineState {
-                case .loading: ProgressView().controlSize(.mini); Text("Chargement du modèle…")
+                case .loading: ProgressView().controlSize(.small); Text("Chargement du modèle…")
                 case .ready: Image(systemName: "apple.intelligence").foregroundStyle(.tint); Text("Modèle prêt, sur l’appareil")
                 case .unavailable(let why): Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(why)
                 }
             }
-            .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            .font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
             PauseButton()
         }
         .padding(.horizontal, 14).padding(.bottom, 12)
@@ -116,18 +116,19 @@ struct ActivityPane: View {
             Section {
                 DropZone(targeted: targeted)
                     .listRowSeparator(.hidden)
+                    .selectionDisabled()
             }
             if let scan = model.tidyScan {
                 Section {
-                    TidyBanner(scan: scan).listRowSeparator(.hidden)
-                    ForEach(model.tidyItems.filter { $0.phase != .waiting }) { ItemCard(item: $0).listRowSeparator(.hidden) }
+                    TidyBanner(scan: scan).listRowSeparator(.hidden).selectionDisabled()
+                    ForEach(model.tidyItems.filter { $0.phase != .waiting }) { ItemCard(item: $0).listRowSeparator(.hidden).selectionDisabled() }
                 } header: {
                     Text("Ranger maintenant")
                 }
             }
             if !batch.isEmpty {
                 Section {
-                    ForEach(batch) { ItemCard(item: $0).listRowSeparator(.hidden) }
+                    ForEach(batch) { ItemCard(item: $0).listRowSeparator(.hidden).selectionDisabled() }
                 } header: {
                     HStack {
                         Text(busy ? String(localized: "En cours · \(batch.count { !$0.phase.isPending }) sur \(batch.count)")
@@ -140,7 +141,6 @@ struct ActivityPane: View {
                         }
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
                 }
             }
             Section {
@@ -148,6 +148,7 @@ struct ActivityPane: View {
                     Text(query.isEmpty ? String(localized: "Rien de renommé pour l’instant.")
                                        : String(localized: "Aucun fichier ne contient « \(query) »."))
                         .foregroundStyle(.secondary)
+                        .selectionDisabled()
                 }
                 ForEach(history) { entry in
                     HistoryRow(entry: entry).tag(entry.id)
@@ -221,7 +222,7 @@ private struct TidyBanner: View {
                 Text(tidying ? String(localized: "Lecture des fichiers… encore \(reading)")
                      : ready > 0 ? String(localized: "\(ready) fichier(s) à ranger") : String(localized: "Rien à ranger"))
                     .font(.headline)
-                Text(details).font(.caption).foregroundStyle(.secondary)
+                Text(details).font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
             if tidying {
@@ -255,14 +256,15 @@ private struct HistoryRow: View {
 
     var body: some View {
         let url = entry.url
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             FileBadge(ext: url.pathExtension)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(entry.newName).lineLimit(1).truncationMode(.middle)
-                Text("était « \(entry.oldName) »").font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                Text("était « \(entry.oldName) »").font(.subheadline).foregroundStyle(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
             }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 1) {
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 3) {
                 if let rule = entry.rule {
                     Label(rule, systemImage: "line.3.horizontal.decrease").lineLimit(1)
                 } else {
@@ -270,10 +272,14 @@ private struct HistoryRow: View {
                 }
                 Text(entry.date.formatted(.relative(presentation: .named)))
             }
-            .font(.caption).foregroundStyle(.secondary)
+            .font(.subheadline).foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
+        // Separators from edge to edge: by default they start at the last text's leading edge,
+        // the right-hand column here, at a different place on every row.
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
         // Drag the file itself out: to the Finder, a mail, a web upload.
         .onDrag { NSItemProvider(contentsOf: url) ?? NSItemProvider() }
         .help(entry.path)

@@ -243,6 +243,11 @@ public enum Rules {
         return Day(iso: iso) == nil ? nil : iso
     }
 
+    /// Its name now, or the one it had before Archiviste renamed it.
+    static func matchesName(_ rule: Rule, _ url: URL) -> Bool {
+        rule.matchesName(url.lastPathComponent) || Marker.originalName(url).map(rule.matchesName) == true
+    }
+
     /// Reads a document's issue date (AAAA-MM-JJ), nil if it can't tell: see `Namer.issueDate`.
     public typealias DateReader = @Sendable (URL) async -> String?
 
@@ -250,11 +255,13 @@ public enum Rules {
     /// When the rule dates the file (prefix or dated subfolder), `readDate` picks the issue date
     /// (the model, choosing among the dates written in the document); the file's creation date otherwise.
     /// `sorted`: the classeurs (`UserConfig.datedFolders`); a rule filing into one gets its subfolder.
+    /// A file Archiviste renamed before, then took out of its folder, also matches by its name of
+    /// before (the mark keeps it): put back in an inbox, it is filed as it was the first time.
     public static func firstMatch(_ rules: [Rule], for url: URL, readDate: DateReader? = nil,
                                   sorted: [UserConfig.DatedFolder] = []) async -> Match? {
         let filename = url.lastPathComponent
         var text: String?? = .none  // read once, lazily
-        for (i, rule) in tryOrder(rules) where rule.enabled && rule.hasCondition && rule.matchesName(filename) {
+        for (i, rule) in tryOrder(rules) where rule.enabled && rule.hasCondition && matchesName(rule, url) {
             if rule.needsText && text == nil { text = .some(await RuleText.read(url)) }
             // Enabled, with a condition and a matching name (so a valid pattern): only the phrases are left.
             guard rule.missingPhrases(in: text ?? nil).isEmpty else { continue }
@@ -283,7 +290,7 @@ public enum Rules {
     public static func nearMisses(_ rules: [Rule], for url: URL) async -> [(index: Int, rule: Rule, missing: [String])] {
         var out: [(Int, Rule, [String])] = []
         var text: String??
-        for (i, rule) in tryOrder(rules) where rule.enabled && rule.hasCondition && rule.matchesName(url.lastPathComponent) {
+        for (i, rule) in tryOrder(rules) where rule.enabled && rule.hasCondition && matchesName(rule, url) {
             if rule.needsText && text == nil { text = .some(await RuleText.read(url)) }
             let missing = rule.missingPhrases(in: text ?? nil)
             if missing.isEmpty { break }

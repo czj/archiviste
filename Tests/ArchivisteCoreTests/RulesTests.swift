@@ -44,6 +44,57 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(!Marker.isMarked(edited))
 }
 
+@Test func `un fichier traité qui sort de son dossier puis y revient est à traiter de nouveau`() throws {
+    let dir = try tempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let inbox = dir.appendingPathComponent("inbox"), elsewhere = dir.appendingPathComponent("ailleurs")
+    try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+    let scan = dir.appendingPathComponent("Scan.pdf")
+    try Data("x".utf8).write(to: scan)
+    let final = try Files.rename(scan, to: "Facture.pdf", in: inbox, backupDir: dir.appendingPathComponent("backup"))
+    #expect(Marker.isMarked(final))
+
+    // Renamed in place, by hand: still handled (Date Added doesn't change).
+    let renamed = try Files.move(final, to: "Facture EDF.pdf")
+    #expect(Marker.isMarked(renamed))
+
+    // Out, then back: new again, its first name kept for the rules.
+    Thread.sleep(forTimeInterval: 1.2)  // Date Added has to change by more than the tolerance
+    let out = try Files.move(renamed, to: renamed.lastPathComponent, in: elsewhere)
+    #expect(!Marker.isMarked(out))
+    Thread.sleep(forTimeInterval: 1.2)
+    let back = try Files.move(out, to: out.lastPathComponent, in: inbox)
+    #expect(!Marker.isMarked(back))
+    #expect(Marker.originalName(back) == "Scan.pdf")
+
+    // Handled again here: marked again.
+    Marker.set(back, originalName: "Scan.pdf")
+    #expect(Marker.isMarked(back))
+}
+
+@Test func `une marque d’avant la date d’ajout ne vaut que pour un fichier arrivé avant`() throws {
+    let dir = try tempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let file = dir.appendingPathComponent("a.pdf")
+    try Data("x".utf8).write(to: file)
+    Marker.set(file, originalName: "old.pdf")
+    _ = file.withUnsafeFileSystemRepresentation { removexattr($0!, Marker.addedAttribute, XATTR_NOFOLLOW) }
+    #expect(Marker.originalName(file) == "old.pdf")
+    #expect(!Marker.isMarked(file))  // arrived now, after `undatedUntil`: an older version marked it elsewhere
+}
+
+@Test func `une règle reconnaît un fichier revenu par son nom d’avant`() async throws {
+    let dir = try tempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let file = dir.appendingPathComponent("2026-11-20 - Facture Bouygues Telecom.pdf")
+    try Data("x".utf8).write(to: file)
+    Marker.set(file, originalName: "Bouyguestelecom_Facture_20261120.pdf")
+    let rule = Rule(name: "Bouygues", filename: "^Bouyguestelecom_Facture_", folder: dir.appendingPathComponent("Factures").path,
+                    rename: "Facture Bouygues Telecom", datePrefix: false)
+    let match = try #require(await Rules.firstMatch([rule], for: file))
+    #expect(match.folder.lastPathComponent == "Factures")
+}
+
 @Test func `la sauvegarde de l’original ne porte pas la marque`() throws {
     let dir = try tempDir()
     defer { try? FileManager.default.removeItem(at: dir) }
