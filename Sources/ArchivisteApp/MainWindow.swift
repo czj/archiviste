@@ -23,6 +23,15 @@ enum AppSection: String, CaseIterable, Identifiable {
         }
     }
 
+    /// One color per page, as in the system's own sidebars: easier to find at a glance.
+    var tint: Color {
+        switch self {
+        case .activity: .blue
+        case .rules: .purple
+        case .folders: .orange
+        }
+    }
+
     /// ⌘1 … ⌘3
     var key: KeyEquivalent { KeyEquivalent(Character(String((Self.allCases.firstIndex(of: self) ?? 0) + 1))) }
 }
@@ -36,14 +45,28 @@ struct MainWindow: View {
     var body: some View {
         NavigationSplitView {
             List(selection: Binding(get: { model.section }, set: { if let s = $0 { model.section = s } })) {
-                ForEach(AppSection.allCases) { section in
-                    Label(section.title, systemImage: section.icon)
+                Section("Archiviste") {
+                    ForEach(AppSection.allCases) { section in
+                        Label {
+                            Text(section.title)
+                        } icon: {
+                            // White on the selection's accent fill, where a blue icon would vanish.
+                            Image(systemName: section.icon)
+                                .foregroundStyle(section == model.section ? Color.white : section.tint)
+                        }
                         .badge(badge(section))
                         .tag(section)
+                    }
+                }
+                let inboxes = model.settings.watchedFolders
+                if !inboxes.isEmpty {
+                    Section("Boîtes d’arrivée") {
+                        ForEach(inboxes) { InboxRow(folder: $0, paused: model.paused) }
+                    }
                 }
             }
-            .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 260)
-            .safeAreaInset(edge: .bottom) { status }
+            .navigationSplitViewColumnWidth(min: 210, ideal: 230, max: 280)
+            .safeAreaInset(edge: .bottom, spacing: 0) { status }
         } detail: {
             Group {
                 switch model.section {
@@ -67,29 +90,91 @@ struct MainWindow: View {
         .frame(minWidth: 940, minHeight: 540)
     }
 
-    private func badge(_ section: AppSection) -> Int {
+    /// Files waiting or proposed; rules that can't work, with a warning sign so the number
+    /// doesn't read as a total.
+    private func badge(_ section: AppSection) -> Text? {
         switch section {
-        case .activity: model.items.count { $0.phase.isPending || $0.phase == .proposed }
-        case .rules: model.rules.count { !$0.isUsable }
-        default: 0
+        case .activity:
+            let n = model.items.count { $0.phase.isPending || $0.phase == .proposed }
+            return n > 0 ? Text("\(n)") : nil
+        case .rules:
+            let n = model.rules.count { !$0.isUsable }
+            return n > 0 ? Text("\(Image(systemName: "exclamationmark.triangle.fill")) \(n)").foregroundStyle(.orange) : nil
+        case .folders:
+            return nil
         }
     }
 
-    /// Model state and the pause switch, under the sidebar.
+    /// Model state, today's count and the pause switch, on a glass card under the sidebar.
     private var status: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Divider()
-            HStack(spacing: 6) {
+        let today = model.recent.count { Calendar.current.isDateInToday($0.date) }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 7) {
                 switch model.engineState {
-                case .loading: ProgressView().controlSize(.small); Text("Chargement du modèle…")
-                case .ready: Image(systemName: "apple.intelligence").foregroundStyle(.tint); Text("Modèle prêt, sur l’appareil")
-                case .unavailable(let why): Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(why)
+                case .loading:
+                    ProgressView().controlSize(.mini)
+                    Text("Chargement du modèle…")
+                case .ready:
+                    Image(systemName: "apple.intelligence").foregroundStyle(.tint)
+                    Text("Modèle prêt, sur l’appareil")
+                case .unavailable(let why):
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                    Text(why)
                 }
             }
-            .font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
-            PauseButton()
+            .font(.subheadline)
+            .lineLimit(2)
+            HStack {
+                PauseButton()
+                Spacer(minLength: 6)
+                if today > 0 {
+                    Text("\(today) aujourd’hui")
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .help("Fichiers renommés ou rangés aujourd’hui")
+                }
+            }
         }
-        .padding(.horizontal, 14).padding(.bottom, 12)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, 10).padding(.bottom, 10)
+    }
+}
+
+/// A watched folder in the sidebar: its state at a glance, a click opens it in the Finder.
+private struct InboxRow: View {
+    @Environment(AppModel.self) private var model
+    let folder: UserConfig.Folder
+    let paused: Bool
+
+    var body: some View {
+        let live = folder.enabled && !paused
+        let (state, color): (String, Color) =
+            !folder.enabled ? (String(localized: "Désactivée"), .secondary)
+            : paused ? (String(localized: "En pause"), .orange)
+            : folder.relay != nil ? (String(localized: "Relais vers \(folder.relay?.lastPathComponent ?? "")"), .green)
+            : folder.usesModel ? (String(localized: "Règles, puis le modèle"), .green)
+            : (String(localized: "Règles seulement"), .green)
+        Button { NSWorkspace.shared.open(folder.url) } label: {
+            Label {
+                Text(folder.name).lineLimit(1).truncationMode(.middle)
+            } icon: {
+                Image(systemName: folder.relay != nil ? "arrow.right.circle" : "tray.and.arrow.down")
+                    .foregroundStyle(live ? Color.accentColor : .secondary)
+            }
+            .badge(Text(Image(systemName: "circle.fill")).font(.system(size: 7)).foregroundStyle(color))
+            .opacity(folder.enabled ? 1 : 0.55)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .selectionDisabled()
+        .help("\(folder.path) · \(state)")
+        .accessibilityValue(state)
+        .contextMenu {
+            Button("Ouvrir dans le Finder") { NSWorkspace.shared.open(folder.url) }
+            Button("Réglages des dossiers…") { model.section = .folders }
+        }
     }
 }
 
