@@ -60,7 +60,8 @@ public enum Evaluation {
         add("issuer", e.issuer, issuer) { exp in
             let have = words(issuer)
             return exp.split(separator: "|").contains { alt in
-                let want = words(String(alt))
+                // Cleaned like the answer: "Klein Charpentier S.A." expects "Klein Charpentier".
+                let want = words(Naming.cleanFields(["issuer": String(alt)])["issuer"] ?? String(alt))
                 return want.isSubset(of: have) && have.count <= want.count + 1
             }
         }

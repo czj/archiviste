@@ -198,8 +198,17 @@ attendus sont dans `corpus.json`, les PDF en sortent par `swift tools/make_corpu
 
     archiviste --eval corpus/synthetique   # chaque écart, puis le score par champ
 
-Un corpus privé de vrais documents se monte de la même façon hors du dépôt (un dossier, ses
-fichiers et un `corpus.json` sans `lines`) et se passe à la même commande.
+Un corpus privé se monte de la même façon hors du dépôt (un dossier, ses fichiers et un
+`corpus.json`) et se passe à la même commande. Pour qu'un score dise quelque chose, on ajuste
+le prompt sur `corpus/synthetique` et on le **mesure** sur les autres, sans les relire pour
+corriger : sinon ils deviennent aussi flatteurs que lui.
+
+Un corpus public complète : 100 factures françaises fictives étiquetées
+([N-Mehdi/french-invoices-synth](https://huggingface.co/datasets/N-Mehdi/french-invoices-synth),
+Apache-2.0), téléchargées dans `corpus/public/` (non versionné) :
+
+    uv run --with pyarrow --with huggingface_hub python tools/fetch_public_corpus.py
+    archiviste --eval corpus/public/french-invoices-synth
 
 ## Compiler
 

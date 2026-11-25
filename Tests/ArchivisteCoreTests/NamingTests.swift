@@ -14,6 +14,11 @@ import Testing
     ("Acme Co., Ltd.", "Acme"),
     ("Dr Martin", "Dr Martin"),
     ("Saint-Gobain", "Saint-Gobain"),  // "Sa…" inside a word is not a legal form
+    ("Klein Charpentier S.A.", "Klein Charpentier"),
+    ("Charrier Brunet S.A.R.L.", "Charrier Brunet"),
+    ("LEBLANC SAS", "LEBLANC"),
+    ("Leblanc S.A.S.U.", "Leblanc"),
+    ("SIRET 247 428 493 19087", "aucun"),
     ("SA", "SA"),  // a form alone is left: nothing better to show
 ])
 func `formes juridiques retirées de l’émetteur`(issuer: String, expected: String) {

@@ -188,9 +188,11 @@ public enum Naming {
 
     /// A legal form at either end of a company name: "Amazon EU S.à r.l.", "SAS Le Petit Café",
     /// "Shenzhen … Mao Yi You Xian Gong Si" (pinyin for "Trading Co., Ltd.").
-    static let legalForm = #"(?:s\.?\s?à\.?\s?r\.?\s?l\.?|sàrl|sasu|sas|sarl|eurl|sa|snc|sci|selarl|scp|gmbh|ag|ltd\.?|limited|inc\.?|llc|plc|b\.?v\.?|n\.?v\.?|s\.?p\.?a\.?|s\.?l\.?|co\.?|corp\.?|you xian gong si|gong si|co\.?,? ltd\.?)"#
+    static let legalForm = #"(?:s\.?\s?à\.?\s?r\.?\s?l\.?|sàrl|s\.?a\.?(?:s\.?(?:u\.?)?|r\.?l\.?)?|e\.?u\.?r\.?l\.?|s\.?n\.?c\.?|s\.?c\.?i\.?|selarl|s\.?c\.?p\.?|gmbh|ag|ltd\.?|limited|inc\.?|llc|plc|b\.?v\.?|n\.?v\.?|s\.?p\.?a\.?|s\.?l\.?|co\.?|corp\.?|you xian gong si|gong si|co\.?,? ltd\.?)"#
     static let trailingForm = Rx(#"(?:[\s,&]+"# + legalForm + #")+\s*$"#, [.caseInsensitive])
     static let leadingForm = Rx(#"^\s*"# + legalForm + #"\s+(?=\S)"#, [.caseInsensitive])
+    /// A registration number taken for a name: "SIRET 247 428 493 19087".
+    static let registration = Rx(#"^\s*(?:siret|siren|tva|n°|rcs)\b"#, [.caseInsensitive])
 
     /// The model's fields with a cleaner issuer: no legal form, and never one of the user's own
     /// names (on their documents they are the recipient). The rest is untouched.
@@ -199,6 +201,7 @@ public enum Naming {
         var fields = raw
         issuer = leadingForm.sub(trailingForm.sub(issuer, ""), "").trimmingCharacters(in: .whitespaces)
         if isOneOf(issuer, myNames) { issuer = "aucun" }
+        if registration.test(issuer) { issuer = "aucun" }
         fields["issuer"] = issuer.isEmpty ? "aucun" : issuer
         if let detail = raw["detail"] { fields["detail"] = without(myNames, in: detail) }
         return fields
