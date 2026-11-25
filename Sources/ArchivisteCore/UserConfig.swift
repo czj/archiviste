@@ -16,7 +16,8 @@ import Foundation
 ///       "watchedFolders": [{ "path": "~/Downloads", "enabled": true },
 ///                          { "path": "~/Scans inbox", "moveTo": "~/Desktop" },
 ///                          { "path": "~/Desktop", "rulesOnly": true }],
-///       "confirmBeforeRename": false
+///       "confirmBeforeRename": false,
+///       "myNames": ["Camille Martin", "Martin Conseil"]
 ///     }
 public struct UserConfig: Codable, Equatable, Sendable {
     public struct Folder: Codable, Equatable, Hashable, Sendable, Identifiable {
@@ -61,6 +62,9 @@ public struct UserConfig: Codable, Equatable, Sendable {
     public var watchedFolders: [Folder] = []
     /// Dropped files: show the name and wait for "Renommer".
     public var confirmBeforeRename = false
+    /// The user's own names (person, companies): on their documents they are the recipient, never
+    /// the issuer. Told to the model, and taken out of the issuer if it gives one anyway.
+    public var myNames: [String] = []
     /// Classeurs, sorted by date: a file landing at the top, put there by hand or by a rule, goes
     /// to its year (or month) subfolder, dated. Watched like the inboxes; "Ranger maintenant" sorts
     /// the files already there. Only these: never a folder that is not listed.
@@ -148,6 +152,7 @@ public struct UserConfig: Codable, Equatable, Sendable {
         watchedFolders = try c.decodeIfPresent([Folder].self, forKey: .watchedFolders) ?? d.watchedFolders
         confirmBeforeRename = try c.decodeIfPresent(Bool.self, forKey: .confirmBeforeRename) ?? d.confirmBeforeRename
         datedFolders = try c.decodeIfPresent([DatedFolder].self, forKey: .datedFolders) ?? d.datedFolders
+        myNames = try c.decodeIfPresent([String].self, forKey: .myNames) ?? d.myNames
     }
 
     public var backupURL: URL { Self.expand(backupDir) }

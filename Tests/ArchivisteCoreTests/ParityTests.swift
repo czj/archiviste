@@ -53,9 +53,9 @@ private let fx = Fixture.shared
 private let today = Day(iso: fx.today)!
 
 @Suite struct `Parité avec le script Python` {
-    @Test func `prompts identiques`() {
-        #expect(Config.instructions == fx.instructions)
-        #expect(Config.imageInstructions == fx.image_instructions)
+    // The prompt itself now moves on from the script's, measured with `archiviste --eval` on
+    // corpus/ rather than pinned here; the type lists still match.
+    @Test func `types identiques`() {
         #expect(Config.types == fx.types)
         #expect(Config.imageTypes == fx.image_types)
     }

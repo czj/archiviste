@@ -1365,6 +1365,16 @@
         }
       }
     },
+    "ex. Camille Martin, Martin Conseil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Camille Martin, Martin Consulting"
+          }
+        }
+      }
+    },
     "Effacer l’historique" : {
       "localizations" : {
         "en" : {
@@ -1787,6 +1797,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Case and accents are ignored. PDFs (scans included), images, Excel files."
+          }
+        }
+      }
+    },
+    "Mes noms" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My names"
           }
         }
       }
@@ -2907,6 +2927,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Empty this list: the files stay where they are"
+          }
+        }
+      }
+    },
+    "Vous-même et vos sociétés, séparés par des virgules. Sur vos documents, vous êtes le destinataire : ces noms ne sont jamais pris pour l’émetteur." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You and your companies, separated by commas. On your documents you are the recipient: these names are never taken as the issuer."
           }
         }
       }

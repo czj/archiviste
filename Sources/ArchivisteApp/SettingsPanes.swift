@@ -27,6 +27,7 @@ struct GeneralPane: View {
     @AppStorage(Presence.menuBarKey) private var showInMenuBar = true
     @AppStorage(Presence.dockKey) private var dock = Presence.Dock.withWindow
     @AppStorage(Presence.quitKey) private var onQuit = Presence.OnQuit.ask
+    @State private var myNamesText = ""
 
     var body: some View {
         @Bindable var model = model
@@ -66,6 +67,19 @@ struct GeneralPane: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 login = SMAppService.mainApp.status  // approved meanwhile in System Settings
+            }
+            Section {
+                // Edited as typed text, read into the list on each change: re-joining the list
+                // would swallow a comma just typed.
+                TextField("Mes noms", text: $myNamesText, prompt: Text("ex. Camille Martin, Martin Conseil"))
+                    .onAppear { myNamesText = model.settings.myNames.joined(separator: ", ") }
+                    .onChange(of: myNamesText) { _, text in
+                        model.settings.myNames = text.split(separator: ",")
+                            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                    }
+            } footer: {
+                Text("Vous-même et vos sociétés, séparés par des virgules. Sur vos documents, vous êtes le destinataire : ces noms ne sont jamais pris pour l’émetteur.")
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             Section("Format du nom") {
                 HStack(spacing: 6) {

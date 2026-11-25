@@ -325,7 +325,7 @@ final class AppModel {
             let ex = try await extraction.value
             guard let engine else { throw EngineError.unavailable("non chargé") }
             item.phase = .analyzing
-            guard let s = try await Namer.suggest(item.url, ex, engine: engine) else {
+            guard let s = try await Namer.suggest(item.url, ex, engine: engine, myNames: settings.myNames) else {
                 item.phase = .skipped(String(localized: "rien de lisible")); return
             }
             item.suggestion = s

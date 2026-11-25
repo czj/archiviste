@@ -44,9 +44,11 @@ public enum Namer {
     }
 
     /// nil when nothing in the file is readable.
-    public static func suggest(_ url: URL, _ ex: Extracted, engine: Engine) async throws -> Suggestion? {
+    /// `myNames`: the user's own names (`UserConfig.myNames`), never the issuer.
+    public static func suggest(_ url: URL, _ ex: Extracted, engine: Engine, myNames: [String] = []) async throws -> Suggestion? {
         guard !ex.isEmpty else { return nil }
-        let fields = try await engine.ask(ex, isImage: Config.isImage(url))
+        let raw = try await engine.ask(ex, isImage: Config.isImage(url), myNames: myNames)
+        let fields = Naming.cleanFields(raw, myNames: myNames)
         let ext = url.lastPathComponent.pySplitExt.1.lowercased()
         let name = Naming.buildFilename(fields, original: url.lastPathComponent, captureDate: ex.captureDate) + ext
         return Suggestion(fields: fields, name: name)

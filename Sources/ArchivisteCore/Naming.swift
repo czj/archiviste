@@ -184,6 +184,58 @@ public enum Naming {
         return prefix + name + suffix
     }
 
+    // MARK: Issuer cleanup (before buildFilename, which stays the Python script's port)
+
+    /// A legal form at either end of a company name: "Amazon EU S.à r.l.", "SAS Le Petit Café",
+    /// "Shenzhen … Mao Yi You Xian Gong Si" (pinyin for "Trading Co., Ltd.").
+    static let legalForm = #"(?:s\.?\s?à\.?\s?r\.?\s?l\.?|sàrl|sasu|sas|sarl|eurl|sa|snc|sci|selarl|scp|gmbh|ag|ltd\.?|limited|inc\.?|llc|plc|b\.?v\.?|n\.?v\.?|s\.?p\.?a\.?|s\.?l\.?|co\.?|corp\.?|you xian gong si|gong si|co\.?,? ltd\.?)"#
+    static let trailingForm = Rx(#"(?:[\s,&]+"# + legalForm + #")+\s*$"#, [.caseInsensitive])
+    static let leadingForm = Rx(#"^\s*"# + legalForm + #"\s+(?=\S)"#, [.caseInsensitive])
+
+    /// The model's fields with a cleaner issuer: no legal form, and never one of the user's own
+    /// names (on their documents they are the recipient). The rest is untouched.
+    public static func cleanFields(_ raw: [String: String], myNames: [String] = []) -> [String: String] {
+        guard var issuer = raw["issuer"]?.trimmingCharacters(in: .whitespacesAndNewlines), !issuer.isEmpty else { return raw }
+        var fields = raw
+        issuer = leadingForm.sub(trailingForm.sub(issuer, ""), "").trimmingCharacters(in: .whitespaces)
+        if isOneOf(issuer, myNames) { issuer = "aucun" }
+        fields["issuer"] = issuer.isEmpty ? "aucun" : issuer
+        if let detail = raw["detail"] { fields["detail"] = without(myNames, in: detail) }
+        return fields
+    }
+
+    /// "Forfait mobile Level UP" → "Forfait mobile": two words or more in a row from one of the
+    /// user's names (or one alone if it is the whole name) say who received it, not what it is.
+    static func without(_ names: [String], in detail: String) -> String {
+        func fold(_ s: Substring) -> String {
+            s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).filter { $0.isLetter || $0.isNumber }
+        }
+        var words = detail.split(separator: " ")
+        for name in names {
+            let mine = Set(name.split { !$0.isLetter && !$0.isNumber }.map(fold))
+            guard !mine.isEmpty else { continue }
+            var i = 0
+            while i < words.count {
+                var j = i
+                while j < words.count, mine.contains(fold(words[j])), !fold(words[j]).isEmpty { j += 1 }
+                if j - i >= min(2, mine.count) { words.removeSubrange(i..<j) } else { i = max(j, i + 1) }
+            }
+        }
+        return words.joined(separator: " ")
+    }
+
+    /// "Martin Conseil" is also "MARTIN CONSEIL SAS" and "Martin conseil": the words of one are all
+    /// among the other's, case and accents aside. Whole words: "Orange" is not "Orangerie".
+    static func isOneOf(_ issuer: String, _ names: [String]) -> Bool {
+        func words(_ s: String) -> Set<String> {
+            Set(s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+                .split { !$0.isLetter && !$0.isNumber }.map(String.init))
+        }
+        let i = words(issuer)
+        guard !i.isEmpty else { return false }
+        return names.map(words).contains { n in !n.isEmpty && (n.isSubset(of: i) || i.isSubset(of: n)) }
+    }
+
     /// Short labels for the UI chips: type, date, amount.
     public static func chips(_ raw: [String: String]) -> [String] {
         let f = normalize(raw)

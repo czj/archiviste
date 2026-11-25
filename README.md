@@ -147,6 +147,7 @@ est versionné avec chezmoi, lancez `chezmoi re-add` après l'avoir modifié dan
     archiviste --rename --force *.pdf       # reprend aussi les fichiers déjà traités ou nommés
     archiviste --rules *.pdf                # quelle règle prend chaque fichier, et pourquoi pas les autres
     archiviste --text scan.pdf              # ce que lit le modèle : texte, dates et montants candidats
+    archiviste --eval corpus/synthetique    # note le modèle sur un corpus étiqueté (voir « Qualité des noms »)
 
 ## Sauvegardes et configuration
 
@@ -186,6 +187,19 @@ recharge toute seule quand l'un des deux change. Toutes les clés sont facultati
 | `watchedFolders` | `[]` | boîtes d’arrivée : règles puis modèle, règles seulement (`rulesOnly`), ou relais (`moveTo`) |
 | `datedFolders` | `[]` | classeurs : `path`, `subfolder` (`year`, `yearMonth`, `none`), `datePrefix`, `enabled` |
 | `confirmBeforeRename` | `false` | fichiers déposés : attendre « Renommer » |
+| `myNames` | `[]` | vous et vos sociétés : le destinataire, jamais pris pour l’émetteur (Réglages › Général) |
+
+## Qualité des noms
+
+Le prompt se mesure sur un corpus étiqueté plutôt qu'à l'œil. `corpus/synthetique/` contient
+18 documents fictifs (facture de marketplace, avoir avec le destinataire en en-tête, fiche de
+paie, ordonnance, avis d'impôt avec date limite, ticket de caisse…) : leur texte et les champs
+attendus sont dans `corpus.json`, les PDF en sortent par `swift tools/make_corpus.swift corpus/synthetique`.
+
+    archiviste --eval corpus/synthetique   # chaque écart, puis le score par champ
+
+Un corpus privé de vrais documents se monte de la même façon hors du dépôt (un dossier, ses
+fichiers et un `corpus.json` sans `lines`) et se passe à la même commande.
 
 ## Compiler
 

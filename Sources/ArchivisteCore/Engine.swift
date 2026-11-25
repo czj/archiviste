@@ -36,8 +36,15 @@ public struct Engine: Sendable {
         }
     }
 
+    /// Types the model gives too readily: one of these words must be in the text for them to stand.
+    static let typeWords: [String: [String]] = [
+        "Avoir": ["avoir", "credit note", "rembours", "annul"],
+        "Note de frais": ["note de frais", "frais professionnels", "état de frais", "expense"],
+    ]
+
     /// The model's fields (type, issuer, date, detail, amount) for one extracted file.
-    public func ask(_ ex: Extracted, isImage: Bool) async throws -> [String: String] {
+    /// `myNames`: the user's own names, the recipient on their documents, never the issuer.
+    public func ask(_ ex: Extracted, isImage: Bool, myNames: [String] = []) async throws -> [String: String] {
         var imageURL: URL?
         if let png = ex.imagePNG {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("archiviste-\(UUID().uuidString).png")
@@ -58,7 +65,11 @@ public struct Engine: Sendable {
             Field(name: "amount", description: "Montant total TTC (factures, reçus, devis...), ou aucun",
                   choices: amounts + ["aucun"]),
         ]
-        let instructions = isImage ? Config.imageInstructions : Config.instructions
+        var instructions = isImage ? Config.imageInstructions : Config.instructions
+        if !myNames.isEmpty {
+            instructions += "\n\nLe destinataire de ces documents est \(myNames.joined(separator: ", ")) : "
+                + "JAMAIS l'issuer, même s'il apparaît en haut de la page ; prends l'autre partie."
+        }
         let body = ex.text?.pyStrip ?? "(aucun texte lisible, utilise l'image)"
         // Fallbacks: the model may refuse a page image or overflow its 8k context.
         let attempts: [(URL?, String)] = switch (imageURL, ex.text) {
@@ -70,8 +81,17 @@ public struct Engine: Sendable {
         var last = "?"
         for (image, txt) in attempts {
             do {
-                return try await respond(instructions: instructions, prompt: "Texte du document:\n---\n\(txt)\n---",
-                                         image: image, fields: fields)
+                let prompt = "Texte du document:\n---\n\(txt)\n---"
+                let answer = try await respond(instructions: instructions, prompt: prompt, image: image, fields: fields)
+                // A type whose own words are nowhere in the text (an attestation answered "Avoir"):
+                // asked again without it. Only with a text to check against.
+                guard let type = answer["type"], let words = Self.typeWords[type], ex.text != nil,
+                      !words.contains(where: { text.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }),
+                      let i = fields.firstIndex(where: { $0.name == "type" }), let choices = fields[i].choices
+                else { return answer }
+                var narrowed = fields
+                narrowed[i] = Field(name: "type", description: fields[i].description, choices: choices.filter { $0 != type })
+                return (try? await respond(instructions: instructions, prompt: prompt, image: image, fields: narrowed)) ?? answer
             } catch {
                 last = error.message
                 if !error.isRetryable { break }

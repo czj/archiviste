@@ -40,15 +40,17 @@ public enum Config {
         type = choisis dans cette liste (sinon 1 à 3 mots):
         - Facture: demande de paiement d'un fournisseur, prestataire ou professionnel \
         (y compris facture acquittée, note d'honoraires, titre de recette d'hôpital).
-        - Reçu de paiement: confirmation de paiement en ligne, par carte, ticket de caisse.
-        - Avoir, Devis, Bon de commande, Note de frais (frais professionnels remboursés \
-        par un employeur), Quittance (loyer).
+        - Reçu de paiement: ticket de caisse d'un magasin, confirmation de paiement en ligne ou par carte.
+        - Avoir: SEULEMENT si le document dit « avoir » ou « credit note », ou annule ou rembourse une facture.
+        - Devis, Bon de commande, Quittance (loyer).
+        - Note de frais: SEULEMENT un état de frais professionnels qu'un employeur rembourse.
         - Relevé de compte: relevé bancaire ou de carte. Relevé de prestations: \
         remboursements de mutuelle ou d'assurance maladie. Échéancier.
         - Avis d'imposition: impôt ou taxe à payer (impôt sur le revenu, CFE, taxe foncière). \
         Déclaration: déclaration fiscale ou sociale (DSN, TVA, revenus).
         - Récépissé: accusé de réception ou confirmation d'une démarche auprès d'une administration.
-        - Attestation, Certificat, Contrat, Avenant, Conditions générales, Procès-verbal \
+        - Contrat: contrat, conditions particulières, police d'assurance, bail.
+        - Attestation, Certificat, Avenant, Conditions générales, Procès-verbal \
         (assemblée générale), Bilan (comptes annuels), Rapport.
         - Bulletin de paie, Bulletin scolaire, Convocation.
         - Ordonnance: prescription d'un médecin (médicaments, vaccins, examens). \
@@ -58,9 +60,11 @@ public enum Config {
         issuer = qui a ÉCRIT le document (en-tête, logo, signature). JAMAIS le destinataire, \
         le client ou le patient. Forme courte et lisible:
         - entreprise ou marque: son nom sans forme juridique (SAS, SARL...).
+        - magasin: l'enseigne seule, sans la ville ni le numéro du magasin.
+        - bulletin de paie: l'employeur.
         - administration: nom usuel (Finances publiques, URSSAF, CPAM, CAF, Mairie de Lyon).
         - hôpital ou clinique: son nom (Hôpital Necker).
-        - médecin, professionnel de santé ou libéral: métier + nom de famille \
+        - médecin, professionnel de santé ou libéral: métier + nom de famille, sans prénom \
         (Dr Martin, Kiné Durand, Orthodontiste Lefèvre, Avocat Moreau).
         - déclaration: celui qui déclare (l'entreprise ou la personne), pas l'organisme destinataire.
         - aucun si pas clair.
@@ -70,7 +74,9 @@ public enum Config {
         aucun si absente.
 
         detail = 2 à 6 mots sur l'objet précis: produit ou service acheté, médicament, \
-        période d'un relevé (Octobre 2026), objet d'un courrier ou d'un contrat. \
+        mois d'un relevé ou d'un bulletin de paie (Octobre 2026), objet d'un courrier, \
+        ce que couvre un contrat ou une attestation (Assurance auto Peugeot 208), \
+        pour un avoir ce qui est remboursé (l'article), jamais « annulation de facture ». \
         Ne répète pas le type ni l'émetteur. JAMAIS de numéro de facture, \
         de dossier ou de référence.
 
