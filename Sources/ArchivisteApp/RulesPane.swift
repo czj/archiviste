@@ -139,7 +139,8 @@ struct RulesPane: View {
         if !rule.contains.isEmpty {
             return String(localized: "contient \(rule.contains.map(RuleStyle.quoted).joined(separator: " + "))")
         }
-        return rule.filename.isEmpty ? String(localized: "aucune condition") : rule.filename
+        if rule.filename.isEmpty { return String(localized: "aucune condition") }
+        return rule.nameMatch.map(RuleStyle.describe) ?? rule.filename
     }
 
     private func row(_ rule: Rule, rank: Int) -> some View {
@@ -347,6 +348,20 @@ enum RuleStyle {
     /// A phrase between the language's quotation marks: « … » in French, “…” in English.
     static func quoted(_ text: String) -> String { String(localized: "« \(text) »") }
 
+    /// "nom : « Facture » … « Power UP » · PDF"
+    static func describe(_ match: NameMatch) -> String {
+        var parts: [String] = []
+        if !match.cleanWords.isEmpty {
+            parts.append(String(localized: "nom : \(match.cleanWords.map(quoted).joined(separator: " … "))"))
+        }
+        switch match.kind {
+        case .any: break
+        case .custom: parts.append(match.extensions.joined(separator: ", "))
+        default: parts.append(match.kind.title)
+        }
+        return parts.joined(separator: " · ")
+    }
+
     static func searchText(_ rule: Rule) -> String {
         ([rule.label, rule.folder, rule.filename, rule.rename] + rule.contains).joined(separator: "\n")
     }
@@ -552,20 +567,9 @@ private struct RuleEditor: View {
                 .padding(.vertical, 4)
             }
             Section {
+                RuleNameEditor(rule: $rule)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Le nom du fichier correspond à")
-                    TextField("Nom du fichier", text: $rule.filename, prompt: Text("expression régulière, ex. ^Facture_EDF_"))
-                        .labelsHidden()
-                        .textFieldStyle(.roundedBorder)
-                        .font(.body.monospaced())
-                    if rule.patternError != nil {
-                        Text("Expression invalide").font(.subheadline).foregroundStyle(.red)
-                    } else {
-                        Text("Vide : tout nom convient. (?i) au début ignore la casse.").font(.subheadline).foregroundStyle(.secondary)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Le texte contient (toutes ces expressions, une par ligne)")
+                    Text("Le texte contient (toutes ces phrases, une par ligne)")
                     TextEditor(text: $phrasesText)
                         .font(.body.monospaced())
                         .frame(minHeight: 54, maxHeight: 110)

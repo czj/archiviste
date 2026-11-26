@@ -88,6 +88,7 @@ public struct Rule: Codable, Equatable, Sendable, Identifiable {
 
     /// A rule with no condition would take every file: it never matches.
     public var hasCondition: Bool { !namePattern.isEmpty || !phrases.isEmpty }
+    public var hasNameCondition: Bool { !namePattern.isEmpty }
     /// Content conditions need the file's text.
     public var needsText: Bool { !phrases.isEmpty }
     /// The new name or the subfolder depends on the document's date.
@@ -155,15 +156,38 @@ public struct Rule: Codable, Equatable, Sendable, Identifiable {
 
     // MARK: Drafting
 
-    static let longDigits = Rx(#"\d{3,}"#)
     static let copySuffix = Rx(#"(?: \(\d+\)| - \d+)$"#)
 
-    /// A rule for "files named like this one": its name up to the extension, with long numbers
-    /// (dates, invoice numbers) generalised, and as new name the type and issuer the model gave
-    /// ("2026-09-16 - Facture EDF - Électricité - 81.20 EUR.pdf" → "Facture EDF"). To be adjusted.
+    /// A rule for "files named like this one": the words of its name in order, numbers left out
+    /// (dates, invoice numbers change from one file to the next), the same kind of file, and as
+    /// new name the type and issuer the model gave ("2026-09-16 - Facture EDF - Électricité -
+    /// 81.20 EUR.pdf" → "Facture EDF"). To be adjusted in the editor, word by word.
     public static func draft(from filename: String, suggestedName: String? = nil) -> Rule {
-        let stem = copySuffix.sub(filename.precomposedStringWithCanonicalMapping.pySplitExt.0, "")
-        let pattern = "^" + longDigits.sub(NSRegularExpression.escapedPattern(for: stem), "\\d+")
+        let (base, dotExt) = filename.precomposedStringWithCanonicalMapping.pySplitExt
+        let stem = copySuffix.sub(base, "")
+        // Tokens joined by spaces, underscores or dashes stay one word ("Facture_EDF" → "Facture
+        // EDF", which the pattern finds again); a number or any other character ends it.
+        var words: [String] = [], run: [String] = [], token = ""
+        func endToken() {
+            if token.allSatisfy(\.isNumber) { endRun() } else { run.append(token) }
+            token = ""
+        }
+        func endRun() {
+            if !run.isEmpty { words.append(run.joined(separator: " ")) }
+            run = []
+        }
+        for c in stem {
+            if c.isLetter || c.isNumber { token.append(c); continue }
+            if !token.isEmpty { endToken() }
+            if !" _-".contains(c) { endRun() }
+        }
+        if !token.isEmpty { endToken() }
+        endRun()
+        let ext = String(dotExt.dropFirst()).lowercased()
+        let kind = NameMatch.Kind.allCases.first { $0.extensions.contains(ext) }
+        let match = NameMatch(words: words, atStart: true,
+                              extensions: ext.isEmpty ? [] : kind?.extensions ?? [ext])
+        let pattern = match.pattern
         var rename = ""
         if let suggestedName {
             let s = Naming.datePrefix.sub(suggestedName.pySplitExt.0, "")

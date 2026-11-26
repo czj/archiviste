@@ -98,9 +98,19 @@ Réglages Système › Général › Langue et région). Les noms de fichiers re
 Avant tout passage par le modèle, chaque fichier est confronté aux **règles** : d'abord
 celles qui ne portent que sur le nom, puis celles qui lisent le texte, chaque groupe dans
 l'ordre de la liste. La première qui correspond le renomme et le range, sans appel au
-modèle. Une règle porte sur le nom du fichier (expression régulière), sur son texte (toutes
-les expressions données, majuscules et accents ignorés : PDF, scans, images, fichiers
-Excel), ou les deux. Elle range le fichier dans un dossier, sous un nouveau nom,
+modèle. Une règle porte sur le nom du fichier, sur son texte (toutes les phrases données,
+majuscules et accents ignorés : PDF, scans, images, fichiers Excel), ou les deux.
+
+Le nom se décrit **en mots** : « Facture » puis « Power UP », et un type de fichier (PDF,
+images, audio, vidéos, tableurs). Les mots doivent apparaître dans cet ordre, n'importe quoi
+peut se trouver entre eux, les majuscules sont ignorées, et l'espace, `_` et `-` se valent :
+« Power UP » trouve aussi `power_up` et `PowerUP`. L'éditeur montre l'expression régulière
+écrite pour vous, et les fichiers de l'historique qu'elle prendrait. Pour ce que des mots
+ne savent pas dire (alternatives, chiffres précis…), le mode « Expression régulière »
+reste là. Une règle déjà écrite s'ouvre en mots quand son expression s'y traduit, et n'est
+réécrite que si vous la modifiez.
+
+Une règle range le fichier dans un dossier, sous un nouveau nom,
 éventuellement préfixé par la date du document (lue par le modèle, sinon la date de
 création du fichier). Le sous-dossier d'année ou de mois n'est pas réglé dans la règle :
 c'est celui du dossier de destination quand c'est un classeur. L'éditeur de règle l'affiche
@@ -116,7 +126,7 @@ règles qui ont failli le prendre. Elles sont enregistrées dans `~/.config/arch
   "rules": [
     {
       "name": "Électricité",
-      "filename": "^Facture_EDF_",
+      "filename": "(?i)^Facture[ _-]*EDF.*\\.pdf\\z",
       "contains": [],
       "folder": "~/Documents/Factures",
       "rename": "Facture EDF",
