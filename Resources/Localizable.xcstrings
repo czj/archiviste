@@ -1711,32 +1711,12 @@
         }
       }
     },
-    "Le nom du fichier correspond à" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The file name matches"
-          }
-        }
-      }
-    },
     "Le texte contient" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "The text contains"
-          }
-        }
-      }
-    },
-    "Le texte contient (toutes ces expressions, une par ligne)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The text contains (all of these phrases, one per line)"
           }
         }
       }
@@ -3354,6 +3334,366 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "⌘Q"
+          }
+        }
+      }
+    },
+    "%lld aujourd’hui" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld today"
+          }
+        }
+      }
+    },
+    "Fichiers renommés ou rangés aujourd’hui" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files renamed or filed today"
+          }
+        }
+      }
+    },
+    "Relais vers %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relay to %@"
+          }
+        }
+      }
+    },
+    "Ouvrir dans le Finder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Finder"
+          }
+        }
+      }
+    },
+    "Réglages des dossiers…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder settings…"
+          }
+        }
+      }
+    },
+    "Le nom du fichier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file name"
+          }
+        }
+      }
+    },
+    "Mode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode"
+          }
+        }
+      }
+    },
+    "Mots" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Words"
+          }
+        }
+      }
+    },
+    "Expression régulière" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regular expression"
+          }
+        }
+      }
+    },
+    "Repartir de mots ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start over with words?"
+          }
+        }
+      }
+    },
+    "Effacer l’expression" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear the expression"
+          }
+        }
+      }
+    },
+    "Cette expression dit plus que des mots dans un ordre (alternatives, chiffres, caractères au choix…) : elle ne se traduit pas en mots." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This expression says more than words in an order (alternatives, digits, character choices…): it can't be turned into words."
+          }
+        }
+      }
+    },
+    "Mot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Word"
+          }
+        }
+      }
+    },
+    "Ajouter un mot du nom, ex. Facture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a word of the name, e.g. Invoice"
+          }
+        }
+      }
+    },
+    "Ajouter un mot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a word"
+          }
+        }
+      }
+    },
+    "puis" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "then"
+          }
+        }
+      }
+    },
+    "Le nom commence par le premier mot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The name starts with the first word"
+          }
+        }
+      }
+    },
+    "Type de fichier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kind of file"
+          }
+        }
+      }
+    },
+    "Autres : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Others: %@"
+          }
+        }
+      }
+    },
+    "Majuscules ignorées ; espace, _ et - se valent. N’importe quoi peut se trouver entre les mots." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Case ignored; space, _ and - are the same. Anything may come between the words."
+          }
+        }
+      }
+    },
+    "Expression : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expression: %@"
+          }
+        }
+      }
+    },
+    "Sans mot ni type : tout nom convient." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No word nor kind: any name matches."
+          }
+        }
+      }
+    },
+    "Retirer « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove “%@”"
+          }
+        }
+      }
+    },
+    "Aucun des %lld derniers fichiers n’a un tel nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None of the last %lld files has such a name"
+          }
+        }
+      }
+    },
+    "Parmi les %lld derniers fichiers, %lld ont un tel nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Of the last %1$lld files, %2$lld have such a name"
+          }
+        }
+      }
+    },
+    "et %lld autre(s)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "and %lld more"
+          }
+        }
+      }
+    },
+    "Le nom d’origine des fichiers de l’historique. Une règle qui lit aussi le contenu en prendra peut-être moins." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The original name of the files in the history. A rule that also reads the content may take fewer."
+          }
+        }
+      }
+    },
+    "Tous les fichiers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All files"
+          }
+        }
+      }
+    },
+    "PDF" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF"
+          }
+        }
+      }
+    },
+    "Images" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Images"
+          }
+        }
+      }
+    },
+    "Audio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        }
+      }
+    },
+    "Vidéos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos"
+          }
+        }
+      }
+    },
+    "Tableurs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spreadsheets"
+          }
+        }
+      }
+    },
+    "Autres" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Others"
+          }
+        }
+      }
+    },
+    "nom : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "name: %@"
+          }
+        }
+      }
+    },
+    "Le texte contient (toutes ces phrases, une par ligne)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text contains (all these phrases, one per line)"
           }
         }
       }
