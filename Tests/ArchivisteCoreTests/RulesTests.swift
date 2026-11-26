@@ -359,13 +359,15 @@ private func writePDF(_ lines: [String], to url: URL) throws {
     #expect(bare.matches(filename: "facture-edf-2027.PDF", text: nil))
 
     // Other characters split words, and the file it comes from always matches.
-    for name in ["a+b (x).pdf", "Relevé n°12 – mars 2026.pdf", "IMG_2041.HEIC", "scan.2026.11.05.jpg", "rapport"] {
+    for name in ["a+b (x).pdf", "bizarre.p+f", "devis.(1)","Relevé n°12 – mars 2026.pdf", "IMG_2041.HEIC", "scan.2026.11.05.jpg", "rapport"] {
         let d = Rule.draft(from: name)
         #expect(d.patternError == nil && d.nameMatch != nil, "\(name)")
         #expect(d.matches(filename: name, text: nil), "\(name) → \(d.filename)")
     }
     #expect(Rule.draft(from: "a+b (x).pdf").nameMatch?.words == ["a", "b", "x"])
     #expect(Rule.draft(from: "IMG_2041.HEIC").nameMatch?.kind == .image)
+    #expect(Rule.draft(from: "bizarre.p+f").nameMatch?.extensions == [])  // odd extension: any kind
+    #expect(NameMatch(words: ["x"], extensions: ["p+f"]).pattern == #"(?i)x.*\.p\+f\z"#)  // always literal
 }
 
 @Test func `nom en mots : l’expression écrite, puis relue`() {

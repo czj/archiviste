@@ -71,7 +71,9 @@ public struct NameMatch: Equatable, Sendable {
             .joined(separator: ".*")
         if !extensions.isEmpty {
             if !words.isEmpty { p += ".*" }
-            p += "\\." + (extensions.count == 1 ? extensions[0] : "(?:" + extensions.joined(separator: "|") + ")") + "\\z"
+            // Escaped: an extension is literal text, whatever it holds.
+            let exts = extensions.map(NSRegularExpression.escapedPattern(for:))
+            p += "\\." + (exts.count == 1 ? exts[0] : "(?:" + exts.joined(separator: "|") + ")") + "\\z"
         }
         return p
     }

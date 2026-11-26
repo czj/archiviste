@@ -183,10 +183,12 @@ public struct Rule: Codable, Equatable, Sendable, Identifiable {
         }
         if !token.isEmpty { endToken() }
         endRun()
+        // Only a plain extension ("pdf", "m4a") becomes a kind of file; anything odd, none.
         let ext = String(dotExt.dropFirst()).lowercased()
+        let plain = !ext.isEmpty && ext.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) }
         let kind = NameMatch.Kind.allCases.first { $0.extensions.contains(ext) }
         let match = NameMatch(words: words, atStart: true,
-                              extensions: ext.isEmpty ? [] : kind?.extensions ?? [ext])
+                              extensions: plain ? kind?.extensions ?? [ext] : [])
         let pattern = match.pattern
         var rename = ""
         if let suggestedName {
