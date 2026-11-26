@@ -345,16 +345,66 @@ private func writePDF(_ lines: [String], to url: URL) throws {
 @Test func `règle tirée d’un fichier : nombres généralisés, type et émetteur du nom proposé`() {
     let r = Rule.draft(from: "Invoice-DE84E1D9-0026 (1).pdf",
                        suggestedName: "2026-09-17 - Facture Replicate - Calcul GPU - 12.40 USD.pdf")
-    #expect(r.filename == #"^Invoice-DE84E1D9-\d+"#)
+    #expect(r.nameMatch == NameMatch(words: ["Invoice DE84E1D9"], atStart: true, extensions: ["pdf"]))
     #expect(r.rename == "Facture Replicate")
     #expect(r.name == "Facture Replicate")
+    #expect(r.matches(filename: "Invoice-DE84E1D9-0026 (1).pdf", text: nil))
     #expect(r.matches(filename: "Invoice-DE84E1D9-0031.pdf", text: nil))
     #expect(!r.matches(filename: "Invoice-AB12CD34-0031.pdf", text: nil))
+    #expect(!r.matches(filename: "Invoice-DE84E1D9-0031.png", text: nil))
 
     let bare = Rule.draft(from: "Facture_EDF_10260541684.pdf")
-    #expect(bare.filename == #"^Facture_EDF_\d+"#)
+    #expect(bare.nameMatch?.words == ["Facture EDF"])
     #expect(bare.rename.isEmpty && bare.name == "Facture_EDF_10260541684")
-    #expect(Rule.draft(from: "a+b (x).pdf").filename == #"^a\+b \(x\)"#)  // regex characters stay literal
+    #expect(bare.matches(filename: "facture-edf-2027.PDF", text: nil))
+
+    // Other characters split words, and the file it comes from always matches.
+    for name in ["a+b (x).pdf", "Relevé n°12 – mars 2026.pdf", "IMG_2041.HEIC", "scan.2026.11.05.jpg", "rapport"] {
+        let d = Rule.draft(from: name)
+        #expect(d.patternError == nil && d.nameMatch != nil, "\(name)")
+        #expect(d.matches(filename: name, text: nil), "\(name) → \(d.filename)")
+    }
+    #expect(Rule.draft(from: "a+b (x).pdf").nameMatch?.words == ["a", "b", "x"])
+    #expect(Rule.draft(from: "IMG_2041.HEIC").nameMatch?.kind == .image)
+}
+
+@Test func `nom en mots : l’expression écrite, puis relue`() {
+    let m = NameMatch(words: ["Facture", "Power UP"], extensions: ["pdf"])
+    #expect(m.pattern == #"(?i)Facture.*Power[ _-]*UP.*\.pdf\z"#)
+    #expect(NameMatch(pattern: m.pattern) == m)
+    let r = Rule(filename: m.pattern)
+    #expect(r.matches(filename: "facture n°3 - power_up.PDF", text: nil))
+    #expect(r.matches(filename: "Facture-PowerUP.pdf", text: nil))  // parts of a word may touch
+    #expect(!r.matches(filename: "Power UP facture.pdf", text: nil))  // in this order
+    #expect(!r.matches(filename: "Facture Power UP.png", text: nil))
+
+    let start = NameMatch(words: ["Releve"], atStart: true, extensions: NameMatch.Kind.audio.extensions)
+    #expect(start.kind == .audio)
+    #expect(NameMatch(pattern: start.pattern) == start)
+    #expect(NameMatch(words: [" ", ""]).pattern == "")  // nothing to look for: any name
+    #expect(NameMatch(pattern: "") == NameMatch())
+    #expect(NameMatch(words: ["a.b+c"]).pattern == #"(?i)a\.b\+c"#)
+    #expect(NameMatch(pattern: #"(?i)a\.b\+c"#)?.words == ["a.b+c"])
+}
+
+@Test func `nom en mots : les expressions écrites à la main, relues quand c’est possible`() {
+    let simple: [(String, NameMatch)] = [
+        ("Facture.+ Power UP", NameMatch(words: ["Facture", "Power UP"])),
+        ("Alan.+Facture Prevoyance", NameMatch(words: ["Alan", "Facture Prevoyance"])),
+        ("facture_freemobile_20", NameMatch(words: ["facture freemobile 20"])),
+        (#"^Releve_.+\.pdf$"#, NameMatch(words: ["Releve"], atStart: true, extensions: ["pdf"])),
+        (#"(?i).*\.(pdf|PDF)"#, NameMatch(extensions: ["pdf"])),
+        (#"(?i)réunion.+\.(?:mp3|m4a)\z"#, NameMatch(words: ["réunion"], extensions: ["mp3", "m4a"])),
+        (#"^.*Scan"#, NameMatch(words: ["Scan"])),
+    ]
+    for (pattern, expected) in simple {
+        #expect(NameMatch(pattern: pattern) == expected, "\(pattern)")
+    }
+    // More than words in order: stays a regex.
+    for pattern in [#"Facture.+(Power UP|SG)"#, #"^Facture_EDF_\d+"#, "releve_[0-9", "a?b", "x{2}", "a.b", "Facture$", "(?i)"] {
+        #expect(NameMatch(pattern: pattern) == nil, "\(pattern)")
+    }
+    #expect(NameMatch(words: ["x"], extensions: ["mp3", "m4a"]).kind == .custom)
 }
 
 @Test func `xlsx : texte lu, nom de fichier pris tel quel`() throws {
