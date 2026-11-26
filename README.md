@@ -19,7 +19,7 @@ prennent la date de prise de vue. Noms et prompts sont en français.
     curl -fsSL https://raw.githubusercontent.com/czj/archiviste/main/scripts/install.sh | zsh
 
 Installe la dernière [version publiée](https://github.com/czj/archiviste/releases/latest) :
-l'app dans `~/Applications`, la commande `archiviste` dans `~/.local/bin`, puis ouvre l'app.
+l'app dans `/Applications`, la commande `archiviste` dans `~/.local/bin`, puis ouvre l'app.
 Relancer la même commande met à jour (`ARCHIVISTE_VERSION=1.1.0` pour une version précise).
 
 L'app n'est pas notarisée par Apple (signature ad hoc). Ce script la télécharge avec `curl`,
@@ -47,10 +47,11 @@ L'app est en français et en anglais : elle suit la langue du système (choix pa
 Réglages Système › Général › Langue et région). Les noms de fichiers restent en français.
 
 - Un clic sur l'icône de la barre des menus ouvre la fenêtre Archiviste : Activité
-  (dépôt de fichiers, historique des renommages avec recherche), Règles, Dossiers,
-  Sauvegardes, Général (⌘1 à ⌘5). Un clic droit donne un menu court : ouvrir, ranger
+  (dépôt de fichiers, historique des renommages avec recherche, à effacer au besoin), Règles,
+  Dossiers (⌘1 à ⌘3). Les préférences ont leur fenêtre Réglages (⌘,) : Général, Sauvegardes
+  et ménage. Un clic droit donne un menu court : ouvrir, ranger
   maintenant, pause, quitter. Fenêtre fermée, l'app reste dans la barre des menus.
-- Page Général : ouverture à l'ouverture de session (`SMAppService`), icône dans la barre
+- Réglages › Général : ouverture à l'ouverture de session (`SMAppService`), icône dans la barre
   des menus (oui/non), icône dans le Dock (toujours, quand la fenêtre est ouverte, jamais).
   Tout s'applique tout de suite, sans relancer. ⌘Q demande s'il faut quitter ou laisser
   tourner en arrière-plan (sans fenêtre), sauf si on a choisi une fois pour toutes. Sans aucune icône, rouvrir l'app depuis le
@@ -62,7 +63,9 @@ Réglages Système › Général › Langue et région). Les noms de fichiers re
   - les **boîtes d'arrivée** (Téléchargements, Bureau, Scans…, clé `watchedFolders`) :
     chaque fichier qui y arrive passe par les règles, d'abord celles sur le nom, puis celles
     sur le contenu ; la première qui convient le renomme et le range. Sans règle, le modèle
-    nomme les PDF et images sur place. Une notification suit : un clic montre le fichier
+    nomme les PDF et images sur place, sauf en **« Règles seulement »** (clé `rulesOnly`) :
+    ce qu'aucune règle ne prend garde alors son nom, pratique pour Téléchargements ou le
+    Bureau. Une notification suit : un clic montre le fichier
     dans le Finder, « Annuler » remet son nom d'origine. Une boîte d'arrivée peut
     aussi être un **relais** (« Seulement déplacer vers… », clé `moveTo`) : ce qui y arrive
     est déplacé tel quel vers un autre dossier, par exemple les scans d'une app vers le Bureau ;
@@ -144,6 +147,7 @@ est versionné avec chezmoi, lancez `chezmoi re-add` après l'avoir modifié dan
     archiviste --rename --force *.pdf       # reprend aussi les fichiers déjà traités ou nommés
     archiviste --rules *.pdf                # quelle règle prend chaque fichier, et pourquoi pas les autres
     archiviste --text scan.pdf              # ce que lit le modèle : texte, dates et montants candidats
+    archiviste --eval corpus/synthetique    # note le modèle sur un corpus étiqueté (voir « Qualité des noms »)
 
 ## Sauvegardes et configuration
 
@@ -180,13 +184,53 @@ recharge toute seule quand l'un des deux change. Toutes les clés sont facultati
 | `backupDir` | `~/Documents/Archiviste/Originaux` | où sont copiés les originaux |
 | `backupMaxAgeDays` | `180` | âge au-delà duquel les sauvegardes sont supprimées (`0` = jamais) |
 | `expireMaxAgeDays` | `0` | met à la corbeille les **autres** fichiers du dossier de sauvegarde ajoutés depuis plus longtemps : pratique si ce dossier sert aussi de « à jeter plus tard » (`0` = jamais) |
-| `watchedFolders` | `[]` | boîtes d’arrivée : règles puis modèle, ou relais (`moveTo`) |
+| `watchedFolders` | `[]` | boîtes d’arrivée : règles puis modèle, règles seulement (`rulesOnly`), ou relais (`moveTo`) |
 | `datedFolders` | `[]` | classeurs : `path`, `subfolder` (`year`, `yearMonth`, `none`), `datePrefix`, `enabled` |
 | `confirmBeforeRename` | `false` | fichiers déposés : attendre « Renommer » |
+| `myNames` | `[]` | vous et vos sociétés : le destinataire, jamais pris pour l’émetteur (Réglages › Général) |
+
+## Qualité des noms
+
+Le prompt se mesure sur un corpus étiqueté plutôt qu'à l'œil. `corpus/synthetique/` contient
+18 documents fictifs (facture de marketplace, avoir avec le destinataire en en-tête, fiche de
+paie, ordonnance, avis d'impôt avec date limite, ticket de caisse…) : leur texte et les champs
+attendus sont dans `corpus.json`, les PDF en sortent par `swift tools/make_corpus.swift corpus/synthetique`.
+
+    archiviste --eval corpus/synthetique   # chaque écart, puis le score par champ
+
+Un corpus privé se monte de la même façon hors du dépôt (un dossier, ses fichiers et un
+`corpus.json`) et se passe à la même commande. Pour qu'un score dise quelque chose, on ajuste
+le prompt sur `corpus/synthetique` et on le **mesure** sur les autres, sans les relire pour
+corriger : sinon ils deviennent aussi flatteurs que lui.
+
+Plusieurs façons d'interroger le modèle se comparent avec `--strategy` (voir
+`Sources/ArchivisteCore/Strategy.swift`) et `tools/compare_strategies.sh <corpus> <dossier>`.
+Réglées sur `corpus/dev` (40 documents fictifs), puis mesurées une fois sur les autres, l'app
+retient `twoPass+reasoning+guards+headTail+blend` : le type seul d'abord, puis les autres champs
+après avoir fait recopier le titre et la ligne de l'auteur, le début et la fin des longs textes,
+et le montant de l'interrogation simple, qui choisit mieux le TTC (demandé seul avec le type, en
+même temps que le reste). Environ 4 s par document au lieu de 2,5 ; sur le corpus privé l'émetteur
+passe de 43 à 60 %, la date de 93 à 100 % et le montant de 73 à 80 % (88 à 95 % sur les factures
+publiques). Ne pas joindre l'image de la page quand le texte existe (`textOnly`) gagne 15 % de
+temps mais fait chuter le montant des factures publiques à 51 % : écarté. Ces corpus ont donc
+servi à deux choix (la stratégie, puis l'image) : leurs scores sont un peu flatteurs, et une
+prochaine mesure honnête demande des documents neufs, jamais vus. C'est `corpus/controle`
+(24 documents fictifs, autre destinataire, cas difficiles : émetteur en pied de page, vendeur
+d'une plateforme, sous-totaux, rapport, guide, étiquette…) : il n'a encore jamais été lancé.
+Il ne sert qu'à la mesure finale d'un changement, jamais à choisir entre deux variantes.
+Demander directement le nom de fichier au modèle a été essayé : nettement
+moins bon (émetteur 30 % au lieu de 62 % sur `corpus/dev`).
+
+Un corpus public complète : 100 factures françaises fictives étiquetées
+([N-Mehdi/french-invoices-synth](https://huggingface.co/datasets/N-Mehdi/french-invoices-synth),
+Apache-2.0), téléchargées dans `corpus/public/` (non versionné) :
+
+    uv run --with pyarrow --with huggingface_hub python tools/fetch_public_corpus.py
+    archiviste --eval corpus/public/french-invoices-synth
 
 ## Compiler
 
-    scripts/build-app.sh               # build release, signe ad hoc, installe dans ~/Applications
+    scripts/build-app.sh               # build release, signe ad hoc, installe dans /Applications
                                        # et la commande dans ~/.local/bin
     scripts/build-app.sh --no-install  # seulement build/Archiviste.app
     scripts/release.sh 1.1.0 notes.md  # depuis main propre : tests, build, release GitHub (tag v1.1.0)

@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The main window's pages, in sidebar order.
 enum AppSection: String, CaseIterable, Identifiable {
-    case activity, rules, folders, cleanup, general
+    case activity, rules, folders
     var id: Self { self }
 
     var title: String {
@@ -12,8 +12,6 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .activity: String(localized: "Activité")
         case .rules: String(localized: "Règles")
         case .folders: String(localized: "Dossiers")
-        case .cleanup: String(localized: "Sauvegardes et ménage")
-        case .general: String(localized: "Général")
         }
     }
 
@@ -22,16 +20,24 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .activity: "clock.arrow.circlepath"
         case .rules: "line.3.horizontal.decrease.circle"
         case .folders: "folder"
-        case .cleanup: "archivebox"
-        case .general: "gearshape"
         }
     }
 
-    /// ⌘1 … ⌘5
+    /// One color per page, as in the system's own sidebars: easier to find at a glance.
+    var tint: Color {
+        switch self {
+        case .activity: .blue
+        case .rules: .purple
+        case .folders: .orange
+        }
+    }
+
+    /// ⌘1 … ⌘3
     var key: KeyEquivalent { KeyEquivalent(Character(String((Self.allCases.firstIndex(of: self) ?? 0) + 1))) }
 }
 
-/// Everything in one window: a sidebar of pages, the page on the right.
+/// The work in one window: a sidebar of pages, the page on the right. Preferences are in
+/// their own Settings window (⌘,).
 /// The menu bar icon opens it, takes dropped files and has a short menu.
 struct MainWindow: View {
     @Environment(AppModel.self) private var model
@@ -39,27 +45,39 @@ struct MainWindow: View {
     var body: some View {
         NavigationSplitView {
             List(selection: Binding(get: { model.section }, set: { if let s = $0 { model.section = s } })) {
-                ForEach(AppSection.allCases) { section in
-                    Label(section.title, systemImage: section.icon)
+                Section("Archiviste") {
+                    ForEach(AppSection.allCases) { section in
+                        Label {
+                            Text(section.title)
+                        } icon: {
+                            // White on the selection's accent fill, where a blue icon would vanish.
+                            Image(systemName: section.icon)
+                                .foregroundStyle(section == model.section ? Color.white : section.tint)
+                        }
                         .badge(badge(section))
                         .tag(section)
+                    }
+                }
+                let inboxes = model.settings.watchedFolders
+                if !inboxes.isEmpty {
+                    Section("Boîtes d’arrivée") {
+                        ForEach(inboxes) { InboxRow(folder: $0, paused: model.paused) }
+                    }
                 }
             }
-            .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 260)
-            .safeAreaInset(edge: .bottom) { status }
+            .navigationSplitViewColumnWidth(min: 210, ideal: 230, max: 280)
+            .safeAreaInset(edge: .bottom, spacing: 0) { status }
         } detail: {
             Group {
                 switch model.section {
                 case .activity: ActivityPane()
                 case .rules: RulesPane()
                 case .folders: FoldersPane()
-                case .cleanup: CleanupPane()
-                case .general: GeneralPane()
                 }
             }
             .navigationTitle(model.section.title)
         }
-        // Shortcuts (⌘1…⌘5, ⇧⌘R…) live in the menus: AppCommands.
+        // Shortcuts (⌘1…⌘3, ⇧⌘R…) live in the menus: AppCommands.
         // By default a menu bar app has no Dock icon nor menu bar; while this window is open it
         // gets both, so ⌘Tab finds it and Édition › Annuler shows (Réglages › Général changes that).
         // Back to menu bar only when the window really closes: onDisappear also fires when it is
@@ -67,34 +85,96 @@ struct MainWindow: View {
         .onAppear { Presence.applyDock(windowOpen: true) }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { note in
             guard (note.object as? NSWindow)?.isMainWindow == true else { return }
-            Presence.applyDock(windowOpen: false)
+            Presence.applyDock(windowOpen: Presence.settingsIsOpen)
         }
         .frame(minWidth: 940, minHeight: 540)
     }
 
-    private func badge(_ section: AppSection) -> Int {
+    /// Files waiting or proposed; rules that can't work, with a warning sign so the number
+    /// doesn't read as a total.
+    private func badge(_ section: AppSection) -> Text? {
         switch section {
-        case .activity: model.items.count { $0.phase.isPending || $0.phase == .proposed }
-        case .rules: model.rules.count { !$0.isUsable }
-        default: 0
+        case .activity:
+            let n = model.items.count { $0.phase.isPending || $0.phase == .proposed }
+            return n > 0 ? Text("\(n)") : nil
+        case .rules:
+            let n = model.rules.count { !$0.isUsable }
+            return n > 0 ? Text("\(Image(systemName: "exclamationmark.triangle.fill")) \(n)").foregroundStyle(.orange) : nil
+        case .folders:
+            return nil
         }
     }
 
-    /// Model state and the pause switch, under the sidebar.
+    /// Model state, today's count and the pause switch, on a glass card under the sidebar.
     private var status: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Divider()
-            HStack(spacing: 6) {
+        let today = model.recent.count { Calendar.current.isDateInToday($0.date) }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 7) {
                 switch model.engineState {
-                case .loading: ProgressView().controlSize(.mini); Text("Chargement du modèle…")
-                case .ready: Image(systemName: "apple.intelligence").foregroundStyle(.tint); Text("Modèle prêt, sur l’appareil")
-                case .unavailable(let why): Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(why)
+                case .loading:
+                    ProgressView().controlSize(.mini)
+                    Text("Chargement du modèle…")
+                case .ready:
+                    Image(systemName: "apple.intelligence").foregroundStyle(.tint)
+                    Text("Modèle prêt, sur l’appareil")
+                case .unavailable(let why):
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                    Text(why)
                 }
             }
-            .font(.caption).foregroundStyle(.secondary).lineLimit(2)
-            PauseButton()
+            .font(.subheadline)
+            .lineLimit(2)
+            HStack {
+                PauseButton()
+                Spacer(minLength: 6)
+                if today > 0 {
+                    Text("\(today) aujourd’hui")
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .help("Fichiers renommés ou rangés aujourd’hui")
+                }
+            }
         }
-        .padding(.horizontal, 14).padding(.bottom, 12)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, 10).padding(.bottom, 10)
+    }
+}
+
+/// A watched folder in the sidebar: its state at a glance, a click opens it in the Finder.
+private struct InboxRow: View {
+    @Environment(AppModel.self) private var model
+    let folder: UserConfig.Folder
+    let paused: Bool
+
+    var body: some View {
+        let live = folder.enabled && !paused
+        let (state, color): (String, Color) =
+            !folder.enabled ? (String(localized: "Désactivée"), .secondary)
+            : paused ? (String(localized: "En pause"), .orange)
+            : folder.relay != nil ? (String(localized: "Relais vers \(folder.relay?.lastPathComponent ?? "")"), .green)
+            : folder.usesModel ? (String(localized: "Règles, puis le modèle"), .green)
+            : (String(localized: "Règles seulement"), .green)
+        Button { NSWorkspace.shared.open(folder.url) } label: {
+            Label {
+                Text(folder.name).lineLimit(1).truncationMode(.middle)
+            } icon: {
+                Image(systemName: folder.relay != nil ? "arrow.right.circle" : "tray.and.arrow.down")
+                    .foregroundStyle(live ? Color.accentColor : .secondary)
+            }
+            .badge(Text(Image(systemName: "circle.fill")).font(.system(size: 7)).foregroundStyle(color))
+            .opacity(folder.enabled ? 1 : 0.55)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .selectionDisabled()
+        .help("\(folder.path) · \(state)")
+        .accessibilityValue(state)
+        .contextMenu {
+            Button("Ouvrir dans le Finder") { NSWorkspace.shared.open(folder.url) }
+            Button("Réglages des dossiers…") { model.section = .folders }
+        }
     }
 }
 
@@ -107,6 +187,7 @@ struct ActivityPane: View {
     /// History rows picked (click, ⇧/⌘-click): Espace previews them, the context menu acts on them.
     @State private var selection: Set<RecentEntry.ID> = []
     @State private var preview: URL?
+    @State private var confirmClear = false
 
     var body: some View {
         // Each read below filters the items: once per redraw.
@@ -116,18 +197,19 @@ struct ActivityPane: View {
             Section {
                 DropZone(targeted: targeted)
                     .listRowSeparator(.hidden)
+                    .selectionDisabled()
             }
             if let scan = model.tidyScan {
                 Section {
-                    TidyBanner(scan: scan).listRowSeparator(.hidden)
-                    ForEach(model.tidyItems.filter { $0.phase != .waiting }) { ItemCard(item: $0).listRowSeparator(.hidden) }
+                    TidyBanner(scan: scan).listRowSeparator(.hidden).selectionDisabled()
+                    ForEach(model.tidyItems.filter { $0.phase != .waiting }) { ItemCard(item: $0).listRowSeparator(.hidden).selectionDisabled() }
                 } header: {
                     Text("Ranger maintenant")
                 }
             }
             if !batch.isEmpty {
                 Section {
-                    ForEach(batch) { ItemCard(item: $0).listRowSeparator(.hidden) }
+                    ForEach(batch) { ItemCard(item: $0).listRowSeparator(.hidden).selectionDisabled() }
                 } header: {
                     HStack {
                         Text(busy ? String(localized: "En cours · \(batch.count { !$0.phase.isPending }) sur \(batch.count)")
@@ -140,7 +222,6 @@ struct ActivityPane: View {
                         }
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
                 }
             }
             Section {
@@ -148,13 +229,30 @@ struct ActivityPane: View {
                     Text(query.isEmpty ? String(localized: "Rien de renommé pour l’instant.")
                                        : String(localized: "Aucun fichier ne contient « \(query) »."))
                         .foregroundStyle(.secondary)
+                        .selectionDisabled()
                 }
                 ForEach(history) { entry in
                     HistoryRow(entry: entry).tag(entry.id)
                 }
             } header: {
-                Text("Historique · \(model.recent.count) fichier(s)")
+                HStack {
+                    Text("Historique · \(model.recent.count) fichier(s)")
+                    Spacer()
+                    if !model.recent.isEmpty {
+                        Button("Effacer l’historique…", systemImage: "trash") { confirmClear = true }
+                            .buttonStyle(.bordered)
+                            .help("Vider cette liste : les fichiers restent où ils sont")
+                    }
+                }
             }
+        }
+        .confirmationDialog("Effacer l’historique ?", isPresented: $confirmClear) {
+            Button("Effacer l’historique", role: .destructive) {
+                model.recent = []
+                selection = []
+            }
+        } message: {
+            Text("Les fichiers restent où ils sont, sous leur nouveau nom, et leurs originaux dans les sauvegardes. Seule la possibilité de les annuler d’ici disparaît.")
         }
         .listStyle(.inset)
         .contextMenu(forSelectionType: RecentEntry.ID.self) { ids in
@@ -221,7 +319,7 @@ private struct TidyBanner: View {
                 Text(tidying ? String(localized: "Lecture des fichiers… encore \(reading)")
                      : ready > 0 ? String(localized: "\(ready) fichier(s) à ranger") : String(localized: "Rien à ranger"))
                     .font(.headline)
-                Text(details).font(.caption).foregroundStyle(.secondary)
+                Text(details).font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
             if tidying {
@@ -231,11 +329,12 @@ private struct TidyBanner: View {
                     .help("Oublier ces propositions : les fichiers restent où ils sont")
                 if ready > 0 {
                     Button("Tout ranger (\(ready))") { model.tidyAll() }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.borderedProminent)
                         .help("Ranger chaque fichier comme proposé ci-dessous (⌘↩). Chacun reste annulable.")
                 }
             }
         }
+        .buttonStyle(.bordered)
         .padding(12)
         .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
     }
@@ -255,14 +354,15 @@ private struct HistoryRow: View {
 
     var body: some View {
         let url = entry.url
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             FileBadge(ext: url.pathExtension)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(entry.newName).lineLimit(1).truncationMode(.middle)
-                Text("était « \(entry.oldName) »").font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                Text("était « \(entry.oldName) »").font(.subheadline).foregroundStyle(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
             }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 1) {
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 3) {
                 if let rule = entry.rule {
                     Label(rule, systemImage: "line.3.horizontal.decrease").lineLimit(1)
                 } else {
@@ -270,10 +370,14 @@ private struct HistoryRow: View {
                 }
                 Text(entry.date.formatted(.relative(presentation: .named)))
             }
-            .font(.caption).foregroundStyle(.secondary)
+            .font(.subheadline).foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
+        // Separators from edge to edge: by default they start at the last text's leading edge,
+        // the right-hand column here, at a different place on every row.
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
         // Drag the file itself out: to the Finder, a mail, a web upload.
         .onDrag { NSItemProvider(contentsOf: url) ?? NSItemProvider() }
         .help(entry.path)

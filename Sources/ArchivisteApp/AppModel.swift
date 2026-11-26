@@ -42,18 +42,22 @@ final class Item: Identifiable {
     let tidy: Bool
     /// Set for a loose file in a dated destination folder: this one rule instead of all of them.
     let dating: Rule?
+    /// From an inbox set to "rules only": no rule, no change (the model is not asked).
+    let rulesOnly: Bool
     var url: URL
     var phase: Phase = .waiting
     var suggestion: Suggestion?
     var took: TimeInterval?
     @ObservationIgnored var extraction: Task<Extracted, Error>?
 
-    init(url: URL, source: String?, phase: Phase = .waiting, tidy: Bool = false, dating: Rule? = nil) {
+    init(url: URL, source: String?, phase: Phase = .waiting, tidy: Bool = false, dating: Rule? = nil,
+         rulesOnly: Bool = false) {
         self.url = url
         self.phase = phase
         self.source = source
         self.tidy = tidy
         self.dating = dating
+        self.rulesOnly = rulesOnly
         originalName = url.lastPathComponent
         originalFolder = url.deletingLastPathComponent()
     }
@@ -143,11 +147,12 @@ final class AppModel {
         for url in urls where Config.isFileForRules(url) && !isQueued(url) {
             items.append(Item(url: url, source: folder.name, dating: rule))
         }
+        trimFinished()
         startWorker()
     }
 
     /// Files dropped, chosen or pasted (folders: their files), or arriving in a watched folder.
-    func add(_ urls: [URL], source: String? = nil) {
+    func add(_ urls: [URL], source: String? = nil, rulesOnly: Bool = false) {
         var files: [URL] = []
         for url in urls {
             if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
@@ -159,14 +164,15 @@ final class AppModel {
             }
         }
         // Any file may match a rule; only PDFs and images can be named by the model.
-        for url in files where (Config.isSupported(url) || !rules.isEmpty) && Config.isFileForRules(url) {
+        for url in files where (Config.isSupported(url) && !rulesOnly || !rules.isEmpty) && Config.isFileForRules(url) {
             guard !isQueued(url) else { continue }
             if Marker.isMarked(url) {  // renamed or filed by Archiviste before, whatever its name now
                 if source == nil { items.append(Item(url: url, source: nil, phase: .skipped(String(localized: "déjà traité")))) }
                 continue
             }
-            items.append(Item(url: url, source: source))
+            items.append(Item(url: url, source: source, rulesOnly: rulesOnly))
         }
+        trimFinished()
         startWorker()
     }
 
@@ -175,6 +181,20 @@ final class AppModel {
 
     private func startWorker() {
         if worker == nil, nextItem() != nil { worker = Task { await drain() } }
+    }
+
+    /// A watched folder adds cards for as long as the app runs (days, weeks): the oldest finished
+    /// ones go past this many (they stay in the history). Files still to read or to confirm stay.
+    static let keptCards = 100
+
+    private func trimFinished() {
+        var extra = items.count { !$0.tidy && !$0.phase.isPending && $0.phase != .proposed } - Self.keptCards
+        guard extra > 0 else { return }
+        items.removeAll { item in
+            guard extra > 0, !item.tidy, !item.phase.isPending, item.phase != .proposed else { return false }
+            extra -= 1
+            return true
+        }
     }
 
     // MARK: Ranger maintenant
@@ -311,7 +331,7 @@ final class AppModel {
                 return
             }
             // 2. The model, for PDFs and images not named "AAAA-MM-JJ - …" yet.
-            guard Config.isSupported(item.url) else { leave(item, String(localized: "aucune règle")); return }
+            guard Config.isSupported(item.url), !item.rulesOnly else { leave(item, String(localized: "aucune règle")); return }
             guard !Naming.isNamed(item.url.lastPathComponent) else {
                 leave(item, String(localized: "déjà nommé (« AAAA-MM-JJ - … »)")); return
             }
@@ -321,7 +341,7 @@ final class AppModel {
             let ex = try await extraction.value
             guard let engine else { throw EngineError.unavailable("non chargé") }
             item.phase = .analyzing
-            guard let s = try await Namer.suggest(item.url, ex, engine: engine) else {
+            guard let s = try await Namer.suggest(item.url, ex, engine: engine, myNames: settings.myNames) else {
                 item.phase = .skipped(String(localized: "rien de lisible")); return
             }
             item.suggestion = s
@@ -539,8 +559,8 @@ final class AppModel {
 
     /// What a watched folder does with what arrives at its top.
     private enum Role {
-        /// Rules (name, then content), else the model names it in place.
-        case inbox
+        /// Rules (name, then content), else the model names it in place (unless rules only).
+        case inbox(usesModel: Bool)
         /// Moved as is to another folder.
         case relay(URL)
         /// A classeur: to its year or month subfolder.
@@ -551,7 +571,7 @@ final class AppModel {
     /// over a classeur for the same folder (the Dossiers page doesn't let a folder be both).
     private func role(for path: String) -> Role? {
         if let inbox = settings.watchedFolders.first(where: { $0.enabled && $0.url.path == path }) {
-            return inbox.relay.map(Role.relay) ?? .inbox
+            return inbox.relay.map(Role.relay) ?? .inbox(usesModel: inbox.usesModel)
         }
         return UserConfig.DatedFolder.find(URL(fileURLWithPath: path), in: settings.datedFolders.filter(\.enabled))
             .map(Role.classeur)
@@ -571,9 +591,9 @@ final class AppModel {
                 guard let self, Config.isFileForRules(file) else { return false }
                 switch self.role(for: path) {
                 case .relay, .classeur: return true  // passed on, or sorted, whoever renamed it before
-                case .inbox:
+                case .inbox(let usesModel):
                     guard !Marker.isMarked(file) else { return false }
-                    return Config.isSupported(file) || !self.rules.isEmpty  // any file may match a rule
+                    return usesModel && Config.isSupported(file) || !self.rules.isEmpty  // any file may match a rule
                 case nil: return false
                 }
             }) { [weak self] urls in
@@ -581,7 +601,7 @@ final class AppModel {
                 switch self.role(for: path) {
                 case .relay(let to): self.pass(urls, to: to)
                 case .classeur(let folder): self.sort(urls, into: folder)
-                case .inbox: self.add(urls, source: url.lastPathComponent)
+                case .inbox(let usesModel): self.add(urls, source: url.lastPathComponent, rulesOnly: !usesModel)
                 case nil: break
                 }
             }

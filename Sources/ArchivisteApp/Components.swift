@@ -1,5 +1,6 @@
 import ArchivisteCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// State and switch in one: "⏸ Actif" (click to pause) or "▶︎ En pause" (click to resume).
 struct PauseButton: View {
@@ -11,7 +12,7 @@ struct PauseButton: View {
         Button { withAnimation(.snappy) { model.paused.toggle() } } label: {
             Label(paused ? String(localized: "En pause") : String(localized: "Actif"), systemImage: paused ? "play.fill" : "pause.fill")
                 .contentTransition(.symbolEffect(.replace))
-                .font(.caption.weight(.medium))
+                .font(.subheadline.weight(.medium))
                 .padding(.horizontal, 9).padding(.vertical, 4)
                 .foregroundStyle(color)
                 .glassEffect(.regular.tint(color.opacity(0.25)).interactive(), in: Capsule())
@@ -31,11 +32,11 @@ struct DropZone: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: "arrow.down.doc").font(.system(size: 30, weight: .light)).foregroundStyle(.tint)
-            Text("Déposez des PDF ou des images").font(.callout.weight(.semibold))
+            Text("Déposez des PDF ou des images").font(.headline)
             Button("Choisir des fichiers…", systemImage: "folder") { model.chooseFiles() }
                 .buttonStyle(.bordered)
                 .help("Choisir des fichiers (⌘O)")
-            Text("ou collez-les avec ⌘V").font(.caption).foregroundStyle(.secondary)
+            Text("ou collez-les avec ⌘V").font(.subheadline).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 150)
         .background(Color.accentColor.opacity(targeted ? 0.15 : 0.06), in: RoundedRectangle(cornerRadius: 10))
@@ -46,21 +47,42 @@ struct DropZone: View {
     }
 }
 
+/// A short label in a capsule: the chips of a proposal, the parts of a name, the steps of a flow.
+struct Chip: View {
+    let text: Text
+    let icon: String?
+    var tint: Color?
+
+    init(_ text: String, systemImage: String? = nil, tint: Color? = nil) {
+        self.text = Text(text); self.icon = systemImage; self.tint = tint
+    }
+
+    init(_ key: LocalizedStringKey, systemImage: String? = nil, tint: Color? = nil) {
+        self.text = Text(key); self.icon = systemImage; self.tint = tint
+    }
+
+    var body: some View {
+        Group {
+            if let icon { Label { text } icon: { Image(systemName: icon) } } else { text }
+        }
+        .font(.subheadline)
+        .foregroundStyle(tint == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+        .lineLimit(1)
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .background(tint.map { AnyShapeStyle($0.opacity(0.14)) } ?? AnyShapeStyle(.quaternary), in: Capsule())
+        .fixedSize()
+    }
+}
+
+/// The Finder's icon for a file type, as in a Finder list.
 struct FileBadge: View {
     var ext: String
 
     var body: some View {
-        let isPDF = ext.lowercased() == "pdf"
-        RoundedRectangle(cornerRadius: 3)
-            .fill(.background)
-            .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(.quaternary))
-            .overlay(alignment: .bottom) {
-                Text(ext.uppercased().prefix(4))
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(isPDF ? Color.red : Color.blue)
-                    .padding(.bottom, 3)
-            }
-            .frame(width: 26, height: 32)
+        Image(nsImage: NSWorkspace.shared.icon(for: UTType(filenameExtension: ext) ?? .data))
+            .resizable()
+            .frame(width: 32, height: 32)
+            .accessibilityHidden(true)
     }
 }
 
@@ -87,4 +109,6 @@ extension NSPasteboard {
 extension NSWindow {
     /// The main window (SwiftUI names it after the scene's id).
     var isMainWindow: Bool { identifier?.rawValue.hasPrefix(MainWindow.id) == true }
+    /// SwiftUI's Settings window (its identifier names it so).
+    var isSettingsWindow: Bool { identifier?.rawValue.localizedCaseInsensitiveContains("settings") == true }
 }

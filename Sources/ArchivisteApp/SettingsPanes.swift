@@ -2,7 +2,24 @@ import ArchivisteCore
 import ServiceManagement
 import SwiftUI
 
-// The main window's settings pages.
+/// Réglages (⌘,): what is set once, in its own window with tabs, as on any Mac app. The work
+/// (activity, rules, folders) stays in the main window.
+struct SettingsWindow: View {
+    var body: some View {
+        TabView {
+            Tab("Général", systemImage: "gearshape") { GeneralPane() }
+            Tab("Sauvegardes et ménage", systemImage: "archivebox") { CleanupPane() }
+        }
+        .scenePadding(.minimum, edges: .top)
+        .frame(width: 620, height: 600)
+        // Like the main window: a Dock icon (and ⌘Tab) while it is open, if so set.
+        .onAppear { Presence.applyDock(windowOpen: true) }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { note in
+            guard (note.object as? NSWindow)?.isSettingsWindow == true else { return }
+            Presence.applyDock(windowOpen: Presence.windowIsOpen)
+        }
+    }
+}
 
 struct GeneralPane: View {
     @Environment(AppModel.self) private var model
@@ -10,6 +27,7 @@ struct GeneralPane: View {
     @AppStorage(Presence.menuBarKey) private var showInMenuBar = true
     @AppStorage(Presence.dockKey) private var dock = Presence.Dock.withWindow
     @AppStorage(Presence.quitKey) private var onQuit = Presence.OnQuit.ask
+    @State private var myNamesText = ""
 
     var body: some View {
         @Bindable var model = model
@@ -27,7 +45,7 @@ struct GeneralPane: View {
                 if login == .requiresApproval {
                     HStack {
                         Text("À autoriser dans Réglages Système › Général › Ouverture.")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.subheadline).foregroundStyle(.secondary)
                         Spacer()
                         Button("Ouvrir les Réglages") { SMAppService.openSystemSettingsLoginItems() }
                     }
@@ -44,56 +62,74 @@ struct GeneralPane: View {
             } footer: {
                 if !showInMenuBar && dock != .always {
                     Text("Sans icône, Archiviste travaille en arrière-plan : rouvrez-le depuis le Finder, Spotlight ou Raycast pour retrouver cette fenêtre.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 login = SMAppService.mainApp.status  // approved meanwhile in System Settings
             }
+            Section {
+                // Edited as typed text, read into the list on each change: re-joining the list
+                // would swallow a comma just typed.
+                TextField("Mes noms", text: $myNamesText, prompt: Text("ex. Camille Martin, Martin Conseil"))
+                    .onAppear { myNamesText = model.settings.myNames.joined(separator: ", ") }
+                    .onChange(of: myNamesText) { _, text in
+                        model.settings.myNames = text.split(separator: ",")
+                            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                    }
+            } footer: {
+                Text("Vous-même et vos sociétés, séparés par des virgules. Sur vos documents, vous êtes le destinataire : ces noms ne sont jamais pris pour l’émetteur.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
             Section("Format du nom") {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     ForEach([String(localized: "Date"), String(localized: "Type"), String(localized: "Émetteur"),
                              String(localized: "Détail"), String(localized: "Montant")], id: \.self) { part in
-                        Text(part).font(.caption)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                        Chip(part, tint: .accentColor)
                     }
                 }
                 Text("Exemple : 2026-03-14 - Facture Kiné Durand - Séances de rééducation genou - 180.00 EUR.pdf")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
                 Text("Le montant n’apparaît que pour les factures, reçus, devis, avoirs, quittances et notes de frais. Les photos et captures d’écran prennent la date de prise de vue.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             Section("Modèle") {
                 switch model.engineState {
                 case .loading: Text("Chargement…")
-                case .ready: Label("Modèle Apple sur l’appareil, prêt", systemImage: "checkmark.circle").foregroundStyle(.green)
-                case .unavailable(let why): Label(why, systemImage: "exclamationmark.triangle").foregroundStyle(.red)
+                case .ready:
+                    Label { Text("Modèle Apple sur l’appareil, prêt") } icon: {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
+                case .unavailable(let why):
+                    Label { Text(why) } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                    }
                 }
             }
             Section {
                 LabeledContent("Configuration") {
                     HStack {
                         Text(UserConfig.abbreviate(UserConfig.directory.path)).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.head)
                         Button("Afficher") { model.openConfigFolder() }
                     }
                 }
                 if model.localKeys.isEmpty {
-                    Text("Ce Mac suit config.json.").font(.caption).foregroundStyle(.secondary)
+                    Text("Ce Mac suit config.json.").font(.subheadline).foregroundStyle(.secondary)
                 } else {
                     HStack {
                         Text("Propre à ce Mac : \(model.localKeys.joined(separator: ", "))")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.subheadline).foregroundStyle(.secondary)
                         Spacer()
                         Button("Revenir à config.json") { model.resetLocalConfig() }
                     }
                 }
                 if let configError = model.configError {
-                    Text(configError).font(.caption).foregroundStyle(.red)
+                    Text(configError).font(.subheadline).foregroundStyle(.red)
                 }
             } footer: {
-                Text("config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux.")
-                    .font(.caption).foregroundStyle(.secondary)
+                Text("config.json est la configuration commune (à versionner avec vos dotfiles) ; l’app ne la modifie jamais. Ce que vous changez ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux.")
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -111,6 +147,7 @@ struct CleanupPane: View {
                 LabeledContent("Dossier des originaux") {
                     HStack {
                         Text(model.settings.backupDir).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.head).help(model.settings.backupDir)
                         Button("Changer…", action: chooseBackupDir)
                     }
                 }
@@ -128,13 +165,13 @@ struct CleanupPane: View {
                 }
             } footer: {
                 Text("Chaque original est copié sous le nom « RENAME BACKUP <date> - … » avant d’être renommé. Les autres fichiers de ce dossier (rangés là à la main) peuvent aussi être mis à la corbeille après un temps, d’après leur date d’ajout.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             Section {
                 HStack {
                     Button("Faire le ménage maintenant") { Task { await model.runHousekeeping() } }
                     Spacer()
-                    if let last = model.lastHousekeeping { Text(last).font(.caption).foregroundStyle(.secondary) }
+                    if let last = model.lastHousekeeping { Text(last).font(.subheadline).foregroundStyle(.secondary) }
                 }
             }
         }

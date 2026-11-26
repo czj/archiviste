@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Installs Archiviste from its GitHub release: the app in ~/Applications, the command in ~/.local/bin.
+# Installs Archiviste from its GitHub release: the app in /Applications, the command in ~/.local/bin.
 #
 #   curl -fsSL https://raw.githubusercontent.com/czj/archiviste/main/scripts/install.sh | zsh
 #
@@ -10,7 +10,8 @@ set -euo pipefail
 
 REPO=czj/archiviste
 VERSION=${ARCHIVISTE_VERSION:-latest}
-APPS=~/Applications
+APPS=/Applications
+OLD_APPS=~/Applications  # up to 1.0: an older copy there would open instead of this one
 BIN=~/.local/bin
 
 say() { print -P "%F{green}==>%f $*"; }
@@ -20,6 +21,7 @@ die() { print -P "%F{red}✗%f $*" >&2; exit 1; }
 [[ $(uname -m) == arm64 ]] || die "Archiviste demande un Mac Apple silicon (Apple Intelligence)."
 major=$(sw_vers -productVersion | cut -d. -f1)
 (( major >= 27 )) || die "Archiviste demande macOS 27 ou plus récent (ce Mac : $(sw_vers -productVersion))."
+[[ -w $APPS ]] || die "Impossible d’écrire dans $APPS : un compte administrateur est nécessaire."
 
 if [[ -n ${ARCHIVISTE_BASE_URL:-} ]]; then  # tests: a folder of assets (file://…)
   base=$ARCHIVISTE_BASE_URL
@@ -50,7 +52,7 @@ fi
 
 # Up to 1.0 the app was "PDF Namer": quit and remove it. Its settings, rules and history move over
 # on Archiviste's first launch; if it opened at login, Archiviste takes its place.
-if [[ -d "$APPS/PDF Namer.app" || -x "$BIN/pdf-namer" ]]; then
+if [[ -d "$APPS/PDF Namer.app" || -d "$OLD_APPS/PDF Namer.app" || -x "$BIN/pdf-namer" ]]; then
   say "Remplacement de PDF Namer, l'ancien nom d'Archiviste…"
   if osascript -e 'tell application "System Events" to get the name of every login item' 2>/dev/null | grep -q "PDF Namer"; then
     defaults write com.github.czj.archiviste replaceLoginItem -bool true
@@ -58,11 +60,11 @@ if [[ -d "$APPS/PDF Namer.app" || -x "$BIN/pdf-namer" ]]; then
   fi
   osascript -e 'tell application id "com.github.czj.pdf-namer" to quit' >/dev/null 2>&1 || true
   for _ in {1..20}; do pgrep -xq PDFNamerApp || break; sleep 0.5; done
-  rm -rf "$APPS/PDF Namer.app" "$BIN/pdf-namer"
+  rm -rf "$APPS/PDF Namer.app" "$OLD_APPS/PDF Namer.app" "$BIN/pdf-namer"
 fi
 
 mkdir -p "$APPS" "$BIN"
-rm -rf "$APPS/Archiviste.app"
+rm -rf "$APPS/Archiviste.app" "$OLD_APPS/Archiviste.app"
 ditto "$tmp/app/Archiviste.app" "$APPS/Archiviste.app"
 install -m 755 "$tmp/archiviste" "$BIN/archiviste"
 xattr -dr com.apple.quarantine "$APPS/Archiviste.app" 2>/dev/null || true

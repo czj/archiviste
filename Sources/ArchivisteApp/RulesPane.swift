@@ -77,7 +77,7 @@ struct RulesPane: View {
         let shown = shown
         return List(selection: $model.selectedRuleID) {
             if let error = model.rulesError {
-                Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.caption)
+                Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.subheadline)
             }
             if shown.isEmpty, !query.isEmpty {
                 Text("Aucune règle ne contient « \(query) »").foregroundStyle(.secondary)
@@ -148,7 +148,7 @@ struct RulesPane: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(rule.label.isEmpty ? String(localized: "Nouvelle règle") : rule.label).lineLimit(1)
                 Text(subtitle(rule))
-                    .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
             }
             Spacer(minLength: 4)
             if !rule.isUsable {
@@ -156,11 +156,11 @@ struct RulesPane: View {
                     .help(rule.hasCondition ? String(localized: "Expression invalide") : String(localized: "Aucune condition : la règle ne s’applique jamais"))
             }
             if sort != .priority || !query.isEmpty {
-                Text(verbatim: "#\(rank)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                Text(verbatim: "#\(rank)").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
                     .help("Rang : les règles s’appliquent dans l’ordre de priorité")
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 3)
         .opacity(rule.enabled ? 1 : 0.45)
         .tag(rule.id)
         .contextMenu {
@@ -193,8 +193,8 @@ struct RulesPane: View {
             } description: {
                 Text("Une règle range et renomme un fichier d’après son nom ou son contenu, avant tout passage par le modèle.")
             } actions: {
-                Button("Nouvelle règle", action: add).buttonStyle(.glassProminent)
-                Button("Tester un fichier…") { model.chooseTestFile() }.buttonStyle(.glass)
+                Button("Nouvelle règle", action: add).buttonStyle(.borderedProminent)
+                Button("Tester un fichier…") { model.chooseTestFile() }.buttonStyle(.bordered)
             }
         }
     }
@@ -369,6 +369,8 @@ struct RuleIcon: View {
             .frame(width: size, height: size)
             .saturation(rule.enabled ? 1 : 0)
             .help(rule.needsText ? String(localized: "D’après le contenu") : String(localized: "D’après le nom"))
+            .accessibilityElement()
+            .accessibilityLabel(rule.needsText ? String(localized: "D’après le contenu") : String(localized: "D’après le nom"))
     }
 }
 
@@ -394,7 +396,7 @@ struct RuleTest {
             String(localized: "Règle \(i + 1) « \(rule.label) » : manque \(missing.map(RuleStyle.quoted).joined(separator: ", "))")
         }
         var note: [String] = []
-        if let original = Marker.originalName(url) {
+        if Marker.isMarked(url), let original = Marker.originalName(url) {
             note.append(String(localized: "Déjà traité par Archiviste (avant : « \(original) ») : l’app le laisse de côté, seule la commande archiviste --force le reprend"))
         }
         return RuleTest(file: url.lastPathComponent, match: await Rules.firstMatch(rules, for: url, readDate: readDate, sorted: sorted),
@@ -424,11 +426,11 @@ private struct TesterPanel: View {
         VStack(spacing: 6) {
             if tester.running {
                 ProgressView().controlSize(.small)
-                Text("Lecture de \(tester.url?.lastPathComponent ?? "…")").font(.caption).lineLimit(1).truncationMode(.middle)
+                Text("Lecture de \(tester.url?.lastPathComponent ?? "…")").font(.subheadline).lineLimit(1).truncationMode(.middle)
             } else {
                 Image(systemName: "arrow.down.doc").font(.system(size: 26, weight: .light)).foregroundStyle(.tint)
-                Text("Déposez un fichier").font(.callout.weight(.semibold))
-                Text("dans la fenêtre, ou ⌥⌘O").font(.caption).foregroundStyle(.secondary)
+                Text("Déposez un fichier").font(.headline)
+                Text("dans la fenêtre, ou ⌥⌘O").font(.subheadline).foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, minHeight: 110)
@@ -464,7 +466,7 @@ private struct TesterPanel: View {
                           : match.dateSource == .name ? String(localized: "Date déjà dans le nom : \(match.date)")
                           : String(localized: "Pas de date dans le document : date du fichier, \(match.date)"),
                           systemImage: "calendar")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             } else {
                 Label(result.nameable ? String(localized: "Aucune règle : le modèle le nommera")
@@ -474,14 +476,14 @@ private struct TesterPanel: View {
             }
             if !result.nearMisses.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Presque").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                    ForEach(result.nearMisses, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary) }
+                    Text("Presque").font(.headline)
+                    ForEach(result.nearMisses, id: \.self) { Text($0).font(.subheadline).foregroundStyle(.secondary) }
                 }
             }
             Button(result.match == nil ? String(localized: "Créer une règle depuis ce fichier") : String(localized: "Créer une variante pour ce fichier")) {
                 model.makeRule(from: url, suggestion: result.match.map(Suggestion.init), undo: undo)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(.bordered)
         }
         .textSelection(.enabled)
     }
@@ -497,7 +499,7 @@ struct FileRow: View {
             FileBadge(ext: (name as NSString).pathExtension)
             VStack(alignment: .leading, spacing: 1) {
                 Text(name).lineLimit(2).truncationMode(.middle)
-                Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
             }
         }
     }
@@ -532,7 +534,7 @@ private struct RuleEditor: View {
                                 Text("Priorité \(position) sur \(count) · sur le nom : essayée avant les règles sur le contenu")
                             }
                         }
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     ControlGroup {
@@ -557,9 +559,9 @@ private struct RuleEditor: View {
                         .textFieldStyle(.roundedBorder)
                         .font(.body.monospaced())
                     if rule.patternError != nil {
-                        Text("Expression invalide").font(.caption).foregroundStyle(.red)
+                        Text("Expression invalide").font(.subheadline).foregroundStyle(.red)
                     } else {
-                        Text("Vide : tout nom convient. (?i) au début ignore la casse.").font(.caption).foregroundStyle(.secondary)
+                        Text("Vide : tout nom convient. (?i) au début ignore la casse.").font(.subheadline).foregroundStyle(.secondary)
                     }
                 }
                 VStack(alignment: .leading, spacing: 3) {
@@ -568,21 +570,23 @@ private struct RuleEditor: View {
                         .font(.body.monospaced())
                         .frame(minHeight: 54, maxHeight: 110)
                         .scrollContentBackground(.hidden)
-                        .padding(4)
-                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
+                        .padding(.horizontal, 2).padding(.vertical, 4)
+                        .background(.background, in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.separator))
+                        .accessibilityLabel("Le texte contient")
                         .onChange(of: phrasesText) { _, text in
                             let phrases = text.components(separatedBy: .newlines).filter { !$0.isEmpty }
                             if phrases != rule.contains { rule.contains = phrases }
                         }
                     Text("Majuscules et accents ignorés. PDF (scans compris), images, fichiers Excel.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             } header: {
                 Label("Quand", systemImage: "line.3.horizontal.decrease")
             } footer: {
                 if !rule.hasCondition {
                     Text("Ajoutez un nom ou une expression : sans condition, la règle ne s’applique jamais.")
-                        .font(.caption).foregroundStyle(.orange)
+                        .font(.subheadline).foregroundStyle(.orange)
                 }
             }
             Section {
@@ -618,7 +622,7 @@ private struct RuleEditor: View {
                         Text("Le classement par année ou par mois est celui du dossier : il vaut pour toutes les règles qui y rangent et pour les fichiers posés là à la main (page Dossiers). La date est celle du document, lue par le modèle ; à défaut, celle de création du fichier. L’original est sauvegardé comme pour un renommage.")
                     }
                 }
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.subheadline).foregroundStyle(.secondary)
             }
             Section("Exemple") {
                 FileRow(name: "facture_2026_1185.pdf", detail: "~/Downloads")

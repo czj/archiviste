@@ -14,8 +14,10 @@ import Foundation
 ///       "backupMaxAgeDays": 180,
 ///       "expireMaxAgeDays": 548,
 ///       "watchedFolders": [{ "path": "~/Downloads", "enabled": true },
-///                          { "path": "~/Scans inbox", "moveTo": "~/Desktop" }],
-///       "confirmBeforeRename": false
+///                          { "path": "~/Scans inbox", "moveTo": "~/Desktop" },
+///                          { "path": "~/Desktop", "rulesOnly": true }],
+///       "confirmBeforeRename": false,
+///       "myNames": ["Camille Martin", "Martin Conseil"]
 ///     }
 public struct UserConfig: Codable, Equatable, Sendable {
     public struct Folder: Codable, Equatable, Hashable, Sendable, Identifiable {
@@ -24,10 +26,15 @@ public struct UserConfig: Codable, Equatable, Sendable {
         /// A relay folder (a scanner app's inbox, say): what lands here is only moved there,
         /// where the rules and the model take it if that folder is watched too.
         public var moveTo: String?
+        /// Rules only: what no rule takes stays as it is, the model names nothing here (Downloads,
+        /// the Desktop: full of files to keep under their name). Written only when set.
+        public var rulesOnly: Bool?
         public var id: String { path }
         public var url: URL { UserConfig.expand(path) }
         public var name: String { url.lastPathComponent }
         public var relay: URL? { moveTo.flatMap { $0.isEmpty ? nil : UserConfig.expand($0) } }
+        /// Files no rule takes are named by the model (PDFs and images), unless rules only.
+        public var usesModel: Bool { rulesOnly != true }
 
         public init(path: String, enabled: Bool = true, moveTo: String? = nil) {
             self.path = UserConfig.abbreviate(path)
@@ -40,6 +47,7 @@ public struct UserConfig: Codable, Equatable, Sendable {
             path = try c.decode(String.self, forKey: .path)
             enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
             moveTo = try c.decodeIfPresent(String.self, forKey: .moveTo)
+            rulesOnly = try c.decodeIfPresent(Bool.self, forKey: .rulesOnly)
         }
     }
 
@@ -54,6 +62,9 @@ public struct UserConfig: Codable, Equatable, Sendable {
     public var watchedFolders: [Folder] = []
     /// Dropped files: show the name and wait for "Renommer".
     public var confirmBeforeRename = false
+    /// The user's own names (person, companies): on their documents they are the recipient, never
+    /// the issuer. Told to the model, and taken out of the issuer if it gives one anyway.
+    public var myNames: [String] = []
     /// Classeurs, sorted by date: a file landing at the top, put there by hand or by a rule, goes
     /// to its year (or month) subfolder, dated. Watched like the inboxes; "Ranger maintenant" sorts
     /// the files already there. Only these: never a folder that is not listed.
@@ -141,6 +152,7 @@ public struct UserConfig: Codable, Equatable, Sendable {
         watchedFolders = try c.decodeIfPresent([Folder].self, forKey: .watchedFolders) ?? d.watchedFolders
         confirmBeforeRename = try c.decodeIfPresent(Bool.self, forKey: .confirmBeforeRename) ?? d.confirmBeforeRename
         datedFolders = try c.decodeIfPresent([DatedFolder].self, forKey: .datedFolders) ?? d.datedFolders
+        myNames = try c.decodeIfPresent([String].self, forKey: .myNames) ?? d.myNames
     }
 
     public var backupURL: URL { Self.expand(backupDir) }

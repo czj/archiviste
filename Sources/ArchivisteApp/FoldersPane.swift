@@ -32,7 +32,9 @@ struct FoldersPane: View {
                 Label("Boîtes d’arrivée", systemImage: "tray.and.arrow.down")
             } footer: {
                 Text("Chaque fichier qui arrive passe par les règles : d’abord celles sur le nom, puis celles sur le contenu. La première qui convient le renomme et le range. Sans règle, le modèle nomme les PDF et les images sur place (« Date - Type Émetteur - Détail »). Un relais déplace ses fichiers tels quels vers un autre dossier, par exemple les scans d’une app vers le Bureau.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text("En « Règles seulement », ce qu’aucune règle ne prend garde son nom : pour Téléchargements ou le Bureau, pleins de fichiers à laisser tels quels.")
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             Section {
                 if model.settings.datedFolders.isEmpty {
@@ -46,7 +48,7 @@ struct FoldersPane: View {
                 Label("Classeurs", systemImage: "calendar")
             } footer: {
                 Text("Tout fichier posé à la racine d’un classeur, à la main ou par une règle, part dans son sous-dossier d’année ou de mois : date du document, sinon celle du nom, sinon celle du fichier. Une règle qui range ici y dépose directement le fichier, au bon endroit. Pour les fichiers déjà en vrac, utilisez « Ranger maintenant » (⇧⌘R) : un aperçu s’affiche avant de déplacer quoi que ce soit.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             if let notice {
                 Section { Label(notice, systemImage: "info.circle").foregroundStyle(.secondary) }
@@ -69,7 +71,7 @@ struct FoldersPane: View {
                     Text("Autres destinations des règles")
                 } footer: {
                     Text("Ces dossiers reçoivent des fichiers par les règles, tels quels, sans sous-dossier. Un classeur les rangerait par année.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
         }
@@ -116,17 +118,17 @@ private struct FlowDiagram: View {
                 Step(icon: "tray.and.arrow.down", text: "Boîte d’arrivée")
                 Arrow()
                 Step(icon: "textformat", text: "Règle sur le nom")
-                Text("sinon").font(.caption2).foregroundStyle(.secondary)
+                Text("sinon").font(.subheadline).foregroundStyle(.secondary)
                 Step(icon: "doc.text.magnifyingglass", text: "sur le contenu")
                 Arrow()
                 Step(icon: "calendar", text: "Classeur › 2026")
             }
             HStack(spacing: 6) {
-                Text("Aucune règle :").font(.caption).foregroundStyle(.secondary)
+                Text("Aucune règle :").font(.subheadline).foregroundStyle(.secondary)
                 Step(icon: "sparkles", text: "le modèle nomme le fichier sur place")
             }
             HStack(spacing: 6) {
-                Text("Posé à la main dans un classeur :").font(.caption).foregroundStyle(.secondary)
+                Text("Posé à la main dans un classeur :").font(.subheadline).foregroundStyle(.secondary)
                 Step(icon: "calendar", text: "rangé dans 2026 ou 2026-11")
             }
         }
@@ -136,16 +138,12 @@ private struct FlowDiagram: View {
     private struct Step: View {
         let icon: String, text: LocalizedStringKey
         var body: some View {
-            Label(text, systemImage: icon)
-                .font(.caption)
-                .lineLimit(1)
-                .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Color.accentColor.opacity(0.12), in: Capsule())
+            Chip(text, systemImage: icon, tint: .accentColor)
         }
     }
 
     private struct Arrow: View {
-        var body: some View { Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary) }
+        var body: some View { Image(systemName: "arrow.right").font(.subheadline).foregroundStyle(.secondary) }
     }
 }
 
@@ -156,8 +154,8 @@ private struct FolderLabel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(name)
-            Text(path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
-            if let detail { Text(detail).font(.caption2).foregroundStyle(.tertiary) }
+            Text(path).font(.subheadline).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
+            if let detail { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
         }
         .help(path)
     }
@@ -174,14 +172,18 @@ private struct InboxRow: View {
             FolderLabel(name: folder.name, path: folder.path)
             Spacer()
             Menu {
-                Button("Règles, puis le modèle") { folder.moveTo = nil }
+                Toggle("Règles, puis le modèle", isOn: mode(usesModel: true))
+                Toggle("Règles seulement", isOn: mode(usesModel: false))
+                Divider()
                 Button("Seulement déplacer vers…", action: chooseRelay)
             } label: {
-                Text(folder.relay.map { String(localized: "Déplacer vers \($0.lastPathComponent)") } ?? String(localized: "Règles, puis le modèle"))
+                Text(folder.relay.map { String(localized: "Déplacer vers \($0.lastPathComponent)") }
+                     ?? (folder.usesModel ? String(localized: "Règles, puis le modèle") : String(localized: "Règles seulement")))
             }
             .fixedSize()
             .help(folder.relay.map { String(localized: "Relais : chaque fichier qui arrive est déplacé vers \(UserConfig.abbreviate($0.path)), sans autre traitement") }
-                  ?? String(localized: "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive"))
+                  ?? (folder.usesModel ? String(localized: "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive")
+                                       : String(localized: "Les règles (nom, puis contenu) sur chaque fichier qui arrive ; ce qu’aucune règle ne prend garde son nom")))
             Toggle("Actif", isOn: $folder.enabled).labelsHidden().toggleStyle(.switch)
                 .help(folder.enabled ? String(localized: "Surveillé : décocher pour suspendre ce dossier seulement") : String(localized: "Suspendu : rien n’y est renommé"))
             Button {
@@ -191,6 +193,15 @@ private struct InboxRow: View {
             .help("Ne plus surveiller ce dossier (ses fichiers ne bougent pas)")
             .accessibilityLabel("Retirer \(folder.name)")
         }
+    }
+
+    /// Checked when the folder is in this mode (not a relay); choosing it ends the relay.
+    private func mode(usesModel: Bool) -> Binding<Bool> {
+        Binding(get: { folder.relay == nil && folder.usesModel == usesModel }, set: { on in
+            guard on else { return }
+            folder.moveTo = nil
+            folder.rulesOnly = usesModel ? nil : true
+        })
     }
 
     private func chooseRelay() {

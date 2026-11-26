@@ -63,6 +63,7 @@ struct ArchivisteApp: App {
     @State private var model: AppModel
     @State private var status: StatusItem
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     init() {
         Legacy.migrate()
@@ -73,9 +74,10 @@ struct ArchivisteApp: App {
     }
 
     var body: some Scene {
-        // The menu bar icon opens this window: one place for everything.
+        // The menu bar icon opens the main window; Réglages… the Settings window.
         let _ = status.open = { [openWindow] in openWindow(id: MainWindow.id) }
         let _ = delegate.open = { [status] in status.show(nil) }
+        let _ = status.openSettings = { [openSettings] in openSettings() }
 
         Window("Archiviste", id: MainWindow.id) {
             MainWindow().environment(model)
@@ -85,5 +87,9 @@ struct ArchivisteApp: App {
         .defaultLaunchBehavior(UserDefaults.standard.bool(forKey: "openAtLaunch") ? .presented : .suppressed)
         .restorationBehavior(.disabled)
         .commands { AppCommands(model: model) }
+
+        Settings {
+            SettingsWindow().environment(model)
+        }
     }
 }

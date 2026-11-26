@@ -184,6 +184,103 @@ public enum Naming {
         return prefix + name + suffix
     }
 
+    // MARK: Issuer cleanup (before buildFilename, which stays the Python script's port)
+
+    /// A legal form at either end of a company name: "Amazon EU S.à r.l.", "SAS Le Petit Café",
+    /// "Shenzhen … Mao Yi You Xian Gong Si" (pinyin for "Trading Co., Ltd.").
+    static let legalForm = #"(?:s\.?\s?à\.?\s?r\.?\s?l\.?|sàrl|s\.?a\.?(?:s\.?(?:u\.?)?|r\.?l\.?)?|e\.?u\.?r\.?l\.?|s\.?n\.?c\.?|s\.?c\.?i\.?|selarl|s\.?c\.?p\.?|gmbh|ag|ltd\.?|limited|inc\.?|llc|plc|b\.?v\.?|n\.?v\.?|s\.?p\.?a\.?|s\.?l\.?|co\.?|corp\.?|you xian gong si|gong si|co\.?,? ltd\.?)"#
+    static let trailingForm = Rx(#"(?:[\s,&]+"# + legalForm + #")+\s*$"#, [.caseInsensitive])
+    static let leadingForm = Rx(#"^\s*"# + legalForm + #"\s+(?=\S)"#, [.caseInsensitive])
+    /// A registration number taken for a name: "SIRET 247 428 493 19087".
+    static let registration = Rx(#"^\s*(?:siret|siren|tva|n°|rcs)\b"#, [.caseInsensitive])
+
+    /// Administrations by their usual short name: "Direction générale des finances publiques" is
+    /// "Finances publiques", "Caisse primaire d'assurance maladie du Rhône" is "CPAM du Rhône".
+    static let administrations: [(Rx, String)] = [
+        (Rx(#"^(?:direction g[ée]n[ée]rale des finances publiques|dgfip|centre des finances publiques|service des imp[ôo]ts des (?:particuliers|entreprises)|sip|sie)\b.*"#, [.caseInsensitive]), "Finances publiques"),
+        (Rx(#"^caisse primaire d.assurance maladie"#, [.caseInsensitive]), "CPAM"),
+        (Rx(#"^caisse d.allocations familiales"#, [.caseInsensitive]), "CAF"),
+        (Rx(#"^union de recouvrement des cotisations.*"#, [.caseInsensitive]), "URSSAF"),
+        (Rx(#"^caisse d.assurance retraite et de la sant[ée] au travail"#, [.caseInsensitive]), "CARSAT"),
+    ]
+
+    /// Monthly documents (payslip, statement) named by their month: the model tends to pick a
+    /// line ("Salaire de base", "Solde précédent"). The month of the period's end ("du 01/09/2026
+    /// au 30/09/2026"), else of the date.
+    static let monthly = ["Bulletin de paie", "Relevé de compte", "Relevé de prestations"]
+    static let period = Rx(#"\bdu\s+\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\s+au\s+(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})"#, [.caseInsensitive])
+    static let months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août",
+                         "Septembre", "Octobre", "Novembre", "Décembre"]
+
+    static func monthDetail(date: String?, text: String?) -> String? {
+        if let text, let m = period.first(text), let mo = Int(m.group(2, in: text) ?? ""), (1...12).contains(mo),
+           var y = Int(m.group(3, in: text) ?? "") {
+            if y < 100 { y += 2000 }
+            return "\(months[mo - 1]) \(y)"
+        }
+        guard let date, let day = Day(iso: date) else { return nil }
+        let parts = day.iso.split(separator: "-")
+        guard let mo = Int(parts[1]) else { return nil }
+        return "\(months[mo - 1]) \(parts[0])"
+    }
+
+    /// The model's fields with a cleaner issuer: no legal form, an administration's usual name,
+    /// and never one of the user's own names (on their documents they are the recipient). A
+    /// monthly document's detail is its month (`text`: the document's, to read the period).
+    public static func cleanFields(_ raw: [String: String], myNames: [String] = [], text: String? = nil) -> [String: String] {
+        var fields = raw
+        if let type = raw["type"], monthly.contains(type),
+           let month = monthDetail(date: raw["date"].flatMap { dateISO.test($0) ? $0 : nil }, text: text) {
+            fields["detail"] = month
+        }
+        guard var issuer = raw["issuer"]?.trimmingCharacters(in: .whitespacesAndNewlines), !issuer.isEmpty else { return fields }
+        issuer = leadingForm.sub(trailingForm.sub(issuer, ""), "").trimmingCharacters(in: .whitespaces)
+        for (re, short) in administrations {
+            if let m = re.first(issuer) {
+                let rest = (issuer as NSString).substring(from: m.range.location + m.range.length)
+                issuer = short == "Finances publiques" ? short : short + rest
+                break
+            }
+        }
+        if isOneOf(issuer, myNames) { issuer = "aucun" }
+        if registration.test(issuer) { issuer = "aucun" }
+        fields["issuer"] = issuer.isEmpty ? "aucun" : issuer
+        if let detail = fields["detail"] { fields["detail"] = without(myNames, in: detail) }
+        return fields
+    }
+
+    /// "Forfait mobile Level UP" → "Forfait mobile": two words or more in a row from one of the
+    /// user's names (or one alone if it is the whole name) say who received it, not what it is.
+    static func without(_ names: [String], in detail: String) -> String {
+        func fold(_ s: Substring) -> String {
+            s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).filter { $0.isLetter || $0.isNumber }
+        }
+        var words = detail.split(separator: " ")
+        for name in names {
+            let mine = Set(name.split { !$0.isLetter && !$0.isNumber }.map(fold))
+            guard !mine.isEmpty else { continue }
+            var i = 0
+            while i < words.count {
+                var j = i
+                while j < words.count, mine.contains(fold(words[j])), !fold(words[j]).isEmpty { j += 1 }
+                if j - i >= min(2, mine.count) { words.removeSubrange(i..<j) } else { i = max(j, i + 1) }
+            }
+        }
+        return words.joined(separator: " ")
+    }
+
+    /// "Martin Conseil" is also "MARTIN CONSEIL SAS" and "Martin conseil": the words of one are all
+    /// among the other's, case and accents aside. Whole words: "Orange" is not "Orangerie".
+    static func isOneOf(_ issuer: String, _ names: [String]) -> Bool {
+        func words(_ s: String) -> Set<String> {
+            Set(s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+                .split { !$0.isLetter && !$0.isNumber }.map(String.init))
+        }
+        let i = words(issuer)
+        guard !i.isEmpty else { return false }
+        return names.map(words).contains { n in !n.isEmpty && (n.isSubset(of: i) || i.isSubset(of: n)) }
+    }
+
     /// Short labels for the UI chips: type, date, amount.
     public static func chips(_ raw: [String: String]) -> [String] {
         let f = normalize(raw)

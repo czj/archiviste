@@ -1,0 +1,320 @@
+{
+  "myNames": ["Camille Martin", "Martin Conseil"],
+  "documents": [
+    {
+      "file": "01-facture-marketplace.pdf",
+      "type": "Facture", "issuer": "Amazon", "date": "2026-11-18", "amount": "88.00 EUR",
+      "detail": ["Stream Deck", "Elgato"],
+      "lines": [
+        "# Facture",
+        "Amazon EU S.à r.l., 38 avenue John F. Kennedy, L-1855 Luxembourg",
+        "TVA : LU20260743",
+        "", "> Facturé à :", "> Martin Conseil SAS", "> 12 rue des Lilas", "> 69003 Lyon",
+        "",
+        "Date de facture : 18 novembre 2026",
+        "Numéro de facture : FR6001A2B3C4",
+        "Numéro de commande : 405-1234567-8901234",
+        "",
+        "Description                              Qté   Prix unitaire HT   Total TTC",
+        "Elgato Stream Deck Neo, 8 touches        1     73,33 €            88,00 €",
+        "",
+        "Total HT : 73,33 €     TVA 20 % : 14,67 €     Total TTC : 88,00 €",
+        "Payé par carte le 18/11/2026"
+      ]
+    },
+    {
+      "file": "02-avoir-destinataire-en-tete.pdf",
+      "type": "Avoir", "issuer": "Atelier Dubois", "date": "2026-11-21", "amount": "292.47 EUR",
+      "detail": ["clavier"],
+      "lines": [
+        "# MARTIN CONSEIL",
+        "Camille Martin, gérante",
+        "",
+        "> Atelier Dubois SARL",
+        "> 4 impasse des Forges, 33000 Bordeaux",
+        "",
+        "# Avoir n° AV-2026-031",
+        "Émis par : Atelier Dubois SARL, SIRET 812 345 678 00021",
+        "Date : 21/11/2026",
+        "Client : Martin Conseil",
+        "",
+        "Annulation de la facture F-2026-118 du 17/11/2026",
+        "Clavier sans fil mécanique, retourné non utilisé        292,47 €",
+        "Frais d'expédition (offerts)                              0,00 €",
+        "",
+        "Montant de l'avoir TTC : 292,47 €"
+      ]
+    },
+    {
+      "file": "03-facture-telecom.pdf",
+      "type": "Facture", "issuer": "Nuage Télécom", "date": "2026-11-20", "amount": "39.99 EUR",
+      "detail": ["forfait", "fibre", "box", "novembre"],
+      "lines": [
+        "# NUAGE TÉLÉCOM",
+        "Votre facture du 20/11/2026",
+        "", "> Mme Camille Martin", "> 12 rue des Lilas, 69003 Lyon",
+        "",
+        "Compte client : 7712 0034 · Facture n° 2026-11-0098812",
+        "Période : du 20/10/2026 au 19/11/2026",
+        "",
+        "Abonnement Box Fibre 2 Gb/s                    34,99 €",
+        "Option TV                                        5,00 €",
+        "",
+        "Total à payer TTC : 39,99 €",
+        "Prélevé le 05/12/2026 sur votre compte se terminant par 4521"
+      ]
+    },
+    {
+      "file": "04-facture-echeance.pdf",
+      "type": "Facture", "issuer": "Lumen", "date": "2026-10-03", "amount": "84.20 EUR",
+      "detail": ["électricité", "consommation"],
+      "lines": [
+        "# Électricité Lumen",
+        "Facture d'électricité",
+        "", "> Camille Martin", "> 12 rue des Lilas, 69003 Lyon",
+        "",
+        "Date d'émission : 3 octobre 2026",
+        "Date limite de paiement : 18 octobre 2026",
+        "Consommation du 01/09/2026 au 30/09/2026 : 412 kWh",
+        "",
+        "Montant HT : 70,17 €",
+        "TVA : 14,03 €",
+        "Montant TTC à payer : 84,20 €"
+      ]
+    },
+    {
+      "file": "05-invoice-saas-usd.pdf",
+      "type": "Facture", "issuer": "Cloudlane", "date": "2026-09-01", "amount": "29.00 USD",
+      "detail": ["Pro", "plan", "subscription", "abonnement"],
+      "lines": [
+        "# INVOICE",
+        "Cloudlane, Inc. · 500 Market Street, San Francisco, CA 94105",
+        "", "> Bill to: Martin Conseil", "> camille@martin-conseil.example",
+        "",
+        "Invoice number: CL-88123",
+        "Date of issue: September 1, 2026",
+        "Date due: September 15, 2026",
+        "",
+        "Pro plan, monthly subscription (Sep 1 – Oct 1, 2026)      $29.00",
+        "Amount due: $29.00 USD"
+      ]
+    },
+    {
+      "file": "06-bulletin-de-paie.pdf",
+      "type": "Bulletin de paie", "issuer": "Boulangerie Vasseur", "date": "2026-10-31", "amount": "aucun",
+      "detail": ["octobre"],
+      "lines": [
+        "# BULLETIN DE PAIE",
+        "Employeur : Boulangerie Vasseur SAS, 8 place du Marché, 59000 Lille",
+        "SIRET 901 234 567 00012 · Convention collective boulangerie-pâtisserie",
+        "", "> Salarié : Camille Martin", "> Née le 14/03/1990", "> Emploi : vendeuse",
+        "",
+        "Période : du 01/10/2026 au 31/10/2026",
+        "Date de paiement : 31/10/2026",
+        "Salaire de base 151,67 h                     1 980,00 €",
+        "Net à payer avant impôt sur le revenu        1 545,32 €",
+        "Net payé                                      1 489,90 €"
+      ]
+    },
+    {
+      "file": "07-ordonnance.pdf",
+      "type": "Ordonnance", "issuer": "Dr Lefèvre", "date": "2026-10-12", "amount": "aucun",
+      "detail": ["amoxicilline"],
+      "lines": [
+        "# Docteur Hélène LEFÈVRE",
+        "Médecine générale · 3 rue Pasteur, 69006 Lyon · RPPS 10101234567",
+        "",
+        "Lyon, le 12 octobre 2026",
+        "", "> Mme Camille MARTIN", "> née le 14/03/1990",
+        "",
+        "AMOXICILLINE 1 g : 1 comprimé matin et soir pendant 6 jours",
+        "PARACÉTAMOL 1 g : si douleur, 3 fois par jour maximum",
+        "",
+        "Dr H. Lefèvre"
+      ]
+    },
+    {
+      "file": "08-avis-imposition.pdf",
+      "type": "Avis d'imposition", "issuer": "Finances publiques", "date": "2026-08-29", "amount": "aucun",
+      "detail": ["revenu", "2025"],
+      "lines": [
+        "# DIRECTION GÉNÉRALE DES FINANCES PUBLIQUES",
+        "AVIS D'IMPÔT 2026 · IMPÔT SUR LES REVENUS de l'année 2025",
+        "", "> MME MARTIN CAMILLE", "> 12 RUE DES LILAS", "> 69003 LYON",
+        "",
+        "Date de mise en recouvrement : 31/07/2026",
+        "Date d'établissement : 29/08/2026",
+        "Date limite de paiement : 15/09/2026",
+        "Numéro fiscal : 30 12 345 678 901",
+        "",
+        "Revenu fiscal de référence : 38 412 €",
+        "Montant de votre impôt : 2 136 €"
+      ]
+    },
+    {
+      "file": "09-releve-bancaire.pdf",
+      "type": "Relevé de compte", "issuer": "Banque Rhodanienne", "date": "2026-10-31", "amount": "aucun",
+      "detail": ["octobre"],
+      "lines": [
+        "# Banque Rhodanienne",
+        "Relevé de compte courant n° 42",
+        "", "> Mme Camille Martin", "> 12 rue des Lilas, 69003 Lyon",
+        "",
+        "Période du 01/10/2026 au 31/10/2026 · Édité le 31/10/2026",
+        "IBAN FR76 1234 5678 9012 3456 7890 123",
+        "",
+        "Solde au 01/10/2026 : 2 314,55 €",
+        "05/10  Prélèvement Électricité Lumen        -84,20 €",
+        "31/10  Virement salaire Boulangerie Vasseur  1 489,90 €",
+        "Solde au 31/10/2026 : 3 720,25 €"
+      ]
+    },
+    {
+      "file": "10-devis-artisan.pdf",
+      "type": "Devis", "issuer": "Plomberie Garnier", "date": "2026-11-06", "amount": "1450.80 EUR",
+      "detail": ["chauffe-eau", "ballon"],
+      "lines": [
+        "# Plomberie Garnier",
+        "Artisan plombier chauffagiste · 7 chemin du Moulin, 69110 Sainte-Foy-lès-Lyon",
+        "",
+        "DEVIS n° D-2026-077 du 06/11/2026 · valable jusqu'au 06/12/2026",
+        "", "> Client : Camille Martin", "> 12 rue des Lilas, 69003 Lyon",
+        "",
+        "Remplacement chauffe-eau électrique 200 L      980,00 € HT",
+        "Main-d'œuvre (6 h)                              339,00 € HT",
+        "Total HT : 1 319,00 €     TVA 10 % : 131,80 €",
+        "Total TTC : 1 450,80 €"
+      ]
+    },
+    {
+      "file": "11-ticket-de-caisse.pdf",
+      "type": "Reçu de paiement", "issuer": "Bricomax", "date": "2026-11-15", "amount": "47.85 EUR",
+      "detail": ["peinture", "rouleau"],
+      "lines": [
+        "BRICOMAX VAULX-EN-VELIN",
+        "15/11/2026  16:42  CAISSE 04  TICKET 118822",
+        "",
+        "PEINTURE MURS BLANC MAT 2,5L     32,90",
+        "ROULEAU 180MM                     8,95",
+        "BACHE PROTECTION                  6,00",
+        "",
+        "TOTAL TTC                        47,85",
+        "CB SANS CONTACT                  47,85",
+        "MERCI DE VOTRE VISITE"
+      ]
+    },
+    {
+      "file": "12-quittance-loyer.pdf",
+      "type": "Quittance", "issuer": "Bernard Roux", "date": "2026-11-02", "amount": "850.00 EUR",
+      "detail": ["octobre", "loyer"],
+      "lines": [
+        "# Quittance de loyer",
+        "Bailleur : M. Bernard Roux, 22 quai Claude Bernard, 69007 Lyon",
+        "", "> Locataire : Mme Camille Martin", "> 12 rue des Lilas, 69003 Lyon",
+        "",
+        "Je soussigné Bernard Roux, propriétaire du logement désigné ci-dessus,",
+        "déclare avoir reçu la somme de 850,00 euros au titre du loyer et des charges",
+        "pour la période du 01/10/2026 au 31/10/2026.",
+        "Loyer : 780,00 €   Charges : 70,00 €",
+        "",
+        "Fait à Lyon, le 2 novembre 2026"
+      ]
+    },
+    {
+      "file": "13-attestation-assurance.pdf",
+      "type": "Attestation", "issuer": "Mutuelle Horizon", "date": "2026-01-05", "amount": "aucun",
+      "detail": ["habitation", "responsabilité"],
+      "lines": [
+        "# Mutuelle Horizon Assurances",
+        "ATTESTATION D'ASSURANCE HABITATION",
+        "",
+        "Nous attestons que Mme Camille Martin, demeurant 12 rue des Lilas, 69003 Lyon,",
+        "est titulaire du contrat Habitation Sérénité n° HAB-558120,",
+        "garantissant notamment sa responsabilité civile, pour la période du 01/01/2026 au 31/12/2026.",
+        "",
+        "Fait à Niort, le 5 janvier 2026",
+        "Pour Mutuelle Horizon, le service clients"
+      ]
+    },
+    {
+      "file": "14-lettre-mairie.pdf",
+      "type": "Lettre", "issuer": "Mairie de Lyon|Ville de Lyon", "date": "2026-09-22", "amount": "aucun",
+      "detail": ["stationnement", "résident"],
+      "lines": [
+        "# Ville de Lyon",
+        "Direction de la Mobilité",
+        "", "> Mme Camille Martin", "> 12 rue des Lilas", "> 69003 Lyon",
+        "",
+        "Lyon, le 22 septembre 2026",
+        "Objet : renouvellement de votre carte de stationnement résident",
+        "",
+        "Madame,",
+        "Votre demande de carte résident pour la zone 3 a bien été acceptée.",
+        "La carte est valable jusqu'au 30/09/2027.",
+        "Veuillez agréer, Madame, nos salutations distinguées."
+      ]
+    },
+    {
+      "file": "15-billet-train.pdf",
+      "type": "Billet", "issuer": "Rails de France", "date": "2026-11-10", "amount": "aucun",
+      "detail": ["Lyon", "Paris"],
+      "lines": [
+        "# Rails de France · e-billet",
+        "Réservation du 10/11/2026 · Dossier QXZ7HK",
+        "",
+        "Passager : Camille MARTIN",
+        "Aller le 04/12/2026 : Lyon Part-Dieu 07:04 → Paris Gare de Lyon 09:00",
+        "Voiture 14 · Place 62 · 2de classe",
+        "",
+        "Prix payé : 49,00 €"
+      ]
+    },
+    {
+      "file": "16-facture-kine.pdf",
+      "type": "Facture", "issuer": "Kiné Bonnet", "date": "2026-10-28", "amount": "180.00 EUR",
+      "detail": ["rééducation", "séances"],
+      "lines": [
+        "# Julien Bonnet",
+        "Masseur-kinésithérapeute D.E. · 9 cours Gambetta, 69003 Lyon",
+        "",
+        "Note d'honoraires du 28/10/2026",
+        "", "> Patiente : Camille Martin", "> née le 14/03/1990",
+        "",
+        "Séances de rééducation du genou : 10 séances du 01/10 au 27/10/2026",
+        "10 × 18,00 €",
+        "Total acquitté : 180,00 €"
+      ]
+    },
+    {
+      "file": "17-convocation.pdf",
+      "type": "Convocation", "issuer": "Santé au Travail Rhône", "date": "2026-11-03", "amount": "aucun",
+      "detail": ["visite", "médicale"],
+      "lines": [
+        "# Santé au Travail Rhône",
+        "Service de prévention et de santé au travail",
+        "", "> Mme Camille Martin", "> c/o Boulangerie Vasseur", "> 59000 Lille",
+        "",
+        "Lyon, le 3 novembre 2026",
+        "CONVOCATION",
+        "Vous êtes convoquée à une visite d'information et de prévention",
+        "le 9 décembre 2026 à 10 h 30, 15 rue Garibaldi, 69006 Lyon."
+      ]
+    },
+    {
+      "file": "18-contrat-assurance-auto.pdf",
+      "type": "Contrat", "issuer": "Mutuelle Horizon", "date": "2026-03-01", "amount": "aucun",
+      "detail": ["auto", "véhicule"],
+      "lines": [
+        "# Mutuelle Horizon Assurances",
+        "CONDITIONS PARTICULIÈRES · Contrat Auto Confort n° AUTO-771203",
+        "",
+        "Souscripteur : Camille Martin, 12 rue des Lilas, 69003 Lyon",
+        "Véhicule assuré : Peugeot 208, immatriculé GH-123-JK",
+        "Date d'effet : 01/03/2026 · Formule tous risques",
+        "Cotisation annuelle : 612,40 €",
+        "",
+        "Établi à Niort le 1er mars 2026"
+      ]
+    }
+  ]
+}

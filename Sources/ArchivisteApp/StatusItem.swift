@@ -11,6 +11,8 @@ final class StatusItem: NSObject, NSMenuDelegate {
     private let model: AppModel
     /// Opens the main window; set by the App, which holds SwiftUI's openWindow.
     var open: () -> Void = {}
+    /// Opens the Settings window; set by the App, which holds SwiftUI's openSettings.
+    var openSettings: () -> Void = {}
 
     init(model: AppModel) {
         self.model = model
@@ -73,6 +75,14 @@ final class StatusItem: NSObject, NSMenuDelegate {
         }
     }
 
+    /// The Settings window, in front: a menu bar app is not active by itself.
+    func showSettings() {
+        DispatchQueue.main.async { [self] in
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
+        }
+    }
+
     @objc private func clicked() {
         let event = NSApp.currentEvent
         if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
@@ -95,7 +105,7 @@ final class StatusItem: NSObject, NSMenuDelegate {
         menu.addItem(entry(pause, "") { [weak self] in self?.model.paused.toggle() })
         menu.addItem(.separator())
         menu.addItem(entry(String(localized: "Règles…"), "") { [weak self] in self?.show(.rules) })
-        menu.addItem(entry(String(localized: "Réglages…"), ",") { [weak self] in self?.show(.general) })
+        menu.addItem(entry(String(localized: "Réglages…"), ",") { [weak self] in self?.showSettings() })
         menu.addItem(.separator())
         menu.addItem(entry(String(localized: "À propos d’Archiviste"), "") { About.show() })
         menu.addItem(entry(String(localized: "Aide d’Archiviste"), "") { NSWorkspace.shared.open(About.readme) })

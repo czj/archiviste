@@ -5,10 +5,11 @@ import ArchivisteCore
 //   archiviste <file> [--json]
 //   archiviste --rename [--dry-run] [--force] [--backup-dir <dir>] <files...>
 //   archiviste --rules <files...>        which rule each file matches, and why the others don't
+//   archiviste --eval <folders...>       score the model on labelled corpora (corpus.json)
 
 func err(_ s: String) { FileHandle.standardError.write(Data((s + "\n").utf8)) }
 
-let usage = "usage: archiviste <fichier> [--json] | --rename [--dry-run] [--force] [--backup-dir <dir>] <fichiers…> | --rules <fichiers…>"
+let usage = "usage: archiviste <fichier> [--json] | --rename [--dry-run] [--force] [--backup-dir <dir>] <fichiers…> | --rules <fichiers…> | --eval <dossiers…>"
 
 let config: UserConfig
 do { config = try UserConfig.load() } catch {
@@ -20,6 +21,7 @@ do { rules = try Rules.load() } catch {
 }
 var files: [String] = [], json = false, rename = false, dryRun = false, force = false, rulesTest = false
 var backupDir = config.backupURL
+var strategy = Strategy.app  // --strategy a+b (or baseline), before --eval: see Strategy
 var customBackupDir = false  // trashing expired files only ever runs on the configured folder
 var args = CommandLine.arguments.dropFirst()
 while let a = args.popFirst() {
@@ -49,6 +51,51 @@ while let a = args.popFirst() {
             }
         }
         print("\(found) nom(s) mal daté(s) sur \(seen) PDF datés lus")
+        exit(0)
+    case "--strategy":
+        guard let spec = args.popFirst(), let s = Strategy(spec) else {
+            err("--strategy : baseline, ou une combinaison de reasoning, other, twoPass, headTail, filename, guards, blend, textOnly (a+b)"); exit(1)
+        }
+        strategy = s
+    case "--eval":  // score the model on labelled corpora (corpus.json): see Evaluation
+        let engine: Engine
+        do { engine = try Engine() } catch { err("✗ \(error.localizedDescription)"); exit(1) }
+        var totals: [String: (ok: Int, all: Int)] = [:]
+        var seconds = 0.0, timed = 0
+        for dir in args {
+            let folder = UserConfig.expand(dir)
+            let corpus: Evaluation.Corpus
+            do { corpus = try Evaluation.load(folder) } catch {
+                err("✗ \(dir)/corpus.json : \(error.localizedDescription)"); exit(1)
+            }
+            let names = corpus.myNames ?? config.myNames
+            for doc in corpus.documents {
+                let url = folder.appendingPathComponent(doc.file)
+                print("── \(doc.file)")
+                do {
+                    let t0 = Date()
+                    let ex = try await Extractor.extract(url)
+                    let raw = try await engine.ask(ex, isImage: Config.isImage(url), myNames: names, strategy: strategy)
+                    let fields = Naming.cleanFields(raw, myNames: names, text: ex.text)
+                    seconds += Date().timeIntervalSince(t0); timed += 1
+                    let name = Naming.buildFilename(fields, original: doc.file, captureDate: ex.captureDate)
+                    print("   \(name)")
+                    for s in Evaluation.score(doc, fields) {
+                        totals[s.field, default: (0, 0)].all += 1
+                        if s.ok { totals[s.field]!.ok += 1 }
+                        if !s.ok { print("   ✗ \(s.field) : « \(s.got) » au lieu de « \(s.expected) »") }
+                    }
+                } catch {
+                    print("   ✗ \(error.localizedDescription)")
+                }
+            }
+        }
+        print("── score · \(strategy)")
+        for field in ["type", "issuer", "date", "amount", "detail"] {
+            guard let t = totals[field] else { continue }
+            print("   \(field.padding(toLength: 7, withPad: " ", startingAt: 0)) \(t.ok)/\(t.all)  \(t.ok * 100 / max(t.all, 1)) %")
+        }
+        print(String(format: "   durée   %.1f s par document", seconds / Double(max(timed, 1))))
         exit(0)
     case "--rules": rulesTest = true
     case "--rename": rename = true
@@ -97,7 +144,7 @@ if rulesTest {
     if rules.isEmpty { say("Aucune règle dans \(short(Rules.fileURL))"); exit(0) }
     for url in urls {
         print("── \(url.lastPathComponent)")
-        if let original = Marker.originalName(url) { print("   déjà traité par Archiviste (avant : « \(original) »)") }
+        if Marker.isMarked(url), let original = Marker.originalName(url) { print("   déjà traité par Archiviste (avant : « \(original) »)") }
         for (i, rule, missing) in await Rules.nearMisses(rules, for: url) {
             print("   · règle \(i + 1) « \(rule.label) » : manque \(missing.map { "« \($0) »" }.joined(separator: ", "))")
         }
@@ -205,7 +252,7 @@ say("✓ Modèle Apple prêt")
 
 if !batch {
     do {
-        guard let s = try await Namer.suggest(urls[0], try await nextExtraction!.value, engine: engine) else {
+        guard let s = try await Namer.suggest(urls[0], try await nextExtraction!.value, engine: engine, myNames: config.myNames) else {
             err("✗ Rien de lisible dans ce fichier"); exit(2)
         }
         try emit(s.name)
@@ -221,7 +268,7 @@ for (n, url) in urls.enumerated() {
     let extraction = nextExtraction!
     nextExtraction = prefetch(n + 1)
     do {
-        guard let s = try await Namer.suggest(url, try await extraction.value, engine: engine) else {
+        guard let s = try await Namer.suggest(url, try await extraction.value, engine: engine, myNames: config.myNames) else {
             print("  – ignoré   rien de lisible\n"); skipped += 1; continue
         }
         let took = String(format: "%.1fs", Date().timeIntervalSince(t0))

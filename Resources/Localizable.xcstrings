@@ -1365,6 +1365,56 @@
         }
       }
     },
+    "ex. Camille Martin, Martin Conseil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Camille Martin, Martin Consulting"
+          }
+        }
+      }
+    },
+    "Effacer l’historique" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear History"
+          }
+        }
+      }
+    },
+    "Effacer l’historique ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear the history?"
+          }
+        }
+      }
+    },
+    "Effacer l’historique…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear History…"
+          }
+        }
+      }
+    },
+    "En « Règles seulement », ce qu’aucune règle ne prend garde son nom : pour Téléchargements ou le Bureau, pleins de fichiers à laisser tels quels." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With “Rules only”, what no rule takes keeps its name: for Downloads or the Desktop, full of files to leave as they are."
+          }
+        }
+      }
+    },
     "En arrière-plan, il continue de surveiller vos dossiers, sans fenêtre. Quitté, il rattrapera au prochain lancement ce qui sera arrivé entre-temps." : {
       "localizations" : {
         "en" : {
@@ -1671,6 +1721,16 @@
         }
       }
     },
+    "Le texte contient" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text contains"
+          }
+        }
+      }
+    },
     "Le texte contient (toutes ces expressions, une par ligne)" : {
       "localizations" : {
         "en" : {
@@ -1701,6 +1761,26 @@
         }
       }
     },
+    "Les fichiers restent où ils sont, sous leur nouveau nom, et leurs originaux dans les sauvegardes. Seule la possibilité de les annuler d’ici disparaît." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The files stay where they are, under their new name, and their originals in the backups. Only the option to undo them from here goes away."
+          }
+        }
+      }
+    },
+    "Les règles (nom, puis contenu) sur chaque fichier qui arrive ; ce qu’aucune règle ne prend garde son nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The rules (name, then content) on each file that arrives; what no rule takes keeps its name"
+          }
+        }
+      }
+    },
     "Les règles (nom, puis contenu), sinon le modèle, sur chaque fichier qui arrive" : {
       "localizations" : {
         "en" : {
@@ -1717,6 +1797,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Case and accents are ignored. PDFs (scans included), images, Excel files."
+          }
+        }
+      }
+    },
+    "Mes noms" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My names"
           }
         }
       }
@@ -2501,6 +2591,16 @@
         }
       }
     },
+    "Règles seulement" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rules only"
+          }
+        }
+      }
+    },
     "Règles…" : {
       "localizations" : {
         "en" : {
@@ -2821,6 +2921,26 @@
         }
       }
     },
+    "Vider cette liste : les fichiers restent où ils sont" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty this list: the files stay where they are"
+          }
+        }
+      }
+    },
+    "Vous-même et vos sociétés, séparés par des virgules. Sur vos documents, vous êtes le destinataire : ces noms ne sont jamais pris pour l’émetteur." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You and your companies, separated by commas. On your documents you are the recipient: these names are never taken as the issuer."
+          }
+        }
+      }
+    },
     "Valider chaque nom avant de renommer (fichiers déposés)" : {
       "localizations" : {
         "en" : {
@@ -2911,7 +3031,7 @@
         }
       }
     },
-    "config.json est la configuration commune (à versionner avec tes dotfiles) ; l’app ne la modifie jamais. Ce que tu changes ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux." : {
+    "config.json est la configuration commune (à versionner avec vos dotfiles) ; l’app ne la modifie jamais. Ce que vous changez ici va dans config.local.json, qui ne concerne que ce Mac. La commande archiviste lit les deux." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
